@@ -1,0 +1,148 @@
+{
+  "datos_generales": {
+    "responsable_registro": "",
+    "empresa": "Cermaq",
+    "centro": "ce-islagarcia",
+    "fecha_instalacion": "",
+    "tecnico": "",
+    "numero_ficha": ""
+  },
+
+  "infraestructura": {
+    "tipo_equipo": "pcinnovex2",
+    "marca": "",
+    "modelo": "",
+    "serie": "",
+    "sistema_operativo": "",
+    "tipo_conectividad": "Wifi"
+  },
+
+  "acceso_remoto": {
+    "tun0": "10.9.38.65",
+    "ip_fija": "",
+    "puerto_local": "",
+    "puerto_server": "8.8.8.8"
+  },
+
+  "camara": {
+    "instalada": false,
+    "tipo_ip": "",
+    "direccion_ip": ""
+  },
+
+  "estacion": {
+    "instalada": false,
+    "tipo": ""
+  },
+
+  "antena": {
+    "version": "",
+    "tipo_antena": "",
+    "panid": "",
+    "ubicacion": "",
+    "observacion": ""
+  },
+
+  "ubicaciones": [
+    {
+      "tipo": "ponton",
+      "nombre": "Pontón",
+      "coordenadas": "-52.837569,-72.534433",
+
+      "equipos": [
+        {
+          "numero_equipo": 1,
+          "sensor": {
+            "tipo": "oxigeno_salinidad_temperatura",
+            "profundidad": "5m",
+            "serial": ""
+          }
+        },
+        {
+          "numero_equipo": 2,
+          "sensor": {
+            "tipo": "oxigeno_salinidad_temperatura",
+            "profundidad": "10m",
+            "serial": ""
+          }
+        },
+        {
+          "numero_equipo": 6,
+          "sensor": {
+            "tipo": "corriente",
+            "profundidad": "5m",
+            "serial": ""
+          }
+        }
+      ]
+    },
+
+    {
+      "tipo": "jaula",
+      "nombre": "106",
+      "coordenadas": "-52.838752,-72.535610",
+
+      "equipos": [
+        {
+          "numero_equipo": 3,
+          "sensor": {
+            "tipo": "oxigeno_salinidad_temperatura",
+            "profundidad": "5m",
+            "serial": ""
+          }
+        },
+        {
+          "numero_equipo": 4,
+          "sensor": {
+            "tipo": "oxigeno_salinidad_temperatura",
+            "profundidad": "10m",
+            "serial": ""
+          }
+        },
+        {
+          "numero_equipo": 5,
+          "sensor": {
+            "tipo": "oxigeno_salinidad_temperatura",
+            "profundidad": "15m",
+            "serial": ""
+          }
+        }
+      ]
+    },
+
+    {
+      "tipo": "jaula",
+      "nombre": "105",
+      "coordenadas": "-52.838752,-72.535610",
+
+      "equipos": [
+        {
+          "numero_equipo": 7,
+          "sensor": {
+            "tipo": "turbidez",
+            "profundidad": "5m",
+            "serial": ""
+          }
+        }
+      ]
+    }
+  ],
+
+  "activacion": {
+    "fecha_creacion_monitor": "",
+    "tipo_ip": "",
+    "ip_final": "",
+    "ping_ok": false,
+    "ssh_ok": false,
+    "datos_visibles": false,
+    "transmision_ok": false,
+    "alarmas_activadas": false,
+    "responsable_activacion": ""
+  },
+
+  "estado_final": "",
+
+  "observaciones": "",
+
+  "evidencias": []
+}

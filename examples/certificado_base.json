@@ -1,0 +1,41 @@
+{
+  "datos_generales": {},
+
+  "infraestructura": {
+    "categoria": "",
+    "marca": "",
+    "modelo": "",
+    "serie": "",
+    "sistema_operativo": "",
+    "tipo_conectividad": "",
+    "switch": "",
+    "puerto": ""
+  },
+
+  "acceso_remoto": {
+    "tun0": "",
+    "ip_fija": "",
+    "puerto_server": ""
+  },
+
+  "camara": {
+    "instalada": false,
+    "tipo_ip": "",
+    "direccion_ip": ""
+  },
+
+  "estacion": {
+    "instalada": false,
+    "tipo": ""
+  },
+
+  "antena": {},
+
+  "ubicaciones": [],
+
+  "activacion": {},
+
+  "observaciones": "",
+
+  "evidencias": []
+}

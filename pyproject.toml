@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "certificado-instalacion"
+version = "0.1.0"
+description = "Aplicación TUI para la generación de certificados de instalación"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "reportlab>=4.0.0",
+    "pillow>=10.0.0",
+    "charset-normalizer>=3.0.0"
+]
+
+[project.scripts]
+certificado = "src.app.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]

@@ -1,0 +1,35 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+
+# Entornos y cachés de Python
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Artefactos de compilación y distribución
+build/
+dist/
+*.egg-info/
+
+# Datos generados por la aplicación
+storage/
+output/
+
+# Entrega binaria generada
+Certificado_Instalacion_Live_Linux/Entrega_Certificado_Instalacion_Live/
+
+# Configuración local de herramientas
+.vscode/
+.agents/
+.codex/
