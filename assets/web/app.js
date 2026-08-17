@@ -74,7 +74,6 @@ function parseLocationInfo(loc) {
 
   return { empresa: empresa, nombre_centro: nombre_centro };
 }
-
 const TIPOS_ELEMENTOS = [
   "Oxi-Sal", "Corriente", "Turbidez", "Clorofila", "pH",
   "ADCP", "Cámara", "Estación Meteorológica", "Antena", "Notebook", "Otro"
@@ -214,17 +213,141 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnProcesarAutofill").addEventListener("click", procesarAutofill);
   document.getElementById("btnGuardar").addEventListener("click", guardarAvance);
   document.getElementById("btnGenerarPDF").addEventListener("click", compilarYMostrarPDF);
-  document.getElementById("btnAbrirPopout").addEventListener("click", abrirVistaPreviaPopout);
+
+
+  // Revisor & Verificación de Ingreso
+  const btnEjecutarRevisor = document.getElementById("btnEjecutarRevisor");
+  if (btnEjecutarRevisor) {
+    btnEjecutarRevisor.addEventListener("click", ejecutarRevisorEquipos);
+  }
+  const btnCopiarPlantillaRevisor = document.getElementById("btnCopiarPlantillaRevisor");
+  if (btnCopiarPlantillaRevisor) {
+    btnCopiarPlantillaRevisor.addEventListener("click", copiarPlantillaRevisor);
+  }
+  const btnAutoRellenarDesdeRevisor = document.getElementById("btnAutoRellenarDesdeRevisor");
+  if (btnAutoRellenarDesdeRevisor) {
+    btnAutoRellenarDesdeRevisor.addEventListener("click", autoRellenarDesdeRevisor);
+  }
+
+  const inputsRevisor = [
+    "rev_centro", "rev_host", "rev_usuario", "rev_tipo_conexion",
+    "rev_sistema_operativo", "rev_kernel", "rev_clave_pc", "rev_dataweb",
+    "rev_pcinnovex", "rev_cacheton", "rev_python3", "rev_weather_davis", "rev_visibility_cam",
+    "rev_version_equipos", "rev_senal", "rev_voltajes",
+    "rev_saturacion", "rev_salinidad", "rev_temperatura",
+    "rev_camara", "rev_estacion", "rev_repuestos",
+    "rev_repuesto_equipo", "rev_repuesto_sensor", "rev_repuesto_kit",
+    "rev_telefono", "rev_correo", "rev_observaciones"
+  ];
+  inputsRevisor.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", () => construirPlantillaRevisorDesdeFormulario());
+      el.addEventListener("change", () => construirPlantillaRevisorDesdeFormulario());
+    }
+  });
+
+  // Información para ingreso de técnico
+  const btnEjecutarIngresoTecnico = document.getElementById("btnEjecutarIngresoTecnico");
+  if (btnEjecutarIngresoTecnico) {
+    btnEjecutarIngresoTecnico.addEventListener("click", ejecutarIngresoTecnico);
+  }
+  const btnGenerarPlantillaIngreso = document.getElementById("btnGenerarPlantillaIngreso");
+  if (btnGenerarPlantillaIngreso) {
+    btnGenerarPlantillaIngreso.addEventListener("click", generarPlantillaIngreso);
+  }
+  const btnCopiarPlantillaIngreso = document.getElementById("btnCopiarPlantillaIngreso");
+  if (btnCopiarPlantillaIngreso) {
+    btnCopiarPlantillaIngreso.addEventListener("click", copiarPlantillaIngreso);
+  }
+
+  const inputsIngreso = [
+    "ingreso_host", "ingreso_clave_pc", "ingreso_acceso_remoto",
+    "ingreso_observaciones"
+  ];
+  inputsIngreso.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", () => generarPlantillaIngreso());
+      el.addEventListener("change", () => generarPlantillaIngreso());
+    }
+  });
+
+  const btnCopiarTextoPlanoHeader = document.getElementById("btnCopiarTextoPlanoHeader");
+  if (btnCopiarTextoPlanoHeader) {
+    btnCopiarTextoPlanoHeader.addEventListener("click", () => {
+      if (moduloActivoActual === "revisor") {
+        copiarPlantillaRevisor();
+      } else if (moduloActivoActual === "ingreso_tecnico") {
+        copiarPlantillaIngreso();
+      }
+    });
+  }
+
+  inicializarObservacionesGeneralesDefault();
+
+  // Configurar Selector Principal de Módulos de Soporte
+  setupModuleSwitcher();
+
+  const btnSubtabPlantilla = document.getElementById("btnSubtabPlantilla");
+  const btnSubtabDocumentoLive = document.getElementById("btnSubtabDocumentoLive");
+  if (btnSubtabPlantilla && btnSubtabDocumentoLive) {
+    btnSubtabPlantilla.addEventListener("click", () => {
+      document.getElementById("viewPlantillaTexto").style.display = "block";
+      document.getElementById("viewDocumentoLive").style.display = "none";
+      btnSubtabPlantilla.classList.add("active");
+      btnSubtabDocumentoLive.classList.remove("active");
+    });
+    btnSubtabDocumentoLive.addEventListener("click", () => {
+      document.getElementById("viewPlantillaTexto").style.display = "none";
+      document.getElementById("viewDocumentoLive").style.display = "block";
+      btnSubtabDocumentoLive.classList.add("active");
+      btnSubtabPlantilla.classList.remove("active");
+      actualizarFrameDocumentoLive();
+    });
+  }
+
+  const btnSubtabIngresoLive = document.getElementById("btnSubtabIngresoLive");
+  const btnSubtabIngresoTexto = document.getElementById("btnSubtabIngresoTexto");
+  if (btnSubtabIngresoLive && btnSubtabIngresoTexto) {
+    btnSubtabIngresoLive.addEventListener("click", () => {
+      document.getElementById("viewIngresoLive").style.display = "block";
+      document.getElementById("viewIngresoTexto").style.display = "none";
+      btnSubtabIngresoLive.classList.add("active");
+      btnSubtabIngresoTexto.classList.remove("active");
+      actualizarFrameDocumentoIngresoLive();
+    });
+    btnSubtabIngresoTexto.addEventListener("click", () => {
+      document.getElementById("viewIngresoLive").style.display = "none";
+      document.getElementById("viewIngresoTexto").style.display = "block";
+      btnSubtabIngresoTexto.classList.add("active");
+      btnSubtabIngresoLive.classList.remove("active");
+    });
+  }
 
   // Toggles de Vista Previa Derecha
   document.getElementById("btnToggleVistaHTML").addEventListener("click", () => {
+    modoVistaPreviaModulos = "html";
     document.getElementById("liveHtmlContainer").style.display = "flex";
     document.getElementById("pdfContainer").style.display = "none";
     document.getElementById("btnToggleVistaHTML").classList.add("active");
-    document.getElementById("btnToggleVistaPDF").classList.remove("active");
+    if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
+    if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+    actualizarVistaPreviaDerechaPorModulo();
   });
 
-  document.getElementById("btnToggleVistaPDF").addEventListener("click", compilarYMostrarPDF);
+  document.getElementById("btnToggleVistaPDF").addEventListener("click", () => {
+    modoVistaPreviaModulos = "html";
+    if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+    compilarYMostrarPDF();
+  });
+
+  const btnToggleTexto = document.getElementById("btnToggleVistaTexto");
+  if (btnToggleTexto) {
+    btnToggleTexto.addEventListener("click", () => {
+      mostrarTextoPlanoEnPanelDerecho();
+    });
+  }
 
   // Formulario Integrado Repuestos
   document.getElementById("btnToggleFormRepuesto").addEventListener("click", () => {
@@ -468,6 +591,94 @@ function actualizarDropdownTecnicos(encargado) {
   }
 }
 
+let moduloActivoActual = "certificado"; // "certificado", "revisor", "ingreso_tecnico"
+
+function activarSeccionTab(targetTab) {
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  const targetId = `tab-${targetTab}`;
+  const targetEl = document.getElementById(targetId);
+  if (targetEl) {
+    targetEl.classList.add("active");
+  }
+
+  if (targetTab === "ingreso_tecnico") {
+    prellenarDatosHostIngresoTecnico();
+  }
+  actualizarVistaPreviaDerechaPorModulo();
+}
+
+function setupModuleSwitcher() {
+  const moduleBtns = document.querySelectorAll(".module-btn");
+  moduleBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      moduleBtns.forEach(b => {
+        b.classList.remove("active");
+        b.style.background = "var(--card-bg)";
+        b.style.color = "var(--text-color)";
+        b.style.borderColor = "var(--border-color)";
+      });
+
+      btn.classList.add("active");
+      btn.style.background = "#0284c7";
+      btn.style.color = "#ffffff";
+      btn.style.borderColor = "#0284c7";
+
+      const mod = btn.dataset.module;
+      moduloActivoActual = mod;
+
+      const navTabs = document.querySelector(".nav-tabs");
+      const certGroup = document.getElementById("certSelectorGroup");
+      const btnPDF = document.getElementById("btnGenerarPDF");
+      const btnGuardar = document.getElementById("btnGuardar");
+      const btnCopiarHeader = document.getElementById("btnCopiarTextoPlanoHeader");
+      const btnToggleVistaPDF = document.getElementById("btnToggleVistaPDF");
+      const btnToggleVistaTexto = document.getElementById("btnToggleVistaTexto");
+      const btnToggleVistaHTML = document.getElementById("btnToggleVistaHTML");
+
+      // Resetear toggles de vista previa al cambiar de módulo
+      if (btnToggleVistaHTML) btnToggleVistaHTML.classList.add("active");
+      if (btnToggleVistaPDF) btnToggleVistaPDF.classList.remove("active");
+      if (btnToggleVistaTexto) btnToggleVistaTexto.classList.remove("active");
+      const liveC = document.getElementById("liveHtmlContainer");
+      const pdfC = document.getElementById("pdfContainer");
+      if (liveC) liveC.style.display = "flex";
+      if (pdfC) pdfC.style.display = "none";
+
+      if (mod === "certificado") {
+        if (navTabs) navTabs.style.display = "flex";
+        if (certGroup) certGroup.style.display = "flex";
+        if (btnPDF) btnPDF.style.display = "inline-block";
+        if (btnGuardar) btnGuardar.style.display = "inline-block";
+        if (btnCopiarHeader) btnCopiarHeader.style.display = "none";
+        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "inline-block";
+        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "none";
+
+        activarSeccionTab("autofill");
+      } else if (mod === "revisor") {
+        if (navTabs) navTabs.style.display = "none";
+        if (certGroup) certGroup.style.display = "none";
+        if (btnPDF) btnPDF.style.display = "none";
+        if (btnGuardar) btnGuardar.style.display = "none";
+        if (btnCopiarHeader) btnCopiarHeader.style.display = "inline-block";
+        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
+        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
+
+        activarSeccionTab("revisor");
+      } else if (mod === "ingreso_tecnico") {
+        if (navTabs) navTabs.style.display = "none";
+        if (certGroup) certGroup.style.display = "none";
+        if (btnPDF) btnPDF.style.display = "none";
+        if (btnGuardar) btnGuardar.style.display = "none";
+        if (btnCopiarHeader) btnCopiarHeader.style.display = "inline-block";
+        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
+        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
+
+        activarSeccionTab("ingreso_tecnico");
+      }
+    });
+  });
+}
+
 function setupTabs() {
   const tabs = document.querySelectorAll(".tab-btn");
   tabs.forEach(tab => {
@@ -476,10 +687,53 @@ function setupTabs() {
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
 
       tab.classList.add("active");
-      const targetId = `tab-${tab.dataset.tab}`;
-      document.getElementById(targetId).classList.add("active");
+      const targetTab = tab.dataset.tab;
+      const targetId = `tab-${targetTab}`;
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) targetEl.classList.add("active");
+
+      actualizarVistaPreviaDerechaPorModulo();
+
+      if (targetTab === "ingreso_tecnico") {
+        prellenarDatosHostIngresoTecnico();
+      }
     });
   });
+}
+
+function actualizarVistaPreviaDerechaPorModulo() {
+  const btnToggleTexto = document.getElementById("btnToggleVistaTexto");
+  if (btnToggleTexto && btnToggleTexto.classList.contains("active")) {
+    mostrarTextoPlanoEnPanelDerecho();
+    return;
+  }
+
+  if (moduloActivoActual === "revisor") {
+    mostrarVistaPreviaRevisorDerecha();
+  } else if (moduloActivoActual === "ingreso_tecnico") {
+    mostrarVistaPreviaIngresoDerecha();
+  } else {
+    restaurarVistaPreviaCertificadoDerecha();
+  }
+}
+
+function restaurarVistaPreviaCertificadoDerecha() {
+  // Asegurar que el contenedor HTML Live esté visible y el PDF oculto
+  const liveContainer = document.getElementById("liveHtmlContainer");
+  const pdfContainer = document.getElementById("pdfContainer");
+  if (liveContainer) liveContainer.style.display = "flex";
+  if (pdfContainer) pdfContainer.style.display = "none";
+
+  // Asegurar el toggle activo correcto
+  const btnHTML = document.getElementById("btnToggleVistaHTML");
+  const btnPDF = document.getElementById("btnToggleVistaPDF");
+  const btnTexto = document.getElementById("btnToggleVistaTexto");
+  if (btnHTML) btnHTML.classList.add("active");
+  if (btnPDF) btnPDF.classList.remove("active");
+  if (btnTexto) btnTexto.classList.remove("active");
+
+  // Renderizar el informe del certificado
+  renderLiveHtmlSheet();
 }
 
 function bindFormInputs() {
@@ -782,7 +1036,7 @@ function poblarFormularioDesdeState() {
   renderRepuestosList();
   renderEvidenciasGrid();
   renderAlarmasTabla();
-  renderLiveHtmlSheet();
+  actualizarVistaPreviaDerechaPorModulo();
 }
 
 function setupDragAndDrop() {
@@ -1068,231 +1322,243 @@ function eliminarAlarma(idx) {
 
 // RENDERIZADO INSTANTÁNEO A4 LIVE HTML 100% IDÉNTICO A REPORTLAB PDF
 function renderLiveHtmlSheet() {
-  const sheet = document.getElementById("liveHtmlSheet") || document.getElementById("reportlabSheet");
-  if (!sheet) return;
+  try {
+    const sheet = document.getElementById("liveHtmlSheet") || document.getElementById("reportlabSheet");
+    if (!sheet) return;
 
-  const dg = certificadoState.datos_generales || {};
-  const inf = certificadoState.infraestructura || {};
-  const acc = certificadoState.acceso_remoto || {};
-  const cam = certificadoState.estacion_camara || {};
-  const ab = certificadoState.monitoreo_abiotico || {};
-  const act = certificadoState.activacion || {};
-  const ubs = certificadoState.ubicaciones || [];
-  const reps = certificadoState.equipos_repuesto || [];
-  const als = certificadoState.configuracion_alarmas || [];
-  const evs = certificadoState.evidencias || [];
+    const dg = (certificadoState && certificadoState.datos_generales) || {};
+    const inf = (certificadoState && certificadoState.infraestructura) || {};
+    const acc = (certificadoState && certificadoState.acceso_remoto) || {};
+    const cam = (certificadoState && certificadoState.estacion_camara) || {};
+    const ab = (certificadoState && certificadoState.monitoreo_abiotico) || {};
+    const act = (certificadoState && certificadoState.activacion) || {};
+    const ubs = (certificadoState && certificadoState.ubicaciones) || [];
+    const reps = (certificadoState && certificadoState.equipos_repuesto) || [];
+    const als = (certificadoState && certificadoState.configuracion_alarmas) || [];
+    const evs = (certificadoState && certificadoState.evidencias) || [];
 
-  const fichaNo = dg.numero_ficha ? (dg.numero_ficha.startsWith("DS-") ? dg.numero_ficha : `DS-${dg.numero_ficha}`) : `DS-${(dg.location || "001").toUpperCase()}`;
+    const fichaNo = dg.numero_ficha ? (dg.numero_ficha.startsWith("DS-") ? dg.numero_ficha : `DS-${dg.numero_ficha}`) : `DS-${(dg.location || "001").toUpperCase()}`;
 
-  let htmlUbicacionesTables = "";
-  if (ubs.length === 0) {
-    htmlUbicacionesTables = `<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin ubicaciones registradas.</div>`;
-  } else {
-    ubs.forEach(u => {
-      let rows = "";
-      const elemList = u.elementos || u.equipos || [];
-      if (elemList.length === 0) {
-        rows = `<tr><td colspan="4" style="text-align:center; color:#999999;">Sin equipos en esta ubicación.</td></tr>`;
-      } else {
-        elemList.forEach((el, idx) => {
-          const ident = el.mac ? `MAC: ${el.mac}` : (el.serie ? `S/N: ${el.serie}` : '-');
-          rows += `<tr>
-            <td style="text-align:center;">${idx + 1}</td>
-            <td>${el.tipo || '-'}</td>
-            <td style="text-align:center;">${el.metraje ? el.metraje + 'm' : '-'}</td>
-            <td>${ident}</td>
-          </tr>`;
-        });
-      }
+    let htmlUbicacionesTables = "";
+    if (!ubs || ubs.length === 0) {
+      htmlUbicacionesTables = `<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin ubicaciones registradas.</div>`;
+    } else {
+      ubs.forEach(u => {
+        if (!u) return;
+        let rows = "";
+        const elemList = u.elementos || u.equipos || [];
+        if (!elemList || elemList.length === 0) {
+          rows = `<tr><td colspan="4" style="text-align:center; color:#999999;">Sin equipos en esta ubicación.</td></tr>`;
+        } else {
+          elemList.forEach((el, idx) => {
+            if (!el) return;
+            const ident = el.mac ? `MAC: ${el.mac}` : (el.serie ? `S/N: ${el.serie}` : '-');
+            rows += `<tr>
+              <td style="text-align:center;">${idx + 1}</td>
+              <td>${el.tipo || '-'}</td>
+              <td style="text-align:center;">${el.metraje ? el.metraje + 'm' : '-'}</td>
+              <td>${ident}</td>
+            </tr>`;
+          });
+        }
 
-      const coordsText = u.coordenadas ? ` <span style="font-weight:normal; color:#666666;">(${u.coordenadas})</span>` : '';
-      htmlUbicacionesTables += `
-        <div style="font-size:10px; font-weight:bold; color:#333333; margin-top:6px; margin-bottom:3px;">
-          📍 Ubicación: ${u.nombre}${coordsText}
-        </div>
-        <table class="reportlab-list-table">
-          <thead>
-            <tr>
-              <th style="width:30px;">N°</th>
-              <th>Tipo de elemento</th>
-              <th style="width:80px;">Metraje</th>
-              <th>MAC / N° de serie</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `;
+        const coordsText = u.coordenadas ? ` <span style="font-weight:normal; color:#666666;">(${u.coordenadas})</span>` : '';
+        htmlUbicacionesTables += `
+          <div style="font-size:10px; font-weight:bold; color:#333333; margin-top:6px; margin-bottom:3px;">
+            📍 Ubicación: ${u.nombre || 'Ubicación'}${coordsText}
+          </div>
+          <table class="reportlab-list-table">
+            <thead>
+              <tr>
+                <th style="width:30px;">N°</th>
+                <th>Tipo de elemento</th>
+                <th style="width:80px;">Metraje</th>
+                <th>MAC / N° de serie</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      });
+    }
+
+    let htmlRepuestosRows = "";
+    if (reps && reps.length) {
+      reps.forEach(r => {
+        if (!r) return;
+        const ident = r.mac ? `MAC: ${r.mac}` : (r.serie ? `S/N: ${r.serie}` : '-');
+        htmlRepuestosRows += `<tr><td>${r.tipo || '-'}</td><td>${r.metraje ? r.metraje + 'm' : '-'}</td><td>${ident}</td></tr>`;
+      });
+    }
+
+    let htmlAlarmasRows = "";
+    if (als && als.length) {
+      als.forEach(al => {
+        if (!al) return;
+        const norm = normalizarAlarmaJS(al);
+        htmlAlarmasRows += `<tr>
+          <td>${norm.status}</td>
+          <td>${norm.equipo}</td>
+          <td>${norm.sensor}</td>
+          <td>${norm.correo}</td>
+          <td>${norm.conf_min}</td>
+          <td>${norm.conf_max}</td>
+          <td>${norm.medicion}</td>
+          <td>${norm.envio}</td>
+        </tr>`;
+      });
+    }
+
+    const chkData = act.checklist || {};
+    const checklistItems = [
+      { key: "pc_operativo", desc: "Computador instalado y operativo" },
+      { key: "red_validada", desc: "Configuración de red validada" },
+      { key: "antena_operativa", desc: "Antena receptora operativa" },
+      { key: "jennic_comunicando", desc: "Todos los equipos Jennic comunicando" },
+      { key: "sensores_datos", desc: "Sensores detectados y entregando datos" },
+      { key: "archivos_dat", desc: "Archivos .dat generándose y actualizándose" },
+      { key: "transmision_estacion", desc: "Transmisión datos Estación Meteorológica" },
+      { key: "transmision_camara", desc: "Transmisión datos Fotográficos" },
+      { key: "datos_dataweb", desc: "Datos visibles y actualizando en DataWeb" },
+      { key: "alarmas_estandar", desc: "Alarmas configuradas según estándar" }
+    ];
+
+    let htmlChecklistRows = "";
+    checklistItems.forEach(ci => {
+      const val = (chkData[ci.key] || "OK").toUpperCase();
+      const isOk = val === "OK" || val === "SI" || val === "CONFORME";
+      const isNA = val === "N/A" || val === "NO APLICA";
+      const okMark = isOk ? "[ ✔ ]" : "[   ]";
+      const naMark = isNA ? "[ ✔ ]" : "[   ]";
+      const obs = isOk ? "Conforme" : (isNA ? "N/A" : "Pendiente");
+
+      htmlChecklistRows += `<tr>
+        <td>${ci.desc}</td>
+        <td style="text-align:center;">${okMark}</td>
+        <td style="text-align:center;">${naMark}</td>
+        <td>${obs}</td>
+      </tr>`;
     });
+
+    sheet.innerHTML = `
+      <!-- Encabezado Oficial ReportLab 3 Cajas -->
+      <div class="reportlab-header-box">
+        <div class="reportlab-header-left">
+          <img src="logo.png" alt="Innovex">
+        </div>
+        <div class="reportlab-header-center">
+          VALIDACIÓN DE INSTALACIÓN
+        </div>
+        <div class="reportlab-header-right">
+          <div class="row"><div class="lbl">Registro</div><div class="val">${fichaNo}</div></div>
+          <div class="row"><div class="lbl">Periodo</div><div class="val">2026</div></div>
+          <div class="row"><div class="lbl">Páginas</div><div class="val">1 de 1</div></div>
+        </div>
+      </div>
+
+      <!-- 1. Datos Generales -->
+      <div class="reportlab-sec-title">1. Información general del centro</div>
+      <table class="reportlab-attr-table">
+        <tr><td class="attr">Location ID (Centro)</td><td class="val">${dg.location || '<em style="color:#ef4444;">[Sin asignar]</em>'}</td></tr>
+        <tr><td class="attr">Nombre del Centro</td><td class="val">${dg.nombre_centro || '<em style="color:#ef4444;">[Sin asignar]</em>'}</td></tr>
+        <tr><td class="attr">Empresa Cliente</td><td class="val">${dg.empresa || '-'}</td></tr>
+        <tr><td class="attr">Encargado de Área</td><td class="val">${dg.encargado_area || '-'}</td></tr>
+        <tr><td class="attr">Técnico de Visita</td><td class="val">${dg.tecnico_visita || '-'}</td></tr>
+        <tr><td class="attr">Fecha de Instalación</td><td class="val">${dg.fecha_instalacion || '-'}</td></tr>
+        <tr><td class="attr">Teléfono del Centro</td><td class="val">${dg.telefono_centro || dg.numero_centro || '-'}</td></tr>
+        <tr><td class="attr">Correo del Centro</td><td class="val">${dg.correo_centro || '-'}</td></tr>
+        <tr><td class="attr">Barrio / Zona</td><td class="val">${dg.barrio || '-'}</td></tr>
+        <tr><td class="attr">Puerto Patrón</td><td class="val">${dg.puerto_patron || '-'}</td></tr>
+        <tr><td class="attr">Coordenadas GPS</td><td class="val">${dg.coordenadas || '-'}</td></tr>
+      </table>
+
+      <!-- 2. Infraestructura & Conectividad -->
+      <div class="reportlab-sec-title">2. Infraestructura del PC de Monitoreo & Conectividad</div>
+      <table class="reportlab-attr-table">
+        <tr><td class="attr">Categoría Equipo</td><td class="val">${inf.categoria || '-'}</td></tr>
+        <tr><td class="attr">Marca / Modelo</td><td class="val">${inf.marca || ''} ${inf.modelo || ''}</td></tr>
+        <tr><td class="attr">Sistema Operativo</td><td class="val">${inf.sistema_operativo || '-'}</td></tr>
+        <tr><td class="attr">MAC Ethernet</td><td class="val">${inf.mac_ethernet || '-'}</td></tr>
+        <tr><td class="attr">ID Equipo / PC</td><td class="val">${inf.pc_id || '-'}</td></tr>
+        <tr><td class="attr">Contraseña PC</td><td class="val">${inf.pc_password || '-'}</td></tr>
+        <tr><td class="attr">Tipo de Conexión IP</td><td class="val">${inf.tipo_ip || 'IP VPN tun0'}</td></tr>
+        ${(inf.tipo_ip === 'IP Fija' || inf.tipo_ip === 'Ambas') ? `<tr><td class="attr">IP Fija PC</td><td class="val">${inf.ip_fija || '-'}</td></tr>` : ''}
+        ${(inf.tipo_ip === 'IP VPN tun0' || inf.tipo_ip === 'Ambas' || !inf.tipo_ip) ? `<tr><td class="attr">IP VPN tun0</td><td class="val">${inf.ip_vpn || acc.tun0 || '-'}</td></tr>` : ''}
+        <tr><td class="attr">Protocolo VPN</td><td class="val">${acc.protocolo || '-'}</td></tr>
+        <tr><td class="attr">Servidor Host / Puerto</td><td class="val">${acc.hostserver || 'dataweb.innovex.cl'}:${acc.puerto_server || '8888'}</td></tr>
+      </table>
+
+      <!-- 3. Antena, Cámara & Estación Meteorológica -->
+      <div class="reportlab-sec-title">3. Antena, Estación Meteorológica & Cámara</div>
+      <table class="reportlab-attr-table">
+        <tr><td class="attr">¿Monitoreo Abiótico?</td><td class="val">${ab.instalado || 'Si'}</td></tr>
+        <tr><td class="attr">Tipo y Ubicación de Antena</td><td class="val">${ab.tipo_antena || 'Outdoor'} (${ab.ubicacion_antena || 'Púlpito / Techo'})</td></tr>
+        <tr><td class="attr">Versión Firmware / MAC</td><td class="val">${ab.version || '-'} | MAC: ${ab.mac || '-'}</td></tr>
+        <tr><td class="attr">Pan ID</td><td class="val">${ab.panid || '-'}</td></tr>
+        <tr>
+          <td class="attr">Estación Meteorológica</td>
+          <td class="val">${cam.estacion_instalada === 'Si' ? `${cam.modelo_estacion || 'Davis'} ${cam.modelo_estacion === 'Davis' && cam.region_davis ? `(Región ${cam.region_davis})` : ''} - Ubicación: ${cam.ubicacion_estacion || 'Pontón'}` : 'No'}</td>
+        </tr>
+        <tr>
+          <td class="attr">Cámara de Alimentación</td>
+          <td class="val">${cam.camara_instalada === 'Si' ? `${cam.modelo_camara || 'Domo'} (${cam.conexion_camara || 'Switch PoE'}) - IP: ${cam.ip_fija_camara || '-'} - Ubicación: ${cam.ubicacion_camara || 'Pontón'}` : 'No'}</td>
+        </tr>
+        <tr>
+          <td class="attr">Switch PoE</td>
+          <td class="val">${cam.switch_poe === 'Si' && cam.conexion_camara === 'Switch PoE' ? `${cam.modelo_switch || 'DS-3E0105P-E(B)'} - Ubicación: ${cam.ubicacion_switch || 'Pontón'}` : 'No'}</td>
+        </tr>
+      </table>
+
+      <!-- 4. Ubicaciones e Instalación -->
+      <div class="reportlab-sec-title">4. Detalle de equipos instalados por ubicación</div>
+      ${htmlUbicacionesTables}
+
+      <!-- 5. Repuestos -->
+      <div class="reportlab-sec-title">5. Equipos de repuesto (Almacenamiento: ${certificadoState.ubicacion_repuestos || 'Bodega Pontón'})</div>
+      ${(reps && reps.length) ? `
+        <table class="reportlab-list-table">
+          <thead><tr><th>Tipo de Equipo</th><th>Metraje</th><th>Identificación (MAC/Serie)</th></tr></thead>
+          <tbody>${htmlRepuestosRows}</tbody>
+        </table>
+      ` : '<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin repuestos registrados.</div>'}
+
+      <!-- 6. Activación -->
+      <div class="reportlab-sec-title">6. Validación de activación del servicio</div>
+      <table class="reportlab-attr-table">
+        <tr><td class="attr">IP Asignada / Interfaz</td><td class="val">${act.ip_final || '-'} (${act.interfaz || '-'})</td></tr>
+        <tr><td class="attr">Responsable Activación</td><td class="val">${act.responsable_activacion || '-'}</td></tr>
+        <tr><td class="attr">Estado Final</td><td class="val"><strong>${act.estado_final || 'Operativo'}</strong></td></tr>
+      </table>
+      <div style="font-weight:bold; font-size:10px; margin-top:6px; margin-bottom:3px; color:#222222;">Checklist de Validación de Operatividad:</div>
+      <table class="reportlab-list-table">
+        <thead><tr><th>Validación</th><th style="text-align:center;">OK</th><th style="text-align:center;">N/A</th><th>Observación</th></tr></thead>
+        <tbody>${htmlChecklistRows}</tbody>
+      </table>
+
+      <!-- 7. Alarmas -->
+      ${(als && als.length) ? `
+        <div class="reportlab-sec-title">7. Configuración de alarmas</div>
+        <table class="reportlab-list-table">
+          <thead><tr><th>Status</th><th>Equipo</th><th>Sensor</th><th>Usuario</th><th>Mín</th><th>Máx</th><th>Medición</th><th>Envío</th></tr></thead>
+          <tbody>${htmlAlarmasRows}</tbody>
+        </table>
+      ` : ''}
+
+      <!-- 8. Observaciones -->
+      <div class="reportlab-sec-title">8. Observaciones y notas libres</div>
+      <div class="reportlab-obs-box">
+        ${certificadoState.observaciones || '<span style="color:#aaaaaa;">[ Espacio reservado para notas de campo y firma del cliente ]</span>'}
+      </div>
+
+      <!-- 9. Registro Fotográfico -->
+      ${(evs && evs.length) ? `
+        <div class="reportlab-sec-title">9. Registro fotográfico</div>
+        <div style="font-size:10px; color:#555555; margin-bottom:8px;">Adjuntas ${evs.length} fotografía(s) de evidencia técnica.</div>
+      ` : ''}
+    `;
+  } catch (err) {
+    console.error("Error en renderLiveHtmlSheet:", err);
   }
-
-  let htmlRepuestosRows = "";
-  reps.forEach(r => {
-    const ident = r.mac ? `MAC: ${r.mac}` : (r.serie ? `S/N: ${r.serie}` : '-');
-    htmlRepuestosRows += `<tr><td>${r.tipo}</td><td>${r.metraje ? r.metraje + 'm' : '-'}</td><td>${ident}</td></tr>`;
-  });
-
-  let htmlAlarmasRows = "";
-  als.forEach(al => {
-    const norm = normalizarAlarmaJS(al);
-    htmlAlarmasRows += `<tr>
-      <td>${norm.status}</td>
-      <td>${norm.equipo}</td>
-      <td>${norm.sensor}</td>
-      <td>${norm.correo}</td>
-      <td>${norm.conf_min}</td>
-      <td>${norm.conf_max}</td>
-      <td>${norm.medicion}</td>
-      <td>${norm.envio}</td>
-    </tr>`;
-  });
-
-  const chkData = act.checklist || {};
-  const checklistItems = [
-    { key: "pc_operativo", desc: "Computador instalado y operativo" },
-    { key: "red_validada", desc: "Configuración de red validada" },
-    { key: "antena_operativa", desc: "Antena receptora operativa" },
-    { key: "jennic_comunicando", desc: "Todos los equipos Jennic comunicando" },
-    { key: "sensores_datos", desc: "Sensores detectados y entregando datos" },
-    { key: "archivos_dat", desc: "Archivos .dat generándose y actualizándose" },
-    { key: "transmision_estacion", desc: "Transmisión datos Estación Meteorológica" },
-    { key: "transmision_camara", desc: "Transmisión datos Fotográficos" },
-    { key: "datos_dataweb", desc: "Datos visibles y actualizando en DataWeb" },
-    { key: "alarmas_estandar", desc: "Alarmas configuradas según estándar" }
-  ];
-
-  let htmlChecklistRows = "";
-  checklistItems.forEach(ci => {
-    const val = (chkData[ci.key] || "OK").toUpperCase();
-    const isOk = val === "OK" || val === "SI" || val === "CONFORME";
-    const isNA = val === "N/A" || val === "NO APLICA";
-    const okMark = isOk ? "[ ✔ ]" : "[   ]";
-    const naMark = isNA ? "[ ✔ ]" : "[   ]";
-    const obs = isOk ? "Conforme" : (isNA ? "N/A" : "Pendiente");
-
-    htmlChecklistRows += `<tr>
-      <td>${ci.desc}</td>
-      <td style="text-align:center;">${okMark}</td>
-      <td style="text-align:center;">${naMark}</td>
-      <td>${obs}</td>
-    </tr>`;
-  });
-
-  sheet.innerHTML = `
-    <!-- Encabezado Oficial ReportLab 3 Cajas -->
-    <div class="reportlab-header-box">
-      <div class="reportlab-header-left">
-        <img src="logo.png" alt="Innovex">
-      </div>
-      <div class="reportlab-header-center">
-        VALIDACIÓN DE INSTALACIÓN
-      </div>
-      <div class="reportlab-header-right">
-        <div class="row"><div class="lbl">Registro</div><div class="val">${fichaNo}</div></div>
-        <div class="row"><div class="lbl">Periodo</div><div class="val">2026</div></div>
-        <div class="row"><div class="lbl">Páginas</div><div class="val">1 de 1</div></div>
-      </div>
-    </div>
-
-    <!-- 1. Datos Generales -->
-    <div class="reportlab-sec-title">1. Información general del centro</div>
-    <table class="reportlab-attr-table">
-      <tr><td class="attr">Location ID (Centro)</td><td class="val">${dg.location || '<em style="color:#ef4444;">[Sin asignar]</em>'}</td></tr>
-      <tr><td class="attr">Nombre del Centro</td><td class="val">${dg.nombre_centro || '<em style="color:#ef4444;">[Sin asignar]</em>'}</td></tr>
-      <tr><td class="attr">Empresa Cliente</td><td class="val">${dg.empresa || '-'}</td></tr>
-      <tr><td class="attr">Encargado de Área</td><td class="val">${dg.encargado_area || '-'}</td></tr>
-      <tr><td class="attr">Técnico de Visita</td><td class="val">${dg.tecnico_visita || '-'}</td></tr>
-      <tr><td class="attr">Fecha de Instalación</td><td class="val">${dg.fecha_instalacion || '-'}</td></tr>
-      <tr><td class="attr">Teléfono del Centro</td><td class="val">${dg.telefono_centro || dg.numero_centro || '-'}</td></tr>
-      <tr><td class="attr">Correo del Centro</td><td class="val">${dg.correo_centro || '-'}</td></tr>
-      <tr><td class="attr">Barrio / Zona</td><td class="val">${dg.barrio || '-'}</td></tr>
-      <tr><td class="attr">Puerto Patrón</td><td class="val">${dg.puerto_patron || '-'}</td></tr>
-      <tr><td class="attr">Coordenadas GPS</td><td class="val">${dg.coordenadas || '-'}</td></tr>
-    </table>
-
-    <!-- 2. Infraestructura & Conectividad -->
-    <div class="reportlab-sec-title">2. Infraestructura del PC de Monitoreo & Conectividad</div>
-    <table class="reportlab-attr-table">
-      <tr><td class="attr">Categoría Equipo</td><td class="val">${inf.categoria || '-'}</td></tr>
-      <tr><td class="attr">Marca / Modelo</td><td class="val">${inf.marca || ''} ${inf.modelo || ''}</td></tr>
-      <tr><td class="attr">Sistema Operativo</td><td class="val">${inf.sistema_operativo || '-'}</td></tr>
-      <tr><td class="attr">MAC Ethernet</td><td class="val">${inf.mac_ethernet || '-'}</td></tr>
-      <tr><td class="attr">ID Equipo / PC</td><td class="val">${inf.pc_id || '-'}</td></tr>
-      <tr><td class="attr">Contraseña PC</td><td class="val">${inf.pc_password || '-'}</td></tr>
-      <tr><td class="attr">Tipo de Conexión IP</td><td class="val">${inf.tipo_ip || 'IP VPN tun0'}</td></tr>
-      ${(inf.tipo_ip === 'IP Fija' || inf.tipo_ip === 'Ambas') ? `<tr><td class="attr">IP Fija PC</td><td class="val">${inf.ip_fija || '-'}</td></tr>` : ''}
-      ${(inf.tipo_ip === 'IP VPN tun0' || inf.tipo_ip === 'Ambas' || !inf.tipo_ip) ? `<tr><td class="attr">IP VPN tun0</td><td class="val">${inf.ip_vpn || acc.tun0 || '-'}</td></tr>` : ''}
-      <tr><td class="attr">Protocolo VPN</td><td class="val">${acc.protocolo || '-'}</td></tr>
-      <tr><td class="attr">Servidor Host / Puerto</td><td class="val">${acc.hostserver || 'dataweb.innovex.cl'}:${acc.puerto_server || '8888'}</td></tr>
-    </table>
-
-    <!-- 3. Antena, Cámara & Estación Meteorológica -->
-    <div class="reportlab-sec-title">3. Antena, Estación Meteorológica & Cámara</div>
-    <table class="reportlab-attr-table">
-      <tr><td class="attr">¿Monitoreo Abiótico?</td><td class="val">${ab.instalado || 'Si'}</td></tr>
-      <tr><td class="attr">Tipo y Ubicación de Antena</td><td class="val">${ab.tipo_antena || 'Outdoor'} (${ab.ubicacion_antena || 'Púlpito / Techo'})</td></tr>
-      <tr><td class="attr">Versión Firmware / MAC</td><td class="val">${ab.version || '-'} | MAC: ${ab.mac || '-'}</td></tr>
-      <tr><td class="attr">Pan ID</td><td class="val">${ab.panid || '-'}</td></tr>
-      <tr>
-        <td class="attr">Estación Meteorológica</td>
-        <td class="val">${cam.estacion_instalada === 'Si' ? `${cam.modelo_estacion || 'Davis'} ${cam.modelo_estacion === 'Davis' && cam.region_davis ? `(Región ${cam.region_davis})` : ''} - Ubicación: ${cam.ubicacion_estacion || 'Pontón'}` : 'No'}</td>
-      </tr>
-      <tr>
-        <td class="attr">Cámara de Alimentación</td>
-        <td class="val">${cam.camara_instalada === 'Si' ? `${cam.modelo_camara || 'Domo'} (${cam.conexion_camara || 'Switch PoE'}) - IP: ${cam.ip_fija_camara || '-'} - Ubicación: ${cam.ubicacion_camara || 'Pontón'}` : 'No'}</td>
-      </tr>
-      <tr>
-        <td class="attr">Switch PoE</td>
-        <td class="val">${cam.switch_poe === 'Si' && cam.conexion_camara === 'Switch PoE' ? `${cam.modelo_switch || 'DS-3E0105P-E(B)'} - Ubicación: ${cam.ubicacion_switch || 'Pontón'}` : 'No'}</td>
-      </tr>
-    </table>
-
-    <!-- 4. Ubicaciones e Instalación -->
-    <div class="reportlab-sec-title">4. Detalle de equipos instalados por ubicación</div>
-    ${htmlUbicacionesTables}
-
-    <!-- 5. Repuestos -->
-    <div class="reportlab-sec-title">5. Equipos de repuesto (Almacenamiento: ${certificadoState.ubicacion_repuestos || 'Bodega Pontón'})</div>
-    ${reps.length ? `
-      <table class="reportlab-list-table">
-        <thead><tr><th>Tipo de Equipo</th><th>Metraje</th><th>Identificación (MAC/Serie)</th></tr></thead>
-        <tbody>${htmlRepuestosRows}</tbody>
-      </table>
-    ` : '<div style="font-size:10px; color:#666666; margin-bottom:8px;">Sin repuestos registrados.</div>'}
-
-    <!-- 6. Activación -->
-    <div class="reportlab-sec-title">6. Validación de activación del servicio</div>
-    <table class="reportlab-attr-table">
-      <tr><td class="attr">IP Asignada / Interfaz</td><td class="val">${act.ip_final || '-'} (${act.interfaz || '-'})</td></tr>
-      <tr><td class="attr">Responsable Activación</td><td class="val">${act.responsable_activacion || '-'}</td></tr>
-      <tr><td class="attr">Estado Final</td><td class="val"><strong>${act.estado_final || 'Operativo'}</strong></td></tr>
-    </table>
-    <div style="font-weight:bold; font-size:10px; margin-top:6px; margin-bottom:3px; color:#222222;">Checklist de Validación de Operatividad:</div>
-    <table class="reportlab-list-table">
-      <thead><tr><th>Validación</th><th style="text-align:center;">OK</th><th style="text-align:center;">N/A</th><th>Observación</th></tr></thead>
-      <tbody>${htmlChecklistRows}</tbody>
-    </table>
-
-    <!-- 7. Alarmas -->
-    ${als.length ? `
-      <div class="reportlab-sec-title">7. Configuración de alarmas</div>
-      <table class="reportlab-list-table">
-        <thead><tr><th>Status</th><th>Equipo</th><th>Sensor</th><th>Usuario</th><th>Mín</th><th>Máx</th><th>Medición</th><th>Envío</th></tr></thead>
-        <tbody>${htmlAlarmasRows}</tbody>
-      </table>
-    ` : ''}
-
-    <!-- 8. Observaciones -->
-    <div class="reportlab-sec-title">8. Observaciones y notas libres</div>
-    <div class="reportlab-obs-box">
-      ${certificadoState.observaciones || '<span style="color:#aaaaaa;">[ Espacio reservado para notas de campo y firma del cliente ]</span>'}
-    </div>
-
-    <!-- 9. Registro Fotográfico -->
-    ${evs.length ? `
-      <div class="reportlab-sec-title">9. Registro fotográfico</div>
-      <div style="font-size:10px; color:#555555; margin-bottom:8px;">Adjuntas ${evs.length} fotografía(s) de evidencia técnica.</div>
-    ` : ''}
-  `;
 }
 
 function renderUbicacionesList() {
@@ -1746,5 +2012,581 @@ async function guardarAvance() {
     }
   } catch (err) {
     mostrarToast("Error al guardar", "error");
+  }
+}
+
+// ----------------------------------------------------
+// MÓDULO REVISOR DE EQUIPOS Y VERIFICACIÓN DE INGRESO
+// ----------------------------------------------------
+let ultimoResultadoRevisor = null;
+
+function setInputValue(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined && val !== null && val !== "") {
+    el.value = val;
+  }
+}
+
+async function ejecutarRevisorEquipos() {
+  const centro = document.getElementById("rev_centro").value.trim();
+  const host = document.getElementById("rev_host").value.trim();
+  const usuario = document.getElementById("rev_usuario").value.trim();
+  const contrasena = document.getElementById("rev_contrasena").value;
+  const puerto_ssh = document.getElementById("rev_puerto_ssh").value.trim();
+  const puerto_telnet = document.getElementById("rev_puerto_telnet").value.trim();
+
+  const btn = document.getElementById("btnEjecutarRevisor");
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "⌛ Ejecutando revisión...";
+
+  try {
+    const response = await fetch("/api/revisor/verificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        centro, host, usuario, contrasena, puerto_ssh, puerto_telnet
+      })
+    });
+    const data = await response.json();
+    if (data.status === "ok" && data.resultado) {
+      const res = data.resultado;
+      ultimoResultadoRevisor = res;
+
+      if (res.sistema_operativo) setInputValue("rev_sistema_operativo", res.sistema_operativo);
+      if (res.kernel) setInputValue("rev_kernel", res.kernel);
+      if (res.clave_pc) setInputValue("rev_clave_pc", res.clave_pc);
+      if (res.dataweb) setInputValue("rev_dataweb", res.dataweb);
+
+      if (res.pcinnovex) setInputValue("rev_pcinnovex", res.pcinnovex);
+      if (res.cacheton) setInputValue("rev_cacheton", res.cacheton);
+      if (res.python3_cacheton) setInputValue("rev_python3", res.python3_cacheton);
+      if (res.weather_davis) setInputValue("rev_weather_davis", res.weather_davis);
+      if (res.visibility_cam) setInputValue("rev_visibility_cam", res.visibility_cam);
+
+      if (res.version_equipos) setInputValue("rev_version_equipos", res.version_equipos);
+      if (res.senal) setInputValue("rev_senal", res.senal);
+      if (res.voltajes) setInputValue("rev_voltajes", res.voltajes);
+
+      construirPlantillaRevisorDesdeFormulario();
+
+      if (data.resultado.error) {
+        mostrarToast(`Revisión completada con observaciones: ${data.resultado.error}`, "warning");
+      } else {
+        mostrarToast("✅ Verificación completada y formulario autollenado con éxito", "success");
+      }
+    } else {
+      mostrarToast(`Error: ${data.mensaje || "No se pudo realizar la revisión"}`, "error");
+    }
+  } catch (err) {
+    mostrarToast(`Error al ejecutar revisión: ${err.message}`, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+function construirPlantillaRevisorDesdeFormulario() {
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
+  let centroTitulo = centroRaw.toUpperCase();
+  if (!centroTitulo.startsWith("CE-") && !centroTitulo.startsWith("MW-") && !centroTitulo.startsWith("CENTRO")) {
+    centroTitulo = "CE-" + centroTitulo;
+  }
+
+  const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
+  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || "No configurada";
+  const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
+
+  function fmtChangeset(val, defaultNum) {
+    let str = (val || "").trim();
+    if (!str || str.toUpperCase() === "N/A") return `changeset:   ${defaultNum}`;
+    const m = str.match(/(\d+)/);
+    if (m) return `changeset:   ${m[1]}`;
+    return str;
+  }
+
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "583");
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+
+  let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
+  if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
+    version_equipos = "v" + version_equipos;
+  }
+
+  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
+  if (senal && !senal.startsWith("igual o mayor a")) {
+    senal = "igual o mayor a " + senal;
+  }
+
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.28V";
+  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+    const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
+    voltajes = "igual o mayor a " + vVal;
+  }
+
+  const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
+  const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
+  const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
+
+  const camara = document.getElementById("rev_camara")?.value || "OK";
+  const estacion = document.getElementById("rev_estacion")?.value || "OK";
+
+  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "";
+  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "";
+  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "";
+  const repuestos_texto = document.getElementById("rev_repuestos")?.value.trim() || "";
+
+  let repSec = "7. Repuestos: ";
+  if (repuestos_texto) {
+    repSec = `7. Repuestos: ${repuestos_texto}`;
+  } else if (repuesto_equipo || repuesto_sensor || repuesto_kit) {
+    repSec = `7. Repuestos:\n* Equipo: ${repuesto_equipo || 'OK'}\n* Sensor: ${repuesto_sensor || 'OK'}\n* Kit limpieza: ${repuesto_kit || 'OK'}`;
+  }
+
+  const telefono = document.getElementById("rev_telefono")?.value.trim() || "";
+  const correo = document.getElementById("rev_correo")?.value.trim() || "";
+
+  const obsRaw = document.getElementById("rev_observaciones")?.value.trim() || "";
+  let obsFormatted = "- ----";
+  if (obsRaw && obsRaw !== "-") {
+    const lines = obsRaw.split("\n");
+    const formatted = [];
+    lines.forEach(l => {
+      const lStr = l.trim();
+      if (lStr) {
+        formatted.push(lStr.startsWith("-") ? lStr : "- " + lStr);
+      }
+    });
+    if (formatted.length > 0) obsFormatted = formatted.join("\n");
+  }
+
+  const plantilla =
+`VERIFICACIÓN INGRESO  ${centroTitulo}
+1. Datos computador:
+* Tipo Conexión: ${tipo_conexion}
+* Sistema Operativo: ${sistema_operativo}
+* Kernel: ${kernel}
+* Clave: ${clave_pc}
+* Visualización Dataweb: ${dataweb}
+2. Paquetería computador:
+* pcinnovex: ${pcinnovex}
+* cacheton: ${cacheton}
+* python3: ${python3_ver}
+* Weather Davis: ${weather_davis}
+* Visibility-cam: ${visibility_cam}
+3. Equipos:
+* Versión: ${version_equipos}
+* Señal: ${senal}
+* Voltajes: ${voltajes}
+4. Validación de Variación de Mediciones en Superficie:
+* Saturación 95% - 105%:  ${saturacion}
+* Salinidad: 0Psu - 1Psu: ${salinidad}
+* Temperatura Ambiente: ${temperatura}
+5. Cámara: ${camara}
+6. Estación: ${estacion}
+${repSec}
+8. Datos del centro:
+* Teléfono: ${telefono}
+* Correo: ${correo}
+9. Observaciones:
+${obsFormatted}`;
+
+  const elTxt = document.getElementById("txtPlantillaRevisor");
+  if (elTxt) elTxt.value = plantilla;
+
+  if (moduloActivoActual === "revisor") {
+    const btnToggleTexto = document.getElementById("btnToggleVistaTexto");
+    if (btnToggleTexto && btnToggleTexto.classList.contains("active")) {
+      mostrarTextoPlanoEnPanelDerecho();
+    } else {
+      mostrarVistaPreviaRevisorDerecha();
+    }
+  }
+}
+
+function generarPlantillaRevisor() {
+  construirPlantillaRevisorDesdeFormulario();
+}
+
+async function copiarPlantillaRevisor() {
+  construirPlantillaRevisorDesdeFormulario();
+  const txt = document.getElementById("txtPlantillaRevisor").value;
+  if (!txt.trim()) {
+    mostrarToast("No hay plantilla para copiar.", "warning");
+    return;
+  }
+  navigator.clipboard.writeText(txt).then(() => {
+    mostrarToast("📋 Plantilla copiada al portapapeles con éxito", "success");
+  }).catch(() => {
+    mostrarToast("No se pudo copiar automáticamente al portapapeles", "error");
+  });
+}
+
+function actualizarFrameDocumentoLive() {
+  const frame = document.getElementById("frameDocumentoLive");
+  if (!frame) return;
+  if (ultimoResultadoRevisor && ultimoResultadoRevisor.documento_live_html) {
+    frame.srcdoc = ultimoResultadoRevisor.documento_live_html;
+  } else {
+    const centro = document.getElementById("rev_centro").value.trim() || "CE-CENTRO";
+    const host = document.getElementById("rev_host").value.trim() || "127.0.0.1";
+    const tipo_conexion = document.getElementById("rev_tipo_conexion").value;
+    const clave_pc = document.getElementById("rev_clave_pc").value.trim();
+    const dataweb = document.getElementById("rev_dataweb").value.trim() || "Ok";
+    const saturacion = document.getElementById("rev_saturacion").value.trim() || "OK";
+    const salinidad = document.getElementById("rev_salinidad").value.trim() || "OK";
+    const temperatura = document.getElementById("rev_temperatura").value.trim() || "OK";
+
+    fetch("/api/revisor/verificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ centro, host, tipo_conexion, clave_pc, dataweb, saturacion, salinidad, temperatura })
+    }).then(r => r.json()).then(data => {
+      if (data.status === "ok" && data.resultado) {
+        ultimoResultadoRevisor = data.resultado;
+        frame.srcdoc = data.resultado.documento_live_html || "";
+      }
+    });
+  }
+}
+
+
+function autoRellenarDesdeRevisor() {
+  if (!ultimoResultadoRevisor) {
+    const centro = document.getElementById("rev_centro").value.trim();
+    if (centro) {
+      if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
+      certificadoState.datos_generales.location = centro.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      certificadoState.datos_generales.nombre_centro = centro.toUpperCase();
+      poblarFormularioDesdeState();
+      mostrarToast("✅ Datos principales actualizados en la ficha del certificado", "success");
+    } else {
+      mostrarToast("Ingrese al menos el nombre del centro para autorellenar", "warning");
+    }
+    return;
+  }
+
+  const r = ultimoResultadoRevisor;
+  if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
+  if (r.centro) {
+    certificadoState.datos_generales.location = r.centro.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    certificadoState.datos_generales.nombre_centro = r.centro.toUpperCase();
+  }
+  poblarFormularioDesdeState();
+  mostrarToast("✅ Ficha de certificado actualizada desde el Revisor", "success");
+}
+
+async function actualizarVistaPreviaHTMLRevisor() {
+  const liveSheet = document.getElementById("liveHtmlSheet");
+  if (!liveSheet) return;
+
+  const centro = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
+  const host = document.getElementById("rev_host")?.value.trim() || "";
+  const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
+  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || "No configurada";
+  const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
+
+  const pcinnovex = document.getElementById("rev_pcinnovex")?.value.trim() || "changeset:   583";
+  const cacheton = document.getElementById("rev_cacheton")?.value.trim() || "changeset:   631";
+  const python3_cacheton = document.getElementById("rev_python3")?.value.trim() || "changeset:   415";
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+
+  const version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
+  const senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
+  const voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.28V";
+
+  const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
+  const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
+  const temperatura = document.getElementById("rev_temperatura")?.value.trim() || "OK";
+
+  const camara = document.getElementById("rev_camara")?.value || "OK";
+  const estacion = document.getElementById("rev_estacion")?.value || "OK";
+
+  const repuestos = document.getElementById("rev_repuestos")?.value.trim() || "";
+  const repuesto_equipo = document.getElementById("rev_repuesto_equipo")?.value || "";
+  const repuesto_sensor = document.getElementById("rev_repuesto_sensor")?.value || "";
+  const repuesto_kit = document.getElementById("rev_repuesto_kit")?.value || "";
+
+  const telefono = document.getElementById("rev_telefono")?.value.trim() || "";
+  const correo = document.getElementById("rev_correo")?.value.trim() || "";
+  const observaciones = document.getElementById("rev_observaciones")?.value || "";
+
+  const nodos_detalle = ultimoResultadoRevisor?.nodos_detalle || [];
+  const motes_texto_raw = ultimoResultadoRevisor?.motes_texto_raw || "";
+  const salida_status = ultimoResultadoRevisor?.salida_status || "";
+
+  try {
+    const response = await fetch("/api/revisor/verificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        centro, host, tipo_conexion, sistema_operativo, kernel, clave_pc, dataweb,
+        pcinnovex, cacheton, python3_cacheton, weather_davis, visibility_cam,
+        version_equipos, senal, voltajes,
+        saturacion, salinidad, temperatura,
+        camara, estacion, repuestos, repuesto_equipo, repuesto_sensor, repuesto_kit,
+        telefono, correo, observaciones,
+        nodos_detalle, motes_texto_raw, salida_status
+      })
+    });
+    const data = await response.json();
+    if (data.status === "ok" && data.resultado) {
+      ultimoResultadoRevisor = data.resultado;
+      const htmlDoc = data.resultado.documento_live_html || "";
+      liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(htmlDoc)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Revisor"></iframe>`;
+    }
+  } catch (err) {
+    console.error("Error al actualizar HTML Live Revisor:", err);
+  }
+}
+
+function mostrarVistaPreviaRevisorDerecha() {
+  actualizarVistaPreviaHTMLRevisor();
+}
+
+function mostrarTextoPlanoEnPanelDerecho() {
+  const liveSheet = document.getElementById("liveHtmlSheet");
+  if (!liveSheet) return;
+
+  document.getElementById("liveHtmlContainer").style.display = "flex";
+  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("btnToggleVistaHTML").classList.remove("active");
+  if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
+  if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.add("active");
+
+  let textoPlano = "";
+  if (moduloActivoActual === "revisor") {
+    textoPlano = document.getElementById("txtPlantillaRevisor") ? document.getElementById("txtPlantillaRevisor").value : "";
+    if (!textoPlano && ultimoResultadoRevisor && ultimoResultadoRevisor.plantilla_texto) {
+      textoPlano = ultimoResultadoRevisor.plantilla_texto;
+    }
+  } else if (moduloActivoActual === "ingreso_tecnico") {
+    textoPlano = document.getElementById("txtPlantillaIngresoTecnico").value;
+    if (!textoPlano && ultimoResultadoIngreso && ultimoResultadoIngreso.plantilla_texto) {
+      textoPlano = ultimoResultadoIngreso.plantilla_texto;
+    }
+  }
+
+  liveSheet.innerHTML = `
+    <div style="background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 800px; font-family: sans-serif;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #002d4b; padding-bottom: 8px;">
+        <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">📋 Vista Texto Plano</h3>
+        <button class="btn btn-small btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('preTextoPlanoDerecho').innerText); mostrarToast('📋 Texto plano copiado', 'success');">Copiar Texto</button>
+      </div>
+      <pre id="preTextoPlanoDerecho" style="background: #1e293b; color: #f8fafc; padding: 16px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
+    </div>
+  `;
+}
+
+function htmlEscapeAttr(str) {
+  if (!str) return "";
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// MÓDULO INFORMACIÓN PARA INGRESO DE TÉCNICO
+let ultimoResultadoIngreso = null;
+
+const PLANTILLA_OBS_GENERALES_DEFAULT = `Actualizar paquetería PC
+
+Fotos de los repuestos en su ubicación final
+    Bolso Innovex
+    Equipo con su tapa y pantalla visible
+    Sensor/es de repuesto con vista a su S/N, cabezal y tapa protectora
+
+
+Fotos notebook/otros
+    Entradas USB, cualquier conexión conectada/ocupada
+    Componentes (Switch POE/Hub, antena, meteo-stick entre otros)
+    Tomas de corriente
+Fotos equipos transmisores
+    Pantallas visibles
+    Pedestales con metrajes claros
+    Sin tapa (si es que la climática lo permite)
+Información acerca del tipo de estación y cámara
+Corroborar u obtener datos del centro, teléfono y correo electrónico.`;
+
+function inicializarObservacionesGeneralesDefault() {
+  const el = document.getElementById("ingreso_observaciones_generales");
+  if (el && !el.value.trim()) {
+    el.value = PLANTILLA_OBS_GENERALES_DEFAULT;
+  }
+}
+
+function prellenarDatosHostIngresoTecnico() {
+  // Dejar espacio en blanco por defecto como solicitó el usuario
+}
+
+async function ejecutarIngresoTecnico() {
+  const host = document.getElementById("ingreso_host").value.trim();
+  const usuario = document.getElementById("ingreso_usuario").value.trim() || "innovex";
+  const contrasena = document.getElementById("ingreso_contrasena").value;
+  const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || contrasena || "No configurada";
+  document.getElementById("ingreso_clave_pc").value = clave_pc;
+
+  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
+  const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
+  const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
+
+  const observaciones = document.getElementById("ingreso_observaciones").value;
+  const observaciones_generales = document.getElementById("ingreso_observaciones_generales").value;
+
+  const btn = document.getElementById("btnEjecutarIngresoTecnico");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Consultando / Generando...";
+  }
+
+  try {
+    const response = await fetch("/api/revisor/ingreso_tecnico", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host,
+        usuario,
+        contrasena,
+        clave_pc,
+        acceso_remoto,
+        repuestos_equipo,
+        repuestos_sensor,
+        repuestos_kit,
+        observaciones,
+        observaciones_generales
+      })
+    });
+    const data = await response.json();
+    if (data.status === "ok" && data.resultado) {
+      const res = data.resultado;
+      ultimoResultadoIngreso = res;
+
+      if (res.antena_status) document.getElementById("ingreso_antena_status").value = res.antena_status;
+      if (res.equipos_conectados) document.getElementById("ingreso_equipos_conectados").value = res.equipos_conectados;
+      if (res.voltaje_pilas) document.getElementById("ingreso_voltaje_pilas").value = res.voltaje_pilas;
+      if (res.dns !== undefined) document.getElementById("ingreso_host").value = res.dns;
+      if (res.clave_pc) document.getElementById("ingreso_clave_pc").value = res.clave_pc;
+
+      document.getElementById("txtPlantillaIngresoTecnico").value = res.plantilla_texto || "";
+      actualizarFrameDocumentoIngresoLive();
+      actualizarVistaPreviaDerechaPorModulo();
+
+      mostrarToast("✅ Información para ingreso de técnico cargada con éxito", "success");
+    } else {
+      mostrarToast("⚠️ " + (data.mensaje || "Error al procesar consulta"), "error");
+    }
+  } catch (err) {
+    console.error("Error en consulta ingreso técnico:", err);
+    mostrarToast("❌ Error de red o servidor al ejecutar consulta", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = "Consultar Remotamente (SSH / Telnet)";
+    }
+  }
+}
+
+async function generarPlantillaIngreso() {
+  const host = document.getElementById("ingreso_host").value.trim();
+  const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || "No configurada";
+  document.getElementById("ingreso_clave_pc").value = clave_pc;
+
+  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
+  const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
+  const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
+
+  const antena_status = document.getElementById("ingreso_antena_status").value;
+  const equipos_conectados = document.getElementById("ingreso_equipos_conectados").value;
+  const voltaje_pilas = document.getElementById("ingreso_voltaje_pilas").value;
+  const observaciones = document.getElementById("ingreso_observaciones").value;
+  const observaciones_generales = document.getElementById("ingreso_observaciones_generales").value;
+
+  try {
+    const response = await fetch("/api/revisor/generar_plantilla_ingreso", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dns: host,
+        clave_pc,
+        acceso_remoto,
+        repuestos_equipo,
+        repuestos_sensor,
+        repuestos_kit,
+        antena_status,
+        equipos_conectados,
+        voltaje_pilas,
+        observaciones,
+        observaciones_generales
+      })
+    });
+    const data = await response.json();
+    if (data.status === "ok") {
+      document.getElementById("txtPlantillaIngresoTecnico").value = data.plantilla_texto || "";
+      ultimoResultadoIngreso = {
+        dns: host,
+        clave_pc,
+        acceso_remoto,
+        repuestos_equipo,
+        repuestos_sensor,
+        repuestos_kit,
+        antena_status,
+        equipos_conectados,
+        voltaje_pilas,
+        observaciones,
+        observaciones_generales,
+        plantilla_texto: data.plantilla_texto,
+        documento_live_html: data.documento_live_html
+      };
+      actualizarFrameDocumentoIngresoLive();
+      actualizarVistaPreviaDerechaPorModulo();
+      mostrarToast("✅ Plantilla y Documento Live actualizados", "success");
+    }
+  } catch (err) {
+    console.error("Error al generar plantilla ingreso:", err);
+  }
+}
+
+function actualizarFrameDocumentoIngresoLive() {
+  const frame = document.getElementById("frameDocumentoIngresoLive");
+  if (frame && ultimoResultadoIngreso && ultimoResultadoIngreso.documento_live_html) {
+    frame.srcdoc = ultimoResultadoIngreso.documento_live_html;
+  }
+}
+
+function mostrarVistaPreviaIngresoDerecha() {
+  const liveSheet = document.getElementById("liveHtmlSheet");
+  if (!liveSheet) return;
+
+  if (ultimoResultadoIngreso && ultimoResultadoIngreso.documento_live_html) {
+    liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(ultimoResultadoIngreso.documento_live_html)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Ingreso Técnico"></iframe>`;
+  } else {
+    liveSheet.innerHTML = `<div style="padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;">⏳ Generando vista previa de Ingreso Técnico...</div>`;
+    generarPlantillaIngreso();
+  }
+}
+
+function copiarPlantillaIngreso() {
+  let txt = document.getElementById("txtPlantillaIngresoTecnico").value;
+  if (!txt.trim()) {
+    generarPlantillaIngreso();
+    setTimeout(() => {
+      txt = document.getElementById("txtPlantillaIngresoTecnico").value;
+      if (txt) {
+        navigator.clipboard.writeText(txt).then(() => {
+          mostrarToast("📋 Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
+        });
+      }
+    }, 250);
+  } else {
+    navigator.clipboard.writeText(txt).then(() => {
+      mostrarToast("📋 Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
+    });
   }
 }

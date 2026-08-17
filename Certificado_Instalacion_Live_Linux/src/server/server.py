@@ -6,6 +6,7 @@ import urllib.parse
 from datetime import datetime
 import traceback
 import sys
+import socket
 
 from src.services.certificado_service import CertificadoService
 from src.utils.autofill import procesar_autofill
@@ -274,13 +275,47 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
             self._responder_json({"status": "error", "mensaje": str(e)}, 500)
 
 
-def iniciar_servidor_http(host: str = "127.0.0.1", puerto: int = 8888):
-    """Inicia el servidor HTTP local en el puerto especificado."""
+def obtener_ips_locales() -> list[str]:
+    """Retorna las direcciones IP v4 locales de las interfaces de red activas."""
+    ips = []
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_principal = s.getsockname()[0]
+        s.close()
+        if ip_principal and not ip_principal.startswith("127."):
+            ips.append(ip_principal)
+    except Exception:
+        pass
+
+    try:
+        hostname = socket.gethostname()
+        for ip in socket.gethostbyname_ex(hostname)[2]:
+            if not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except Exception:
+        pass
+
+    return ips
+
+
+def iniciar_servidor_http(host: str = "0.0.0.0", puerto: int = 8888):
+    """Inicia el servidor HTTP en el host y puerto especificados."""
     puerto_actual = puerto
     while puerto_actual < puerto + 20:
         try:
             server = HTTPServer((host, puerto_actual), CertificadoHTTPHandler)
-            print(f"🚀 Servidor Live ejecutándose en: http://{host}:{puerto_actual}/")
+            ips = obtener_ips_locales()
+            print(f"🚀 Servidor Live activo en el puerto {puerto_actual}:")
+            print(f"   • Local (este equipo):  http://localhost:{puerto_actual}/")
+            if host in ("0.0.0.0", ""):
+                if ips:
+                    for ip in ips:
+                        print(f"   • Red Local (colegas):  http://{ip}:{puerto_actual}/")
+                else:
+                    print(f"   • Red Local (colegas):  http://<IP-de-tu-equipo>:{puerto_actual}/")
+            else:
+                print(f"   • Host específico:      http://{host}:{puerto_actual}/")
             return server, puerto_actual
         except OSError:
             puerto_actual += 1

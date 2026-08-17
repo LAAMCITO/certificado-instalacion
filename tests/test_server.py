@@ -76,6 +76,46 @@ class TestCertificadoServer(unittest.TestCase):
             self.assertEqual(res["status"], "ok")
             self.assertIn("pdf_preview_url", res)
 
+    def test_api_ingreso_tecnico(self):
+        payload = {
+            "dns": "ce-yelcho.acuimatic.com",
+            "clave_pc": "clave-de-prueba",
+            "acceso_remoto": "",
+            "observaciones": "Name 5 desasociado, llevar pilas o caja de repuesto.\nReponer stock de repuesto, sensor y caja jennic"
+        }
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            f"{self.base_url}/api/revisor/ingreso_tecnico",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req) as resp:
+            self.assertEqual(resp.status, 200)
+            res = json.loads(resp.read().decode("utf-8"))
+            self.assertEqual(res["status"], "ok")
+            resultado = res["resultado"]
+            self.assertEqual(resultado["dns"], "ce-yelcho.acuimatic.com")
+            self.assertEqual(resultado["clave_pc"], "clave-de-prueba")
+            self.assertIn("DNS:ce-yelcho.acuimatic.com", resultado["plantilla_texto"])
+            self.assertIn("Clave PC:clave-de-prueba", resultado["plantilla_texto"])
+            self.assertIn("Antena status:", resultado["plantilla_texto"])
+            self.assertIn("Equipos conectados:", resultado["plantilla_texto"])
+            self.assertIn("Voltaje pilas:", resultado["plantilla_texto"])
+            self.assertIn("Observaciones:", resultado["plantilla_texto"])
+            self.assertIn("Observaciones generales:", resultado["plantilla_texto"])
+            self.assertNotIn("Bienvenido al servidor de Telnet!", resultado["plantilla_texto"])
+            self.assertIn("documento_live_html", resultado)
+            self.assertIn("INFORMACIÓN PARA INGRESO DE TÉCNICO", resultado["documento_live_html"])
+
+    def test_limpiar_salida_telnet(self):
+        from src.services.revisor_service import limpiar_salida_telnet
+        raw = "Bienvenido al servidor de Telnet!\nEscape character is '^]'\nPancoordinator status\nVersion v2.0.2"
+        clean = limpiar_salida_telnet(raw)
+        self.assertNotIn("Bienvenido al servidor de Telnet!", clean)
+        self.assertNotIn("Escape character", clean)
+        self.assertIn("Pancoordinator status", clean)
+        self.assertIn("Version v2.0.2", clean)
+
 
 if __name__ == "__main__":
     unittest.main()

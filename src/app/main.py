@@ -23,28 +23,34 @@ def main():
 
     # Modo Servidor Web Live (Default)
     puerto_solicitado = 8888
+    host_solicitado = "0.0.0.0"
+
     for i, arg in enumerate(args):
         if (arg == "--port" or arg == "-p") and i + 1 < len(args):
             try:
                 puerto_solicitado = int(args[i + 1])
             except ValueError:
                 pass
+        elif (arg == "--host" or arg == "-h") and i + 1 < len(args):
+            host_solicitado = args[i + 1]
+        elif arg == "--local" or arg == "--localhost":
+            host_solicitado = "127.0.0.1"
 
-    server, puerto = iniciar_servidor_http(host="127.0.0.1", puerto=puerto_solicitado)
-    url = f"http://127.0.0.1:{puerto}/"
-    
     print("=" * 65)
     print("  CERTIFICADO DE INSTALACIÓN — EDICIÓN Y VISTA PREVIA EN VIVO")
     print("=" * 65)
-    print(f"  🌐 Abriendo navegador web en: {url}")
+
+    server, puerto = iniciar_servidor_http(host=host_solicitado, puerto=puerto_solicitado)
+    url_local = f"http://localhost:{puerto}/"
+
     print("  💡 Presione Ctrl+C en esta terminal para detener el servidor.")
     print("  🖥️ Para usar el modo terminal ejecute: ./certificado-instalacion-live --consola")
     print("=" * 65)
 
     try:
-        webbrowser.open(url)
+        webbrowser.open(url_local)
     except Exception:
-        print(f"No se pudo abrir automáticamente el navegador. Ingrese a: {url}")
+        print(f"No se pudo abrir automáticamente el navegador. Ingrese a: {url_local}")
 
     try:
         server.serve_forever()

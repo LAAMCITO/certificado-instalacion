@@ -16,12 +16,15 @@
     <div class="logo-title">
       <img src="logo.png" alt="Innovex Chile" class="brand-logo">
       <div class="divider"></div>
-      <h1>CERTIFICADO DE INSTALACIÓN</h1>
+      <div>
+        <h1 style="margin: 0; font-size: 18px;">SUITE DE SOPORTE TÉCNICO</h1>
+        <span class="sub-brand" style="font-size: 11px; color: #f5c400; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">DEPARTAMENTO DE SOPORTE INNOVEX</span>
+      </div>
     </div>
     
     <div class="header-actions">
       <!-- Controles de Certificados Fijos -->
-      <div class="cert-selector-group">
+      <div class="cert-selector-group" id="certSelectorGroup">
         <button class="btn btn-secondary btn-small" id="btnHeaderNuevo">Nuevo Certificado</button>
         <select id="headerCertSelect" class="select-header">
           <option value="">Cargar Certificado...</option>
@@ -35,8 +38,16 @@
 
       <button class="btn btn-secondary" id="btnGuardar">Guardar</button>
       <button class="btn btn-primary" id="btnGenerarPDF">Compilar PDF Oficial</button>
+      <button class="btn btn-primary" id="btnCopiarTextoPlanoHeader" style="display: none;">Copiar Texto Plano</button>
     </div>
   </header>
+
+  <!-- Navegador Principal de Módulos de Soporte -->
+  <div class="module-bar-container" style="background: #0d0e12; border-bottom: 2px solid var(--border-color); padding: 8px 20px; display: flex; gap: 12px; align-items: center; overflow-x: auto;">
+    <button class="module-btn active" data-module="certificado" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer;">1. Certificado de Instalación</button>
+    <button class="module-btn" data-module="revisor" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">2. Revisor & Verificación Ingreso</button>
+    <button class="module-btn" data-module="ingreso_tecnico" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); cursor: pointer;">3. Información Ingreso Técnico</button>
+  </div>
 
   <!-- Contenedor Principal -->
   <div class="app-container">
@@ -44,7 +55,7 @@
     <!-- Columna Izquierda: Formulario Editor -->
     <main class="editor-pane">
       
-      <!-- Navegación por Secciones -->
+      <!-- Navegación por Secciones del Certificado -->
       <nav class="nav-tabs">
         <button class="tab-btn active" data-tab="autofill">Auto-relleno Rápido</button>
         <button class="tab-btn" data-tab="generales">1. Datos Generales</button>
@@ -614,6 +625,271 @@ Operating System: Ubuntu 24.04.4 LTS
           </div>
         </section>
 
+        <!-- TAB 7: REVISOR DE EQUIPOS Y VERIFICACIÓN DE INGRESO -->
+        <section class="tab-content" id="tab-revisor">
+          <div class="card">
+            <h2>Revisor Remoto de Equipos & Verificación de Ingreso</h2>
+            <p class="subtitle">Consulte automáticamente vía SSH/Telnet o complete/modifique manualmente cualquier campo para generar el informe de Verificación de Ingreso.</p>
+
+            <h3 class="margin-top">Conexión Remota SSH / Telnet (Autollenar)</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Centro / Location</label>
+                <input type="text" id="rev_centro" placeholder="Ej.: CE-YELCHO o mw-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>IP / DNS Host</label>
+                <input type="text" id="rev_host" placeholder="ej. mw-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>Usuario SSH</label>
+                <input type="text" id="rev_usuario" value="innovex">
+              </div>
+              <div class="form-group">
+                <label>Contraseña SSH</label>
+                <input type="password" id="rev_contrasena" placeholder="Contraseña SSH (no se guarda)...">
+              </div>
+              <div class="form-group">
+                <label>Puerto SSH</label>
+                <input type="text" id="rev_puerto_ssh" value="22">
+              </div>
+              <div class="form-group">
+                <label>Puerto Telnet Equipos</label>
+                <input type="text" id="rev_puerto_telnet" value="9999">
+              </div>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnEjecutarRevisor">Consultar y Autollenar Remotamente</button>
+              <button class="btn btn-secondary" id="btnAutoRellenarDesdeRevisor">Autorellenar Certificado Actual</button>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>1. Datos Computador</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Tipo Conexión PC</label>
+                <select id="rev_tipo_conexion">
+                  <option value="Wifi">Wifi</option>
+                  <option value="Cableada">Cableada</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Sistema Operativo</label>
+                <input type="text" id="rev_sistema_operativo" value="Linux Ubuntu 20.04 LTS">
+              </div>
+              <div class="form-group">
+                <label>Kernel</label>
+                <input type="text" id="rev_kernel" value="5.4.0-105-generic">
+              </div>
+              <div class="form-group">
+                <label>Clave del Computador</label>
+                <input type="password" id="rev_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+              </div>
+              <div class="form-group">
+                <label>Visualización Dataweb</label>
+                <input type="text" id="rev_dataweb" value="Ok">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>2. Paquetería Computador</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>pcinnovex</label>
+                <input type="text" id="rev_pcinnovex" value="changeset:   583">
+              </div>
+              <div class="form-group">
+                <label>cacheton</label>
+                <input type="text" id="rev_cacheton" value="changeset:   631">
+              </div>
+              <div class="form-group">
+                <label>python3</label>
+                <input type="text" id="rev_python3" value="changeset:   415">
+              </div>
+              <div class="form-group">
+                <label>Weather Davis</label>
+                <input type="text" id="rev_weather_davis" value="1.1.1">
+              </div>
+              <div class="form-group">
+                <label>Visibility-cam</label>
+                <input type="text" id="rev_visibility_cam" value="3.6">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>3. Equipos & 4. Mediciones en Superficie</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Versión Equipos</label>
+                <input type="text" id="rev_version_equipos" value="v2.0.2">
+              </div>
+              <div class="form-group">
+                <label>Señal Mínima / General</label>
+                <input type="text" id="rev_senal" value="57/198">
+              </div>
+              <div class="form-group">
+                <label>Voltajes</label>
+                <input type="text" id="rev_voltajes" value="3.28V">
+              </div>
+              <div class="form-group">
+                <label>Saturación 95% - 105%</label>
+                <input type="text" id="rev_saturacion" value="OK">
+              </div>
+              <div class="form-group">
+                <label>Salinidad 0Psu - 1Psu</label>
+                <input type="text" id="rev_salinidad" value="OK">
+              </div>
+              <div class="form-group">
+                <label>Temperatura Ambiente</label>
+                <input type="text" id="rev_temperatura" value="OK">
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>5. Cámara, 6. Estación & 7. Repuestos</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>5. Cámara</label>
+                <select id="rev_camara">
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Presenta atraso">Presenta atraso</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>6. Estación</label>
+                <select id="rev_estacion">
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Presenta atraso">Presenta atraso</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>7. Repuestos (Texto o Detalle)</label>
+                <input type="text" id="rev_repuestos" placeholder="Dejar en blanco para formato '7. Repuestos: '">
+              </div>
+              <div class="form-group">
+                <label>Repuesto Equipo</label>
+                <select id="rev_repuesto_equipo">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Repuesto Sensor</label>
+                <select id="rev_repuesto_sensor">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Kit de Limpieza</label>
+                <select id="rev_repuesto_kit">
+                  <option value="">(No especificar)</option>
+                  <option value="OK">OK</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>8. Datos del Centro & 9. Observaciones</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Teléfono Centro</label>
+                <input type="text" id="rev_telefono" placeholder="Ej. +56 9 9100 1437">
+              </div>
+              <div class="form-group">
+                <label>Correo Centro</label>
+                <input type="email" id="rev_correo" placeholder="ej. centro@empresa.cl">
+              </div>
+            </div>
+            <div class="form-group margin-top">
+              <label>9. Observaciones y Notas Libres</label>
+              <textarea id="rev_observaciones" class="text-input" rows="4" placeholder="Ingrese observaciones de terreno adicionales (o dejar en blanco)..."></textarea>
+            </div>
+          </div>
+
+          <div class="card margin-top">
+            <h2>Plantilla de Texto Plano (Resultado)</h2>
+            <p class="subtitle">Resultado formateado en texto plano listo para copiar y enviar.</p>
+            <textarea id="txtPlantillaRevisor" class="code-input" rows="22" style="font-family: monospace; font-size: 13px; line-height: 1.4;" readonly placeholder="La plantilla generada aparecerá aquí..."></textarea>
+            <div style="margin-top: 12px;">
+              <button class="btn btn-secondary" id="btnCopiarPlantillaRevisor">Copiar Plantilla</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: INFORMACIÓN PARA INGRESO DE TÉCNICO -->
+        <section class="tab-content" id="tab-ingreso_tecnico">
+          <div class="card">
+            <h2>Información para Ingreso de Técnico</h2>
+            <p class="subtitle">Complete las credenciales de acceso, consulte el status técnico (o ingrese los valores manualmente) y genere el reporte formateado de ingreso.</p>
+
+            <h3 class="margin-top">Parámetros de Conexión & Acceso</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>DNS / Host (tun0)</label>
+                <input type="text" id="ingreso_host" placeholder="Ej. ce-yelcho.acuimatic.com">
+              </div>
+              <div class="form-group">
+                <label>Usuario SSH</label>
+                <input type="text" id="ingreso_usuario" value="innovex">
+              </div>
+              <div class="form-group">
+                <label>Contraseña SSH</label>
+                <input type="password" id="ingreso_contrasena" placeholder="Contraseña SSH (opcional)...">
+              </div>
+              <div class="form-group">
+                <label>Clave PC</label>
+                <input type="password" id="ingreso_clave_pc" autocomplete="off" placeholder="Ingrese la clave del equipo">
+              </div>
+              <div class="form-group span-2">
+                <label>Acceso remoto</label>
+                <input type="text" id="ingreso_acceso_remoto" placeholder="Ej. Anydesk / TeamViewer / Comentarios de acceso">
+              </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnEjecutarIngresoTecnico">Consultar Remotamente (SSH / Telnet)</button>
+              <button class="btn btn-secondary" id="btnGenerarPlantillaIngreso">Generar / Actualizar Plantilla</button>
+              <button class="btn btn-secondary" id="btnCopiarPlantillaIngreso">Copiar Plantilla</button>
+            </div>
+          </div>
+
+            <!-- Campos ocultos de datos técnicos para compatibilidad de script -->
+            <textarea id="ingreso_antena_status" style="display: none;"></textarea>
+            <textarea id="ingreso_equipos_conectados" style="display: none;"></textarea>
+            <textarea id="ingreso_voltaje_pilas" style="display: none;"></textarea>
+
+          <div class="card margin-top">
+            <h2>Observaciones y Notas Libres</h2>
+            <p class="subtitle">Comentarios o notas de terreno redactadas libremente por el usuario.</p>
+            <textarea id="ingreso_observaciones" class="text-input" rows="5" placeholder="Comentarios u observaciones opcionales..."></textarea>
+            <textarea id="ingreso_observaciones_generales" style="display: none;"></textarea>
+          </div>
+
+
+
+          <div class="card margin-top" style="display: none;">
+            <h2>Plantilla de Texto Plano (Resultado)</h2>
+            <p class="subtitle">Resultado formateado en texto plano listo para copiar y enviar.</p>
+            <textarea id="txtPlantillaIngresoTecnico" class="code-input" rows="22" style="font-family: monospace; font-size: 13px; line-height: 1.4;" readonly placeholder="La plantilla formateada de ingreso de técnico aparecerá aquí..."></textarea>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -626,7 +902,8 @@ Operating System: Ubuntu 24.04.4 LTS
         <div class="preview-controls">
           <button class="btn btn-small btn-secondary active" id="btnToggleVistaHTML">Live HTML</button>
           <button class="btn btn-small btn-secondary" id="btnToggleVistaPDF">PDF Oficial</button>
-          <button class="btn btn-small btn-secondary" id="btnAbrirPopout" title="Abrir en ventana independiente">Abrir Popout</button>
+          <button class="btn btn-small btn-secondary" id="btnToggleVistaTexto" style="display: none;">Texto Plano</button>
+
         </div>
       </div>
 
