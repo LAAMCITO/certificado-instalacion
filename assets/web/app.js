@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const btnGenerarPlantillaIngreso = document.getElementById("btnGenerarPlantillaIngreso");
   if (btnGenerarPlantillaIngreso) {
-    btnGenerarPlantillaIngreso.addEventListener("click", generarPlantillaIngreso);
+    btnGenerarPlantillaIngreso.addEventListener("click", () => generarPlantillaIngreso({ notificar: true }));
   }
   const btnCopiarPlantillaIngreso = document.getElementById("btnCopiarPlantillaIngreso");
   if (btnCopiarPlantillaIngreso) {
@@ -279,8 +279,8 @@ document.addEventListener("DOMContentLoaded", () => {
   inputsIngreso.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener("input", () => generarPlantillaIngreso());
-      el.addEventListener("change", () => generarPlantillaIngreso());
+      el.addEventListener("input", programarActualizacionIngreso);
+      el.addEventListener("change", programarActualizacionIngreso);
     }
   });
 
@@ -2699,14 +2699,16 @@ function mostrarTextoPlanoEnPanelDerecho() {
   }
 
   liveSheet.innerHTML = `
-    <div style="background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 800px; font-family: sans-serif;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #002d4b; padding-bottom: 8px;">
-        <h3 style="margin: 0; color: #002d4b; font-size: 16px; text-transform: uppercase;">Vista Texto Plano</h3>
-        <button class="btn btn-small btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('preTextoPlanoDerecho').innerText); mostrarToast('Texto plano copiado', 'success');">Copiar Texto</button>
+    <div class="plain-text-preview">
+      <div class="plain-text-preview-header">
+        <h3>Vista Texto Plano</h3>
+        <button class="btn btn-small btn-secondary" id="btnCopiarTextoPlanoDerecho">Copiar Texto</button>
       </div>
-      <pre id="preTextoPlanoDerecho" style="background: #1e293b; color: #f8fafc; padding: 16px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
+      <pre id="preTextoPlanoDerecho" class="plain-text-preview-content">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
     </div>
   `;
+
+  document.getElementById("btnCopiarTextoPlanoDerecho")?.addEventListener("click", copiarTextoPlanoDerecho);
 }
 
 function htmlEscapeAttr(str) {
@@ -2714,8 +2716,51 @@ function htmlEscapeAttr(str) {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+async function copiarTextoAlPortapapeles(texto) {
+  if (!texto) return false;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    }
+  } catch (err) {
+    console.warn("No se pudo usar el portapapeles moderno; se usará el método alternativo.", err);
+  }
+
+  const areaTemporal = document.createElement("textarea");
+  areaTemporal.value = texto;
+  areaTemporal.setAttribute("readonly", "");
+  areaTemporal.style.position = "fixed";
+  areaTemporal.style.opacity = "0";
+  document.body.appendChild(areaTemporal);
+  areaTemporal.select();
+  const copiado = document.execCommand("copy");
+  areaTemporal.remove();
+  return copiado;
+}
+
+async function copiarTextoPlanoDerecho() {
+  const texto = document.getElementById("preTextoPlanoDerecho")?.textContent || "";
+  const copiado = await copiarTextoAlPortapapeles(texto);
+  mostrarToast(
+    copiado ? "Texto plano copiado al portapapeles" : "No se pudo copiar el texto plano",
+    copiado ? "success" : "error"
+  );
+}
+
 // MÓDULO INFORMACIÓN PARA INGRESO DE TÉCNICO
 let ultimoResultadoIngreso = null;
+let temporizadorActualizacionIngreso = null;
+let secuenciaGeneracionIngreso = 0;
+
+function programarActualizacionIngreso() {
+  window.clearTimeout(temporizadorActualizacionIngreso);
+  temporizadorActualizacionIngreso = window.setTimeout(() => {
+    temporizadorActualizacionIngreso = null;
+    generarPlantillaIngreso();
+  }, 450);
+}
 
 const PLANTILLA_OBS_GENERALES_DEFAULT = `Actualizar paquetería PC
 
@@ -2754,7 +2799,9 @@ async function ejecutarIngresoTecnico() {
   const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || contrasena || "No configurada";
   document.getElementById("ingreso_clave_pc").value = clave_pc;
 
-  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const accesoRemotoInput = document.getElementById("ingreso_acceso_remoto");
+  const acceso_remoto = accesoRemotoInput.value.trim() || "OK";
+  accesoRemotoInput.value = acceso_remoto;
   const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
   const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
   const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
@@ -2795,6 +2842,7 @@ async function ejecutarIngresoTecnico() {
       if (res.voltaje_pilas) document.getElementById("ingreso_voltaje_pilas").value = res.voltaje_pilas;
       if (res.dns !== undefined) document.getElementById("ingreso_host").value = res.dns;
       if (res.clave_pc) document.getElementById("ingreso_clave_pc").value = res.clave_pc;
+      if (res.acceso_remoto) document.getElementById("ingreso_acceso_remoto").value = res.acceso_remoto;
 
       document.getElementById("txtPlantillaIngresoTecnico").value = res.plantilla_texto || "";
       actualizarFrameDocumentoIngresoLive();
@@ -2815,12 +2863,17 @@ async function ejecutarIngresoTecnico() {
   }
 }
 
-async function generarPlantillaIngreso() {
+async function generarPlantillaIngreso({ notificar = false } = {}) {
+  window.clearTimeout(temporizadorActualizacionIngreso);
+  temporizadorActualizacionIngreso = null;
+  const solicitudActual = ++secuenciaGeneracionIngreso;
   const host = document.getElementById("ingreso_host").value.trim();
   const clave_pc = document.getElementById("ingreso_clave_pc").value.trim() || "No configurada";
   document.getElementById("ingreso_clave_pc").value = clave_pc;
 
-  const acceso_remoto = document.getElementById("ingreso_acceso_remoto").value.trim();
+  const accesoRemotoInput = document.getElementById("ingreso_acceso_remoto");
+  const acceso_remoto = accesoRemotoInput.value.trim() || "OK";
+  accesoRemotoInput.value = acceso_remoto;
   const repuestos_equipo = document.getElementById("ingreso_repuesto_equipo")?.value || "OK";
   const repuestos_sensor = document.getElementById("ingreso_repuesto_sensor")?.value || "OK";
   const repuestos_kit = document.getElementById("ingreso_repuesto_kit")?.value || "OK";
@@ -2850,6 +2903,8 @@ async function generarPlantillaIngreso() {
       })
     });
     const data = await response.json();
+    if (solicitudActual !== secuenciaGeneracionIngreso) return "";
+
     if (data.status === "ok") {
       document.getElementById("txtPlantillaIngresoTecnico").value = data.plantilla_texto || "";
       ultimoResultadoIngreso = {
@@ -2869,11 +2924,15 @@ async function generarPlantillaIngreso() {
       };
       actualizarFrameDocumentoIngresoLive();
       actualizarVistaPreviaDerechaPorModulo();
-      mostrarToast("Plantilla y Documento Live actualizados", "success");
+      if (notificar) mostrarToast("Plantilla y Documento Live actualizados", "success");
+      return data.plantilla_texto || "";
     }
   } catch (err) {
     console.error("Error al generar plantilla ingreso:", err);
+    if (notificar) mostrarToast("No se pudo actualizar la plantilla", "error");
   }
+
+  return "";
 }
 
 function actualizarFrameDocumentoIngresoLive() {
@@ -2888,28 +2947,28 @@ function mostrarVistaPreviaIngresoDerecha() {
   if (!liveSheet) return;
 
   if (ultimoResultadoIngreso && ultimoResultadoIngreso.documento_live_html) {
-    liveSheet.innerHTML = `<iframe srcdoc="${htmlEscapeAttr(ultimoResultadoIngreso.documento_live_html)}" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Ingreso Técnico"></iframe>`;
+    let frame = document.getElementById("frameIngresoTecnicoLiveDerecho");
+    if (!frame) {
+      liveSheet.innerHTML = `<iframe id="frameIngresoTecnicoLiveDerecho" style="width: 100%; height: 850px; border: none; border-radius: 8px;" title="Live Ingreso Técnico"></iframe>`;
+      frame = document.getElementById("frameIngresoTecnicoLiveDerecho");
+    }
+    const documentoLive = ultimoResultadoIngreso.documento_live_html;
+    if (frame.srcdoc !== documentoLive) frame.srcdoc = documentoLive;
   } else {
     liveSheet.innerHTML = `<div style="padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;">Generando vista previa de Ingreso Técnico...</div>`;
     generarPlantillaIngreso();
   }
 }
 
-function copiarPlantillaIngreso() {
+async function copiarPlantillaIngreso() {
   let txt = document.getElementById("txtPlantillaIngresoTecnico").value;
   if (!txt.trim()) {
-    generarPlantillaIngreso();
-    setTimeout(() => {
-      txt = document.getElementById("txtPlantillaIngresoTecnico").value;
-      if (txt) {
-        navigator.clipboard.writeText(txt).then(() => {
-          mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-        });
-      }
-    }, 250);
-  } else {
-    navigator.clipboard.writeText(txt).then(() => {
-      mostrarToast("Plantilla de Ingreso de Técnico copiada al portapapeles", "success");
-    });
+    txt = await generarPlantillaIngreso();
   }
+
+  const copiado = await copiarTextoAlPortapapeles(txt);
+  mostrarToast(
+    copiado ? "Plantilla de Ingreso de Técnico copiada al portapapeles" : "No se pudo copiar la plantilla",
+    copiado ? "success" : "error"
+  );
 }
