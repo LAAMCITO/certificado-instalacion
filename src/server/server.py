@@ -267,6 +267,18 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
                     "alarmas": alarmas
                 })
 
+            elif path == "/api/ssh_autofill":
+                from src.services.revisor_service import RevisorService
+                salida_ssh = RevisorService.ejecutar_ssh_autofill(body)
+                certificado = body.get("certificado", {})
+                resumen_dict = procesar_autofill(certificado, salida_ssh)
+                self._responder_json({
+                    "status": "ok",
+                    "certificado": certificado,
+                    "resumen": resumen_dict.get("resumen", []),
+                    "exito": resumen_dict.get("exito", False)
+                })
+
             elif path == "/api/revisor/verificar":
                 from src.services.revisor_service import RevisorService
                 resultado = RevisorService.verificar_equipo(body)
