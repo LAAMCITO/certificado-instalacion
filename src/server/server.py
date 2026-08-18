@@ -52,6 +52,9 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
         if content_type == "application/pdf":
             fname = filename or ruta.name
             self.send_header("Content-Disposition", f'inline; filename="{fname}"')
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(contenido)))
         self.end_headers()
@@ -290,9 +293,11 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
             elif path == "/api/revisor/generar_plantilla":
                 from src.services.revisor_service import RevisorService
                 plantilla = RevisorService.generar_plantilla_texto(body)
+                html_doc = RevisorService.generar_documento_live_html(body)
                 self._responder_json({
                     "status": "ok",
-                    "plantilla_texto": plantilla
+                    "plantilla_texto": plantilla,
+                    "documento_live_html": html_doc
                 })
 
             elif path == "/api/revisor/ingreso_tecnico":

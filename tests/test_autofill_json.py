@@ -73,13 +73,13 @@ def test_incremental_autofill_preserves_data():
     txt2 = "1 00:15:8D:00:09:24:53:F8 -75dBm 2s 9"
     procesar_autofill(cert, txt2)
     assert cert["monitoreo_abiotico"]["version"] == "v2.0.2"
-    assert len(cert["motes"]) == 1
+    assert len(cert["motes"]) == 2
 
     # Paso 3: Parsear alarmas en texto (debe mantener monitoreo_abiotico y motes)
     txt3 = "Estado\tUsuario\tMínima\tMáxima\tMedicion\tCentros\tEquipo\tSensor\nActivo\tadmin\t4.0\t15.0\tOxygen\tYatac\tEquipo 1\tSensor 1"
     procesar_autofill(cert, txt3)
     assert cert["monitoreo_abiotico"]["version"] == "v2.0.2"
-    assert len(cert["motes"]) == 1
+    assert len(cert["motes"]) == 2
     assert len(cert["configuracion_alarmas"]) == 1
 
     print("✅ test_incremental_autofill_preserves_data PASSED!")
@@ -102,8 +102,25 @@ def test_eliminar_certificado():
     print("✅ test_eliminar_certificado PASSED!")
 
 
+def test_parse_kernel_and_hostnamectl_autofill():
+    from src.utils.autofill import procesar_autofill
+    cert = {}
+    txt = """
+    Static hostname: ce-llancacheo
+    Operating System: Ubuntu 20.04.6 LTS
+    Kernel: Linux 5.15.0-134-generic
+    """
+    res = procesar_autofill(cert, txt)
+    assert res["exito"] is True
+    assert cert["datos_generales"]["location"] == "ce-llancacheo"
+    assert cert["infraestructura"]["sistema_operativo"] == "Ubuntu 20.04.6 LTS"
+    assert cert["infraestructura"]["kernel"] == "5.15.0-134-generic"
+    print("✅ test_parse_kernel_and_hostnamectl_autofill PASSED!")
+
+
 if __name__ == "__main__":
     test_cacheton_config_json_parsing()
     test_pegar_alarmas_texto()
     test_incremental_autofill_preserves_data()
     test_eliminar_certificado()
+    test_parse_kernel_and_hostnamectl_autofill()
