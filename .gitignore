@@ -28,6 +28,8 @@ output/
 db.sqlite3
 db.sqlite3-journal
 collected_static/
+test_correo_generado.html
+
 
 # Entrega binaria generada
 Certificado_Instalacion_Live_Linux/Entrega_Certificado_Instalacion_Live/

@@ -1235,52 +1235,99 @@
         <!-- ===================================================== -->
         <!-- VISTA 4: CORREOS MASIVOS FIN DE SEMANA                -->
         <!-- ===================================================== -->
+        <!-- ===================================================== -->
+        <!-- VISTA 4: CORREOS MASIVOS FIN DE SEMANA                -->
+        <!-- ===================================================== -->
         <section class="portal-view" id="view-correos-masivos">
           <div class="portal-card glass-panel">
             <div class="card-header-flex">
               <div>
                 <h2>✉️ Correos Masivos Fin de Semana</h2>
-                <p class="subtitle">Programe o emita comunicaciones de turno para todos los clientes y centros de cultivo activos.</p>
+                <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
               </div>
-              <button class="btn btn-secondary" onclick="navegarSeccionPortal('gestionar-correos')">
-                👥 Gestor de Destinatarios
+              <button class="btn btn-secondary" onclick="navegarSeccionPortal('gestionar-correos')" style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                Gestor de Base de Datos
               </button>
             </div>
 
-            <div class="form-grid margin-top">
-              <div class="form-group">
-                <label>Número de Semana ISO</label>
-                <input type="number" id="correoSemana" readonly style="background: rgba(0,0,0,0.05); color: var(--text-muted);">
+            <form id="formCorreosMasivos" onsubmit="event.preventDefault();" style="margin-top: 1rem;">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="correoSemana">Número de Semana</label>
+                  <input type="number" id="correoSemana" readonly style="background: rgba(0,0,0,0.05); color: var(--text-muted); cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                  <label for="correoPersonalSelect">Personal de Turno</label>
+                  <select id="correoPersonalSelect" required>
+                    <option value="">Seleccione al asistente...</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label>Personal de Turno</label>
-                <select id="correoPersonalSelect">
-                  <option value="">Cargando asistentes...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Fecha Sábado</label>
-                <input type="text" id="correoFechaSabado" placeholder="DD/MM/AAAA">
-              </div>
-              <div class="form-group">
-                <label>Fecha Domingo</label>
-                <input type="text" id="correoFechaDomingo" placeholder="DD/MM/AAAA">
-              </div>
-              <div class="form-group span-2">
-                <label style="color: #f59e0b;">Correo de Prueba (Opcional)</label>
-                <input type="email" id="correoPrueba" placeholder="Si escribe un correo aquí, solo se simulará/enviará a esta dirección">
-              </div>
-            </div>
 
-            <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-              <button class="btn btn-primary" id="btnGenerarPrevisualizarCorreo">Previsualizar Correo HTML</button>
-              <button class="btn btn-secondary" id="btnEnviarCorreosMasivos">Simular Envío Masivo</button>
-            </div>
+              <div class="form-grid margin-top">
+                <div class="form-group">
+                  <label for="correoFechaSabado">Fecha Sábado</label>
+                  <input type="date" id="correoFechaSabado" required>
+                </div>
+                <div class="form-group">
+                  <label for="correoFechaDomingo">Fecha Domingo</label>
+                  <input type="date" id="correoFechaDomingo" required>
+                </div>
+              </div>
 
-            <!-- Contenedor de Previsualización de Correo -->
-            <div id="previewCorreoContainer" class="margin-top" style="display: none;">
-              <h3 style="margin-bottom: 10px; color: var(--innovex-yellow);">Vista Previa del Correo Generado:</h3>
-              <div id="previewCorreoSheet" style="background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); padding: 20px;"></div>
+              <div class="form-group margin-top">
+                <label for="correoPrueba" style="color: #f59e0b; font-weight: 600;">Correo de Prueba (Opcional)</label>
+                <input type="email" id="correoPrueba" placeholder="Si escribes un correo aquí, SOLO se enviará a esta dirección (ignora a los clientes)">
+              </div>
+
+              <p style="margin-top: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                Se enviará el correo automáticamente a todos los clientes y centros activos en el sistema, firmados a nombre del personal seleccionado.
+              </p>
+
+              <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center;">
+                <button type="button" class="btn btn-primary" id="btnEnviarCorreosMasivos">Enviar Correos Masivos</button>
+              </div>
+            </form>
+
+            <!-- Live HTML Embedded Preview -->
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #f59e0b; margin: 2rem 0 1rem 0;">Vista Previa del Correo Generado:</h3>
+            <div class="live-preview-card" id="livePreviewMailCard">
+              <div class="mail-header">
+                COMUNICADO DE SOPORTE — TURNO FIN DE SEMANA
+              </div>
+
+              <p class="mail-p">Estimados (as):</p>
+              <p class="mail-p">
+                Junto con saludar, informamos que para cualquier requerimiento o solicitud de validación de datos o asistencia técnica remota, se encontrará disponible el siguiente personal de turno este sábado <strong id="pv-sabado">--/--/----</strong> y domingo <strong id="pv-domingo">--/--/----</strong>:
+              </p>
+
+              <div class="mail-box-personal">
+                <div><strong>Asistente de Soporte:</strong> <span id="pv-nombre" style="color: #0284c7; font-weight: 700;">Seleccione personal...</span></div>
+                <div><strong>Contacto telefónico:</strong> <span id="pv-telefono" style="color: #0284c7; font-weight: 600;">+56 9 ...</span></div>
+                <div><strong>Correo electrónico:</strong> <span id="pv-correo" style="color: #0284c7;">correo@innovex.cl</span></div>
+              </div>
+
+              <div class="mail-box-alert">
+                Favor de ser posible a los centros: Indicar disponibilidad de stock de repuestos y uso de los mismos para el apoyo y/o gestión correspondiente.
+              </div>
+
+              <div class="mail-footer-note">
+                Para coordinaciones de ingresos técnicos, favor dirigir solicitudes al correo: <a href="mailto:jefe.area@innovex.cl" style="color: #0284c7;">jefe.area@innovex.cl</a>.<br>
+                Quedamos atentos a sus comentarios y requerimientos.
+              </div>
+
+              <div class="mail-signature">
+                <div class="sig-logo">
+                  <div class="sig-title">in<span style="color: #0f172a;">novex</span><sup style="font-size: 10px; color: #0284c7;">®</sup></div>
+                  <div class="sig-sub">SOLUCIONES TECNOLÓGICAS</div>
+                </div>
+                <div class="sig-info">
+                  <strong id="pv-sig-nombre" style="font-size: 0.95rem; text-transform: uppercase; color: #0f172a;">NOMBRE DEL ASISTENTE</strong><br>
+                  <span id="pv-sig-cargo" style="font-size: 0.8rem; color: #64748b; text-transform: uppercase;">ASISTENTE DE SOPORTE</span><br>
+                  <span id="pv-sig-contacto" style="font-size: 0.82rem; color: #334155;">📞 +56 9 ... | correo@innovex.cl</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>

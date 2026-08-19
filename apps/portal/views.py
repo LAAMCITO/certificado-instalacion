@@ -183,41 +183,18 @@ def destinatarios(request):
 def enviar_correos_masivos(request):
     """POST /api/enviar_correos_masivos"""
     body = _parse_json_body(request)
+    semana = body.get("semana")
     personal_id = body.get("personal_id")
     fecha_sabado = body.get("fecha_sabado") or ""
     fecha_domingo = body.get("fecha_domingo") or ""
     correo_prueba = body.get("correo_prueba", "").strip()
 
-    asistentes_data = PortalService.obtener_asistentes()
-    personal = next(
-        (p for p in asistentes_data if str(p.get("id")) == str(personal_id)),
-        None,
+    res = PortalService.enviar_correos_masivos(
+        semana=semana,
+        personal_id=personal_id,
+        fecha_sabado=fecha_sabado,
+        fecha_domingo=fecha_domingo,
+        correo_prueba=correo_prueba,
     )
-    if not personal and asistentes_data:
-        personal = asistentes_data[0]
-    elif not personal:
-        personal = {
-            "nombre": "Asistente de Soporte",
-            "cargo": "ASISTENTE DE SOPORTE",
-            "telefono": "+56 9 8419 4843",
-            "correo": "soporte@innovex.cl",
-        }
+    return JsonResponse(res)
 
-    html_content = PortalService.generar_html_correo_fin_semana(
-        personal, fecha_sabado, fecha_domingo
-    )
-    destinatarios_data = PortalService.obtener_destinatarios()
-    activos = [d for d in destinatarios_data if d.get("activo")]
-
-    return JsonResponse({
-        "status": "ok",
-        "mensaje": (
-            f"Correo generado exitosamente para {len(activos)} destinatarios activos."
-            if not correo_prueba
-            else f"Modo prueba: correo generado para {correo_prueba}."
-        ),
-        "html_correo": html_content,
-        "destinatarios_count": len(activos),
-        "personal": personal,
-        "modo_prueba": bool(correo_prueba),
-    })

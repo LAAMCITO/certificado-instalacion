@@ -4153,14 +4153,72 @@ function setupBitacoraHandlers() {
 }
 
 // --- 3. Correos Masivos Fin de Semana ---
-function setupCorreosMasivosHandlers() {
-  document.getElementById("btnGenerarPrevisualizarCorreo")?.addEventListener("click", () => {
-    procesarEnvioPrevisualizacionCorreos(false);
-  });
+function formatDateCorreos(dateStr) {
+  if (!dateStr) return '--/--/----';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
 
+function getCargoCalculadoCorreos(nombre) {
+  if (!nombre) return 'ASISTENTE DE SOPORTE';
+  const n = String(nombre).toLowerCase();
+  if (n.includes('hector') || n.includes('héctor') || n.includes('leonidas')) {
+    return 'ASISTENTE DE SOPORTE SENIOR';
+  } else if (n.includes('leonardo') || n.includes('gabriel') || n.includes('felipe') || n.includes('edwin')) {
+    return 'ASISTENTE DE SOPORTE INTERMEDIO';
+  } else if (n.includes('ivan') || n.includes('iván')) {
+    return 'ASISTENTE DE SOPORTE';
+  }
+  return 'ASISTENTE DE SOPORTE';
+}
+
+function updatePreviewCorreoLive() {
+  const select = document.getElementById('correoPersonalSelect');
+  if (!select) return;
+  const opt = select.options[select.selectedIndex];
+  
+  const fechaSab = document.getElementById('correoFechaSabado')?.value;
+  const fechaDom = document.getElementById('correoFechaDomingo')?.value;
+
+  const elSab = document.getElementById('pv-sabado');
+  const elDom = document.getElementById('pv-domingo');
+  if (elSab) elSab.textContent = formatDateCorreos(fechaSab);
+  if (elDom) elDom.textContent = formatDateCorreos(fechaDom);
+
+  if (opt && opt.value) {
+    const nombre = opt.getAttribute('data-nombre') || opt.text;
+    const telefono = opt.getAttribute('data-telefono') || '';
+    const correo = opt.getAttribute('data-correo') || '';
+    const cargoAttr = opt.getAttribute('data-cargo');
+    const cargo = (cargoAttr && cargoAttr.trim() !== "") ? cargoAttr.toUpperCase() : getCargoCalculadoCorreos(nombre);
+
+    const elNombre = document.getElementById('pv-nombre');
+    const elTel = document.getElementById('pv-telefono');
+    const elCorreo = document.getElementById('pv-correo');
+    const elSigNombre = document.getElementById('pv-sig-nombre');
+    const elSigCargo = document.getElementById('pv-sig-cargo');
+    const elSigContacto = document.getElementById('pv-sig-contacto');
+
+    if (elNombre) elNombre.textContent = nombre;
+    if (elTel) elTel.textContent = telefono;
+    if (elCorreo) elCorreo.textContent = correo;
+    if (elSigNombre) elSigNombre.textContent = nombre;
+    if (elSigCargo) elSigCargo.textContent = cargo;
+    if (elSigContacto) elSigContacto.textContent = `📞 ${telefono} | ${correo}`;
+  }
+}
+
+function setupCorreosMasivosHandlers() {
   document.getElementById("btnEnviarCorreosMasivos")?.addEventListener("click", () => {
     procesarEnvioPrevisualizacionCorreos(true);
   });
+
+  document.getElementById("correoPersonalSelect")?.addEventListener("change", updatePreviewCorreoLive);
+  document.getElementById("correoFechaSabado")?.addEventListener("change", updatePreviewCorreoLive);
+  document.getElementById("correoFechaDomingo")?.addEventListener("change", updatePreviewCorreoLive);
 }
 
 async function cargarDatosCorreosMasivos() {
@@ -4172,41 +4230,76 @@ async function cargarDatosCorreosMasivos() {
 
     if (resFechas.status === "ok") {
       const semEl = document.getElementById("correoSemana");
-      const sabEl = document.getElementById("correoFechaSabado");
-      const domEl = document.getElementById("correoFechaDomingo");
       if (semEl) semEl.value = resFechas.semana;
-      if (sabEl) sabEl.value = resFechas.fecha_sabado;
-      if (domEl) domEl.value = resFechas.fecha_domingo;
+    }
+
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 is Sunday, 6 is Saturday
+    const nextSab = new Date(today);
+    const distSab = (6 - dayOfWeek + 7) % 7;
+    nextSab.setDate(today.getDate() + (distSab === 0 ? 0 : distSab));
+    const nextDom = new Date(nextSab);
+    nextDom.setDate(nextSab.getDate() + 1);
+
+    const sabInput = document.getElementById("correoFechaSabado");
+    const domInput = document.getElementById("correoFechaDomingo");
+    if (sabInput && !sabInput.value) {
+      sabInput.value = nextSab.toISOString().split("T")[0];
+    }
+    if (domInput && !domInput.value) {
+      domInput.value = nextDom.toISOString().split("T")[0];
     }
 
     if (resAsist.status === "ok") {
       const select = document.getElementById("correoPersonalSelect");
       if (select) {
-        select.innerHTML = "";
+        select.innerHTML = '<option value="">Seleccione al asistente...</option>';
         resAsist.asistentes.forEach(a => {
           const opt = document.createElement("option");
           opt.value = a.id;
-          opt.textContent = `${a.nombre} (${a.telefono})`;
+          opt.textContent = a.nombre;
+          opt.setAttribute("data-nombre", a.nombre);
+          opt.setAttribute("data-telefono", a.telefono || "");
+          opt.setAttribute("data-correo", a.correo || "");
+          opt.setAttribute("data-cargo", a.cargo || "");
           select.appendChild(opt);
         });
+        if (select.options.length > 1 && !select.value) {
+          select.selectedIndex = 1;
+        }
       }
     }
+    updatePreviewCorreoLive();
   } catch (err) {
     console.error("Error al cargar datos de correos masivos:", err);
   }
 }
 
 async function procesarEnvioPrevisualizacionCorreos(esEnvioReal) {
+  const semana = document.getElementById("correoSemana")?.value;
   const personal_id = document.getElementById("correoPersonalSelect")?.value;
   const fecha_sabado = document.getElementById("correoFechaSabado")?.value || "";
   const fecha_domingo = document.getElementById("correoFechaDomingo")?.value || "";
   const correo_prueba = document.getElementById("correoPrueba")?.value || "";
+
+  if (!personal_id) {
+    mostrarToast("Debe seleccionar al personal de turno", "error");
+    return;
+  }
+  if (!fecha_sabado || !fecha_domingo) {
+    mostrarToast("Debe ingresar las fechas de sábado y domingo", "error");
+    return;
+  }
+
+  const btn = document.getElementById("btnEnviarCorreosMasivos");
+  if (btn) btn.disabled = true;
 
   try {
     const res = await fetch("/api/enviar_correos_masivos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        semana,
         personal_id,
         fecha_sabado,
         fecha_domingo,
@@ -4215,20 +4308,17 @@ async function procesarEnvioPrevisualizacionCorreos(esEnvioReal) {
     });
     const data = await res.json();
     if (data.status === "ok") {
-      const previewContainer = document.getElementById("previewCorreoContainer");
-      const previewSheet = document.getElementById("previewCorreoSheet");
-      if (previewContainer && previewSheet) {
-        previewContainer.style.display = "block";
-        previewSheet.innerHTML = data.html_correo;
-      }
       mostrarToast(data.mensaje, "success");
     } else {
-      mostrarToast(data.mensaje || "Error al generar correo", "error");
+      mostrarToast(data.mensaje || "Error al enviar correo masivo", "error");
     }
   } catch (err) {
-    mostrarToast("Error de conexión al procesar correo", "error");
+    mostrarToast("Error de conexión al procesar correo masivo", "error");
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
+
 
 // --- 4. Gestor de Destinatarios y Empresas ---
 let listaDestinatariosCache = [];

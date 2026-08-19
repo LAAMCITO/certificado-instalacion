@@ -3,7 +3,12 @@ Service centralizado para el Portal de Soporte Innovex (Django ORM + SQLite).
 """
 
 import datetime
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
 from .models import Asistente, Destinatario, Bitacora, EncargadoArea, ZonaGeografica, Tecnico
+
 
 # Asistentes de soporte por defecto basados en la dotación de Innovex
 ASISTENTES_DEFAULT = [
@@ -143,109 +148,190 @@ class PortalService:
         semana_iso = sabado.isocalendar()[1]
         return sabado.strftime("%d/%m/%Y"), domingo.strftime("%d/%m/%Y"), semana_iso
 
+    @staticmethod
+    def _format_fecha_corta(fecha_str: str) -> str:
+        if not fecha_str:
+            return ""
+        try:
+            dt = datetime.datetime.strptime(fecha_str, "%Y-%m-%d")
+            return dt.strftime("%d/%m")
+        except ValueError:
+            pass
+        try:
+            dt = datetime.datetime.strptime(fecha_str, "%d/%m/%Y")
+            return dt.strftime("%d/%m")
+        except ValueError:
+            pass
+        return fecha_str
+
+    @classmethod
+    def obtener_cargo_calculado(cls, nombre: str, cargo_base: str = "ASISTENTE DE SOPORTE") -> str:
+        if not nombre:
+            return cargo_base
+        n = nombre.lower()
+        if "hector" in n or "héctor" in n or "leonidas" in n:
+            return "Asistente de Soporte Senior"
+        elif any(k in n for k in ["leonardo", "gabriel", "felipe", "edwin"]):
+            return "Asistente de Soporte Intermedio"
+        elif "ivan" in n or "iván" in n:
+            return "Asistente de Soporte"
+        return cargo_base or "Asistente de Soporte"
+
     @classmethod
     def generar_html_correo_fin_semana(cls, personal: dict, fecha_sabado: str, fecha_domingo: str) -> str:
         nombre = personal.get("nombre", "Asistente de Soporte")
-        cargo = personal.get("cargo", "ASISTENTE DE SOPORTE")
-        telefono = personal.get("telefono", "+56 9 8419 4843")
-        correo = personal.get("correo", "soporte@innovex.cl")
+        cargo_base = personal.get("cargo", "ASISTENTE DE SOPORTE")
+        cargo_calc = cls.obtener_cargo_calculado(nombre, cargo_base)
+        sab_fmt = cls._format_fecha_corta(fecha_sabado)
+        dom_fmt = cls._format_fecha_corta(fecha_domingo)
 
-        return f"""<!DOCTYPE html>
-<html lang="es-cl">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            color: #333333;
-            line-height: 1.5;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 700px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        }}
-        .header-bar {{
-            border-bottom: 3px solid #f1c40f;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }}
-        .header-title {{
-            color: #0f172a;
-            font-size: 20px;
-            font-weight: bold;
-            margin: 0;
-        }}
-        .signature {{
-            margin-top: 35px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-        }}
-        .highlight {{
-            color: #0284c7;
-            font-weight: 600;
-        }}
-        .notice-box {{
-            background: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            padding: 12px 16px;
-            margin: 20px 0;
-            border-radius: 4px;
-            color: #92400e;
-            font-size: 13px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header-bar">
-            <div class="header-title">COMUNICADO DE SOPORTE — TURNO FIN DE SEMANA</div>
-        </div>
+        return render_to_string(
+            "emails/turno_fin_semana.html",
+            {
+                "fecha_sabado": sab_fmt,
+                "fecha_domingo": dom_fmt,
+                "personal": {
+                    "nombre": nombre,
+                    "telefono": personal.get("telefono", "+56 9 8419 4843"),
+                    "correo": personal.get("correo", "soporte@innovex.cl"),
+                    "cargo_calculado": cargo_calc,
+                },
+                "cargo_calculado": cargo_calc,
+            },
+        )
 
-        <p>Estimados (as):</p>
-        
-        <p>Junto con saludar, informamos que para cualquier requerimiento o solicitud de validación de datos o asistencia técnica remota, se encontrará disponible el siguiente personal de turno este <strong>sábado {fecha_sabado}</strong> y <strong>domingo {fecha_domingo}</strong>:</p>
-        
-        <div style="background: #f1f5f9; padding: 15px 20px; border-radius: 6px; margin: 20px 0;">
-            <p style="margin: 4px 0;"><strong>Asistente de Soporte:</strong> <span class="highlight">{nombre}</span></p>
-            <p style="margin: 4px 0;"><strong>Contacto telefónico:</strong> <span class="highlight">{telefono}</span></p>
-            <p style="margin: 4px 0;"><strong>Correo electrónico:</strong> <a href="mailto:{correo}" style="color: #0284c7; text-decoration: none;">{correo}</a></p>
-        </div>
+    @classmethod
+    def enviar_correos_masivos(
+        cls,
+        semana: str | int | None,
+        personal_id: int | str | None,
+        fecha_sabado: str,
+        fecha_domingo: str,
+        correo_prueba: str = "",
+    ) -> dict:
+        sab_fmt = cls._format_fecha_corta(fecha_sabado)
+        dom_fmt = cls._format_fecha_corta(fecha_domingo)
+        sem_str = str(semana) if semana else str(datetime.date.today().isocalendar()[1])
 
-        <div class="notice-box">
-            <strong>Favor de ser posible a los centros:</strong> Indicar disponibilidad de stock de repuestos y uso de los mismos para el apoyo y/o gestión correspondiente.
-        </div>
+        asistente_obj = None
+        if personal_id:
+            try:
+                asistente_obj = Asistente.objects.filter(id=personal_id).first()
+            except Exception:
+                pass
 
-        <p>Para coordinaciones de ingresos técnicos, favor dirigir solicitudes al correo: <a href="mailto:jefe.area@innovex.cl" style="color: #0284c7; font-weight: 600;">jefe.area@innovex.cl</a>.</p>
+        if asistente_obj:
+            nombre_asistente = asistente_obj.nombre
+            telefono_asistente = asistente_obj.telefono
+            correo_asistente = asistente_obj.correo
+            cargo_base = asistente_obj.cargo
+        else:
+            asistentes = cls.obtener_asistentes()
+            if asistentes:
+                a0 = asistentes[0]
+                nombre_asistente = a0.get("nombre", "Asistente de Soporte")
+                telefono_asistente = a0.get("telefono", "+56 9 8419 4843")
+                correo_asistente = a0.get("correo", "soporte@innovex.cl")
+                cargo_base = a0.get("cargo", "ASISTENTE DE SOPORTE")
+            else:
+                nombre_asistente = "Asistente de Soporte"
+                telefono_asistente = "+56 9 8419 4843"
+                correo_asistente = "soporte@innovex.cl"
+                cargo_base = "ASISTENTE DE SOPORTE"
 
-        <p>Quedamos atentos a sus comentarios y requerimientos.</p>
+        cargo_calc = cls.obtener_cargo_calculado(nombre_asistente, cargo_base)
 
-        <div class="signature">
-            <table style="border-collapse: collapse; width: 100%;">
-                <tr>
-                    <td style="padding-right: 20px; border-right: 2px solid #f1c40f; width: 140px; text-align: center; vertical-align: middle;">
-                        <span style="font-size: 26px; font-weight: 900; color: #f1c40f; letter-spacing: -0.5px;">in<span style="color: #0f172a;">novex</span><sup style="font-size: 11px; color: #64748b;">&reg;</sup></span><br>
-                        <span style="font-size: 9px; color: #64748b; letter-spacing: 1.5px; font-weight: 600;">SOLUCIONES TECNOLÓGICAS</span>
-                    </td>
-                    <td style="padding-left: 20px; vertical-align: middle;">
-                        <strong style="color: #0f172a; font-size: 15px; text-transform: uppercase;">{nombre}</strong><br>
-                        <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">{cargo}</span><br>
-                        <span style="font-size: 12px; color: #334155;">📞 {telefono}</span> &nbsp;|&nbsp; 
-                        <a href="mailto:{correo}" style="font-size: 12px; color: #0284c7; text-decoration: none;">{correo}</a>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-</body>
-</html>"""
+        personal_ctx = {
+            "nombre": nombre_asistente,
+            "telefono": telefono_asistente,
+            "correo": correo_asistente,
+            "cargo_calculado": cargo_calc,
+        }
+
+        html_content = render_to_string(
+            "emails/turno_fin_semana.html",
+            {
+                "fecha_sabado": sab_fmt,
+                "fecha_domingo": dom_fmt,
+                "personal": personal_ctx,
+                "cargo_calculado": cargo_calc,
+            },
+        )
+        text_content = strip_tags(html_content)
+
+        try:
+            with open("test_correo_generado.html", "w", encoding="utf-8") as f:
+                f.write(html_content)
+        except Exception:
+            pass
+
+        nombre_parts = nombre_asistente.lower().split()
+        if len(nombre_parts) >= 2:
+            correo_remitente = f"{nombre_parts[0]}.{nombre_parts[1]}@innovex.cl"
+        elif len(nombre_parts) == 1:
+            correo_remitente = f"{nombre_parts[0]}@innovex.cl"
+        else:
+            correo_remitente = "soporte@innovex.cl"
+
+        subject = f"ASISTENCIA SOPORTE INNOVEX FIN DE SEMANA - SEMANA {sem_str}"
+
+        correo_prueba_clean = correo_prueba.strip()
+        emails_enviados = 0
+
+        if correo_prueba_clean:
+            destinatarios = [c.strip() for c in correo_prueba_clean.replace(";", ",").split(",") if c.strip()]
+            cc_list = []
+
+            if destinatarios:
+                msg = EmailMultiAlternatives(
+                    subject=subject,
+                    body=text_content,
+                    from_email=correo_remitente,
+                    to=destinatarios,
+                    cc=cc_list,
+                    reply_to=[correo_remitente],
+                )
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+                emails_enviados += 1
+            mensaje = f"Se envió el correo masivo en MODO PRUEBA a {', '.join(destinatarios)}. Previsualización guardada en 'test_correo_generado.html'."
+        else:
+            destinatarios_qs = Destinatario.objects.filter(activo=True)
+            empresas_map = {}
+            for d in destinatarios_qs:
+                emp = d.empresa.strip().upper()
+                if emp not in empresas_map:
+                    empresas_map[emp] = []
+                if d.correo and d.correo.strip():
+                    empresas_map[emp].append(d.correo.strip())
+
+            cc_list = ["soporte@innovex.cl", "jefe.area@innovex.cl"]
+
+            for emp_nombre, dests in empresas_map.items():
+                if not dests:
+                    continue
+                msg = EmailMultiAlternatives(
+                    subject=subject,
+                    body=text_content,
+                    from_email=correo_remitente,
+                    to=dests,
+                    cc=cc_list,
+                    reply_to=[correo_remitente],
+                )
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+                emails_enviados += 1
+
+            mensaje = f"Se enviaron correos masivos a {emails_enviados} empresas agrupadas. Puedes previsualizar el HTML generado en el archivo 'test_correo_generado.html'."
+
+        return {
+            "status": "ok",
+            "mensaje": mensaje,
+            "emails_enviados": emails_enviados,
+            "html_correo": html_content,
+            "modo_prueba": bool(correo_prueba_clean),
+        }
+
 
     # -------------------------------------------------------------
     # BUSCADOR & ÍNDICE TRAC WIKI
