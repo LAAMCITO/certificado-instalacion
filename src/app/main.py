@@ -106,8 +106,9 @@ def main():
         "manage.py",
         "runserver",
         f"{host_solicitado}:{puerto_solicitado}",
-        "--noreload"
     ]
+    if "--noreload" in args:
+        django_args.append("--noreload")
     execute_from_command_line(django_args)
 
 

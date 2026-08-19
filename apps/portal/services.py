@@ -3,7 +3,7 @@ Service centralizado para el Portal de Soporte Innovex (Django ORM + SQLite).
 """
 
 import datetime
-from .models import Asistente, Destinatario, Bitacora
+from .models import Asistente, Destinatario, Bitacora, EncargadoArea, ZonaGeografica, Tecnico
 
 # Asistentes de soporte por defecto basados en la dotación de Innovex
 ASISTENTES_DEFAULT = [
@@ -306,3 +306,58 @@ class PortalService:
             ]
         }
         return {"indice": indice}
+
+    # -------------------------------------------------------------
+    # ENCARGADOS DE ÁREA, ZONAS GEOGRÁFICAS Y TÉCNICOS
+    # -------------------------------------------------------------
+    @classmethod
+    def _asegurar_estructura_personal(cls):
+        from apps.core.constants.personal import ESTRUCTURA_ENCARGADOS
+        if not EncargadoArea.objects.exists():
+            for idx, (nombre_enc, data) in enumerate(ESTRUCTURA_ENCARGADOS.items(), start=1):
+                enc, _ = EncargadoArea.objects.get_or_create(
+                    nombre=nombre_enc,
+                    defaults={"orden": idx, "activo": True}
+                )
+                for z_idx, zona in enumerate(data.get("zonas", []), start=1):
+                    ZonaGeografica.objects.get_or_create(
+                        nombre=zona,
+                        defaults={"encargado_principal": enc, "orden": z_idx, "activo": True}
+                    )
+                for t_idx, tec in enumerate(data.get("tecnicos", []), start=1):
+                    Tecnico.objects.get_or_create(
+                        nombre=tec,
+                        defaults={"encargado_principal": enc, "orden": t_idx, "activo": True}
+                    )
+
+    @classmethod
+    def obtener_estructura_personal(cls) -> dict:
+        try:
+            cls._asegurar_estructura_personal()
+            encargados_qs = EncargadoArea.objects.filter(activo=True).order_by("orden", "nombre")
+            zonas_qs = ZonaGeografica.objects.filter(activo=True).order_by("orden", "nombre")
+            tecnicos_qs = Tecnico.objects.filter(activo=True).order_by("orden", "nombre")
+
+            mapa = {}
+            for enc in encargados_qs:
+                mapa[enc.nombre] = {
+                    "zonas": list(enc.zonas.filter(activo=True).order_by("orden", "nombre").values_list("nombre", flat=True)),
+                    "tecnicos": list(enc.tecnicos.filter(activo=True).order_by("orden", "nombre").values_list("nombre", flat=True)),
+                }
+
+            return {
+                "status": "ok",
+                "encargados": [enc.nombre for enc in encargados_qs],
+                "todas_las_zonas": list(zonas_qs.values_list("nombre", flat=True)),
+                "todos_los_tecnicos": list(tecnicos_qs.values_list("nombre", flat=True)),
+                "mapa_completo": mapa,
+            }
+        except Exception:
+            from apps.core.constants.personal import ESTRUCTURA_ENCARGADOS, TODAS_LAS_ZONAS, TODOS_LOS_TECNICOS
+            return {
+                "status": "ok",
+                "encargados": list(ESTRUCTURA_ENCARGADOS.keys()),
+                "todas_las_zonas": TODAS_LAS_ZONAS,
+                "todos_los_tecnicos": TODOS_LOS_TECNICOS,
+                "mapa_completo": ESTRUCTURA_ENCARGADOS,
+            }

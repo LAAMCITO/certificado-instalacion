@@ -58,6 +58,13 @@ def fechas_fin_semana(request):
 
 
 @require_GET
+def estructura_personal(request):
+    """GET /api/personal/estructura"""
+    data = PortalService.obtener_estructura_personal()
+    return JsonResponse(data)
+
+
+@require_GET
 def wiki_buscar(request):
     """GET /api/wiki/buscar?q=..."""
     q = request.GET.get("q", "")

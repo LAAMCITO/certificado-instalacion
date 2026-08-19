@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal de Soporte Técnico — Innovex</title>
-  <link rel="stylesheet" href="styles.css?v=3.1">
+  <link rel="stylesheet" href="{% static 'web/styles.css' %}?v=3.1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -20,7 +21,7 @@
       <!-- Brand Header -->
       <div class="sidebar-brand">
         <div class="brand-logo-wrap">
-          <img src="/assets/logo_innovex_fondo transparente.png" alt="Innovex" class="brand-img-logo" onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
+          <img src="{% static 'assets/logo_innovex_fondo transparente.png' %}" alt="Innovex" class="brand-img-logo" onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
           <div class="brand-symbol" id="brandFallbackSymbol" style="display: none;">
             <span class="symbol-in">in</span><span class="symbol-novex">novex</span><span class="symbol-reg">&reg;</span>
           </div>
@@ -413,8 +414,9 @@
                         <select id="gen_encargado_select"></select>
                       </div>
                       <div class="form-group">
-                        <label>Área</label>
-                        <input type="text" id="gen_area" placeholder="ej. Producción / Cultivo / Operaciones">
+                        <label>Área (Zona Geográfica)</label>
+                        <select id="gen_area_select"></select>
+                        <input type="text" id="gen_area_custom" placeholder="Especificar otra zona / área..." class="input-sub" style="display: none;">
                       </div>
                       <div class="form-group">
                         <label>Técnico de Visita</label>
@@ -1461,6 +1463,6 @@
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="app.js?v=3.1"></script>
+  <script src="{% static 'web/app.js' %}?v=3.1"></script>
 </body>
 </html>

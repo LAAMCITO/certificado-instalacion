@@ -95,6 +95,36 @@ class TestPortalService(TestCase):
         self.assertIn("indice", res_indice)
         self.assertIn("ANTENAS Y COMUNICACIÓN", res_indice["indice"])
 
+    def test_estructura_personal(self):
+        data = PortalService.obtener_estructura_personal()
+        self.assertEqual(data["status"], "ok")
+        self.assertIn("Rodrigo Bustamante", data["encargados"])
+        self.assertIn("Manuel Yovera", data["encargados"])
+        self.assertIn("Camilo Oyarzún", data["encargados"])
+        self.assertIn("Francisco Vásquez", data["encargados"])
+
+        # Zonas y Técnicos
+        self.assertIn("Chiloé", data["todas_las_zonas"])
+        self.assertIn("Pto. Montt", data["todas_las_zonas"])
+        self.assertIn("Pto. Aguirre", data["todas_las_zonas"])
+        self.assertIn("Melinka", data["todas_las_zonas"])
+
+        # Mapa completo
+        mapa = data["mapa_completo"]
+        self.assertIn("Chiloé", mapa["Rodrigo Bustamante"]["zonas"])
+        self.assertIn("Roger Vargas", mapa["Rodrigo Bustamante"]["tecnicos"])
+        self.assertIn("Valdivia", mapa["Manuel Yovera"]["zonas"])
+        self.assertIn("Armando Perez", mapa["Manuel Yovera"]["tecnicos"])
+
+    def test_api_personal_estructura_view(self):
+        from django.test import Client
+        c = Client()
+        response = c.get("/api/personal/estructura")
+        self.assertEqual(response.status_code, 200)
+        json_resp = response.json()
+        self.assertEqual(json_resp["status"], "ok")
+        self.assertIn("mapa_completo", json_resp)
+
 
 if __name__ == "__main__":
     unittest.main()

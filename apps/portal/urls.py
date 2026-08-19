@@ -18,6 +18,9 @@ urlpatterns = [
     # Fechas fin de semana
     path("fechas_fin_semana", views.fechas_fin_semana, name="portal_fechas"),
 
+    # Encargados, Zonas y Técnicos
+    path("personal/estructura", views.estructura_personal, name="portal_estructura_personal"),
+
     # Wiki
     path("wiki/buscar", views.wiki_buscar, name="portal_wiki_buscar"),
     path("wiki/indice", views.wiki_indice, name="portal_wiki_indice"),

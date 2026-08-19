@@ -115,11 +115,44 @@ def importar_certificados():
     print(f"✅ Certificados históricos importados a SQLite: {count}")
 
 
+def importar_personal():
+    from apps.portal.models import EncargadoArea, ZonaGeografica, Tecnico
+    from apps.core.constants.personal import ESTRUCTURA_ENCARGADOS
+
+    enc_count, zona_count, tec_count = 0, 0, 0
+    for idx, (nombre_enc, data) in enumerate(ESTRUCTURA_ENCARGADOS.items(), start=1):
+        enc, created = EncargadoArea.objects.update_or_create(
+            nombre=nombre_enc,
+            defaults={"orden": idx, "activo": True}
+        )
+        if created:
+            enc_count += 1
+
+        for z_idx, zona in enumerate(data.get("zonas", []), start=1):
+            _, z_created = ZonaGeografica.objects.update_or_create(
+                nombre=zona,
+                defaults={"encargado_principal": enc, "orden": z_idx, "activo": True}
+            )
+            if z_created:
+                zona_count += 1
+
+        for t_idx, tec in enumerate(data.get("tecnicos", []), start=1):
+            _, t_created = Tecnico.objects.update_or_create(
+                nombre=tec,
+                defaults={"encargado_principal": enc, "orden": t_idx, "activo": True}
+            )
+            if t_created:
+                tec_count += 1
+
+    print(f"✅ Encargados ({len(ESTRUCTURA_ENCARGADOS)}), Zonas ({zona_count} nuevas), y Técnicos ({tec_count} nuevos) importados.")
+
+
 def main():
     print("🚀 Iniciando importación de datos a SQLite...")
     importar_asistentes()
     importar_destinatarios()
     importar_bitacora()
+    importar_personal()
     importar_certificados()
     print("🎉 Importación completada con éxito.")
 

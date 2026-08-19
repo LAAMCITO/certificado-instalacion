@@ -1,9 +1,28 @@
 // Constantes oficiales del proyecto
+let ESTRUCTURA_PERSONAL = {
+  "Rodrigo Bustamante": {
+    zonas: ["Chiloé"],
+    tecnicos: ["Roger Vargas", "Bernardo Guenteo", "Freddy Blanco", "Orlando Andres Garate", "Alejandro Mansilla"]
+  },
+  "Manuel Yovera": {
+    zonas: ["Pto. Montt", "Hornopirén", "Seno Reloncaví", "Estuario Reloncaví", "Calbuco", "Valdivia", "Chaitén", "Ayacara"],
+    tecnicos: ["Armando Perez", "Cristian Norambuena", "Yerson Seron"]
+  },
+  "Camilo Oyarzún": {
+    zonas: ["Pto. Aguirre", "Pto. Chacabuco", "Pto. Aysén", "Pto. Cisnes"],
+    tecnicos: ["Mariluz Tocol", "Leonardo Valenzuela", "Luis Oyarzun", "Heriberto Lira"]
+  },
+  "Francisco Vásquez": {
+    zonas: ["Melinka", "Pto. Natales", "Pta. Arenas (PUQ)"],
+    tecnicos: ["Carlos Rodriguez", "Carlos Salinas", "Eduin Campos", "Hayran Poveda", "Franco Quintallana", "Glenn Montiel", "Pablo Peréz"]
+  }
+};
+
 const ENCARGADOS = {
-  "Rodrigo Bustamante": ["Roger Vargas", "Bernardo Guenteo", "Freddy Blanco", "Orlando Andres Garate", "Alejandro Mansilla"],
-  "Manuel Yovera": ["Armando Perez", "Cristian Norambuena", "Yerson Seron"],
-  "Camilo Oyarzun": ["Mariluz Tocol", "Leonardo Valenzuela", "Luis Oyarzun", "Heriberto Lira"],
-  "Francisco Vasquez": ["Carlos Rodriguez", "Carlos Salinas", "Eduin Campos", "Hayran Poveda", "Franco Quintallana", "Glenn Montiel", "Pablo Peréz"]
+  "Rodrigo Bustamante": ESTRUCTURA_PERSONAL["Rodrigo Bustamante"].tecnicos,
+  "Manuel Yovera": ESTRUCTURA_PERSONAL["Manuel Yovera"].tecnicos,
+  "Camilo Oyarzún": ESTRUCTURA_PERSONAL["Camilo Oyarzún"].tecnicos,
+  "Francisco Vásquez": ESTRUCTURA_PERSONAL["Francisco Vásquez"].tecnicos
 };
 
 const EMPRESAS = [
@@ -194,6 +213,7 @@ let certificadoState = {
 document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   poblarDropdownsConstantes();
+  cargarEstructuraPersonalDesdeAPI();
   bindFormInputs();
   crearNuevoCertificadoSinPopup();
   cargarListaCertificadosHeader(false);
@@ -617,7 +637,7 @@ function poblarDropdownsConstantes() {
   const encSel = document.getElementById("gen_encargado_select");
   if (encSel) {
     encSel.innerHTML = "";
-    Object.keys(ENCARGADOS).forEach(enc => {
+    Object.keys(ESTRUCTURA_PERSONAL).forEach(enc => {
       const opt = document.createElement("option");
       opt.value = enc;
       opt.textContent = enc;
@@ -626,12 +646,39 @@ function poblarDropdownsConstantes() {
 
     encSel.addEventListener("change", (e) => {
       certificadoState.datos_generales.encargado_area = e.target.value;
+      actualizarDropdownAreas(e.target.value);
       actualizarDropdownTecnicos(e.target.value);
       renderLiveHtmlSheet();
     });
   }
 
+  // Áreas / Zonas Geográficas
+  const areaSel = document.getElementById("gen_area_select");
+  const areaCustom = document.getElementById("gen_area_custom");
+  if (areaSel) {
+    areaSel.addEventListener("change", (e) => {
+      if (e.target.value === "Otra zona...") {
+        if (areaCustom) {
+          areaCustom.style.display = "block";
+          certificadoState.datos_generales.area = areaCustom.value;
+        }
+      } else {
+        if (areaCustom) areaCustom.style.display = "none";
+        certificadoState.datos_generales.area = e.target.value;
+      }
+      renderLiveHtmlSheet();
+    });
+  }
+
+  if (areaCustom) {
+    areaCustom.addEventListener("input", (e) => {
+      certificadoState.datos_generales.area = e.target.value;
+      renderLiveHtmlSheet();
+    });
+  }
+
   // Técnicos
+  actualizarDropdownAreas("Rodrigo Bustamante");
   actualizarDropdownTecnicos("Rodrigo Bustamante");
   const tecSel = document.getElementById("gen_tecnico_select");
   const tecCustom = document.getElementById("gen_tecnico_custom");
@@ -687,25 +734,193 @@ function poblarDropdownsConstantes() {
   }
 }
 
-function actualizarDropdownTecnicos(encargado) {
-  const tecSel = document.getElementById("gen_tecnico_select");
-  tecSel.innerHTML = "";
+async function cargarEstructuraPersonalDesdeAPI() {
+  try {
+    const res = await fetch("/api/personal/estructura");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.mapa_completo && Object.keys(data.mapa_completo).length > 0) {
+        ESTRUCTURA_PERSONAL = data.mapa_completo;
+        const encSel = document.getElementById("gen_encargado_select");
+        if (encSel) {
+          const prevVal = encSel.value || certificadoState.datos_generales.encargado_area;
+          encSel.innerHTML = "";
+          Object.keys(ESTRUCTURA_PERSONAL).forEach(enc => {
+            const opt = document.createElement("option");
+            opt.value = enc;
+            opt.textContent = enc;
+            encSel.appendChild(opt);
+          });
+          if (prevVal && ESTRUCTURA_PERSONAL[prevVal]) {
+            encSel.value = prevVal;
+          }
+          actualizarDropdownAreas(encSel.value, certificadoState.datos_generales.area);
+          actualizarDropdownTecnicos(encSel.value, certificadoState.datos_generales.tecnico_visita);
+        }
+      }
+    }
+  } catch (err) {
+    console.log("Estructura personal usando fallback local");
+  }
+}
 
-  const lista = ENCARGADOS[encargado] || [];
-  lista.forEach(tec => {
-    const opt = document.createElement("option");
-    opt.value = tec;
-    opt.textContent = tec;
-    tecSel.appendChild(opt);
+function actualizarDropdownAreas(encargado, valorSeleccionado = null) {
+  const areaSel = document.getElementById("gen_area_select");
+  const areaCustom = document.getElementById("gen_area_custom");
+  if (!areaSel) return;
+
+  areaSel.innerHTML = "";
+
+  const infoEnc = ESTRUCTURA_PERSONAL[encargado] || { zonas: [], tecnicos: [] };
+  const zonasPropias = infoEnc.zonas || [];
+
+  // 1. Zonas asignadas al encargado seleccionado
+  if (zonasPropias.length > 0) {
+    const grpPrincipal = document.createElement("optgroup");
+    grpPrincipal.label = `Zonas Asignadas (${encargado})`;
+    zonasPropias.forEach(z => {
+      const opt = document.createElement("option");
+      opt.value = z;
+      opt.textContent = z;
+      grpPrincipal.appendChild(opt);
+    });
+    areaSel.appendChild(grpPrincipal);
+  }
+
+  // 2. Otras zonas de la red (para suplencias entre encargados)
+  const otrasZonas = [];
+  Object.entries(ESTRUCTURA_PERSONAL).forEach(([otroEnc, data]) => {
+    if (otroEnc !== encargado && data.zonas) {
+      data.zonas.forEach(z => {
+        if (!zonasPropias.includes(z) && !otrasZonas.includes(z)) {
+          otrasZonas.push(z);
+        }
+      });
+    }
   });
 
+  if (otrasZonas.length > 0) {
+    const grpOtras = document.createElement("optgroup");
+    grpOtras.label = "Otras Zonas (Suplencias)";
+    otrasZonas.sort().forEach(z => {
+      const opt = document.createElement("option");
+      opt.value = z;
+      opt.textContent = z;
+      grpOtras.appendChild(opt);
+    });
+    areaSel.appendChild(grpOtras);
+  }
+
+  // 3. Opción 'Otra zona...'
+  const optOtra = document.createElement("option");
+  optOtra.value = "Otra zona...";
+  optOtra.textContent = "Otra zona...";
+  areaSel.appendChild(optOtra);
+
+  // Seleccionar valor adecuado
+  if (valorSeleccionado) {
+    const match = Array.from(areaSel.options).find(o => o.value.toLowerCase() === String(valorSeleccionado).trim().toLowerCase());
+    if (match) {
+      areaSel.value = match.value;
+      if (areaCustom) areaCustom.style.display = "none";
+      certificadoState.datos_generales.area = match.value;
+    } else {
+      areaSel.value = "Otra zona...";
+      if (areaCustom) {
+        areaCustom.style.display = "block";
+        areaCustom.value = valorSeleccionado;
+      }
+      certificadoState.datos_generales.area = valorSeleccionado;
+    }
+  } else {
+    if (zonasPropias.length > 0) {
+      areaSel.value = zonasPropias[0];
+      if (areaCustom) areaCustom.style.display = "none";
+      certificadoState.datos_generales.area = zonasPropias[0];
+    } else {
+      areaSel.value = "Otra zona...";
+      if (areaCustom) areaCustom.style.display = "block";
+    }
+  }
+}
+
+function actualizarDropdownTecnicos(encargado, valorSeleccionado = null) {
+  const tecSel = document.getElementById("gen_tecnico_select");
+  const tecCustom = document.getElementById("gen_tecnico_custom");
+  if (!tecSel) return;
+
+  tecSel.innerHTML = "";
+
+  const infoEnc = ESTRUCTURA_PERSONAL[encargado] || { zonas: [], tecnicos: [] };
+  const tecnicosPropios = infoEnc.tecnicos || [];
+
+  // 1. Técnicos asignados al encargado
+  if (tecnicosPropios.length > 0) {
+    const grpPrincipal = document.createElement("optgroup");
+    grpPrincipal.label = `Técnicos a Cargo (${encargado})`;
+    tecnicosPropios.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = t;
+      grpPrincipal.appendChild(opt);
+    });
+    tecSel.appendChild(grpPrincipal);
+  }
+
+  // 2. Otros técnicos
+  const otrosTecs = [];
+  Object.entries(ESTRUCTURA_PERSONAL).forEach(([otroEnc, data]) => {
+    if (otroEnc !== encargado && data.tecnicos) {
+      data.tecnicos.forEach(t => {
+        if (!tecnicosPropios.includes(t) && !otrosTecs.includes(t)) {
+          otrosTecs.push(t);
+        }
+      });
+    }
+  });
+
+  if (otrosTecs.length > 0) {
+    const grpOtras = document.createElement("optgroup");
+    grpOtras.label = "Otros Técnicos";
+    otrosTecs.sort().forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = t;
+      grpOtras.appendChild(opt);
+    });
+    tecSel.appendChild(grpOtras);
+  }
+
+  // 3. Opción 'Otro...'
   const optOtro = document.createElement("option");
   optOtro.value = "Otro...";
   optOtro.textContent = "Otro...";
   tecSel.appendChild(optOtro);
 
-  if (lista.length > 0) {
-    certificadoState.datos_generales.tecnico_visita = lista[0];
+  // Seleccionar valor adecuado
+  if (valorSeleccionado) {
+    const match = Array.from(tecSel.options).find(o => o.value.toLowerCase() === String(valorSeleccionado).trim().toLowerCase());
+    if (match) {
+      tecSel.value = match.value;
+      if (tecCustom) tecCustom.style.display = "none";
+      certificadoState.datos_generales.tecnico_visita = match.value;
+    } else {
+      tecSel.value = "Otro...";
+      if (tecCustom) {
+        tecCustom.style.display = "block";
+        tecCustom.value = valorSeleccionado;
+      }
+      certificadoState.datos_generales.tecnico_visita = valorSeleccionado;
+    }
+  } else {
+    if (tecnicosPropios.length > 0) {
+      tecSel.value = tecnicosPropios[0];
+      if (tecCustom) tecCustom.style.display = "none";
+      certificadoState.datos_generales.tecnico_visita = tecnicosPropios[0];
+    } else {
+      tecSel.value = "Otro...";
+      if (tecCustom) tecCustom.style.display = "block";
+    }
   }
 }
 
@@ -881,7 +1096,6 @@ function bindFormInputs() {
     { id: "gen_barrio", sec: "datos_generales", key: "barrio" },
     { id: "gen_puerto_patron", sec: "datos_generales", key: "puerto_patron" },
     { id: "gen_correo_centro", sec: "datos_generales", key: "correo_centro" },
-    { id: "gen_area", sec: "datos_generales", key: "area" },
     { id: "gen_telefono_centro", sec: "datos_generales", key: "telefono_centro" },
 
     { id: "infra_area", sec: "infraestructura", key: "area" },
@@ -1114,15 +1328,20 @@ function poblarFormularioDesdeState() {
   setVal("gen_location", dg.location);
   setVal("gen_nombre_centro", dg.nombre_centro);
   setVal("gen_empresa_select", dg.empresa);
-  setVal("gen_encargado_select", dg.encargado_area);
-  setVal("gen_tecnico_select", dg.tecnico_visita);
+  if (dg.encargado_area) {
+    setVal("gen_encargado_select", dg.encargado_area);
+    actualizarDropdownAreas(dg.encargado_area, dg.area);
+    actualizarDropdownTecnicos(dg.encargado_area, dg.tecnico_visita);
+  } else {
+    actualizarDropdownAreas("Rodrigo Bustamante", dg.area);
+    actualizarDropdownTecnicos("Rodrigo Bustamante", dg.tecnico_visita);
+  }
   setVal("gen_numero_ficha", dg.numero_ficha);
   setVal("gen_fecha_instalacion", dg.fecha_instalacion);
   setVal("gen_coordenadas", dg.coordenadas);
   setVal("gen_barrio", dg.barrio);
   setVal("gen_puerto_patron", dg.puerto_patron);
   setVal("gen_correo_centro", dg.correo_centro);
-  setVal("gen_area", dg.area || "");
   setVal("gen_telefono_centro", dg.telefono_centro || dg.numero_centro || "");
 
   const inf = certificadoState.infraestructura || {};
@@ -1699,6 +1918,7 @@ function renderLiveHtmlSheet() {
         <tr><td class="attr">Nombre del Centro</td><td class="val">${dg.nombre_centro || '<em style="color:#ef4444;">[Sin asignar]</em>'}</td></tr>
         <tr><td class="attr">Empresa Cliente</td><td class="val">${dg.empresa || '-'}</td></tr>
         <tr><td class="attr">Encargado de Área</td><td class="val">${dg.encargado_area || '-'}</td></tr>
+        ${dg.area ? `<tr><td class="attr">Área (Zona Geográfica)</td><td class="val">${dg.area}</td></tr>` : ''}
         <tr><td class="attr">Técnico de Visita</td><td class="val">${dg.tecnico_visita || '-'}</td></tr>
         <tr><td class="attr">Fecha de Instalación</td><td class="val">${dg.fecha_instalacion || '-'}</td></tr>
         <tr><td class="attr">Teléfono del Centro</td><td class="val">${dg.telefono_centro || dg.numero_centro || '-'}</td></tr>
