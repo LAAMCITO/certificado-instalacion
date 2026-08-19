@@ -43,9 +43,9 @@ const MAPA_ABREVIATURAS_EMPRESAS = {
 };
 
 function parseLocationInfo(loc) {
-  if (!loc) return { empresa: null, nombre_centro: "" };
-  const locClean = loc.trim().toLowerCase();
-  if (!locClean) return { empresa: null, nombre_centro: "" };
+  if (!loc) return { empresa: null, nombre_centro: "", location: "" };
+  const locClean = loc.trim().toLowerCase().split(".")[0];
+  if (!locClean) return { empresa: null, nombre_centro: "", location: "" };
 
   const parts = locClean.split("-");
   const prefix = parts[0];
@@ -57,12 +57,28 @@ function parseLocationInfo(loc) {
     rest = locClean;
   }
 
+  // Separar prefijos conocidos pegados como acopio/piscicultura/planta/etc.
+  const prefijosConocidos = ["acopio", "piscicultura", "planta", "ensenada", "isla", "canal", "bahia", "seno", "punta", "puerto", "boca", "paso", "estero", "rio", "caleta"];
+  for (const p of prefijosConocidos) {
+    if (rest.startsWith(p) && rest.length > p.length) {
+      rest = p + " " + rest.slice(p.length);
+      break;
+    }
+  }
+
+  // Separar sufijos comunes pegados como sur/norte/este/oeste/alto/bajo
+  ["sur", "norte", "este", "oeste", "alto", "bajo"].forEach(w => {
+    if (rest.endsWith(w) && rest.length > w.length) {
+      rest = rest.slice(0, -w.length) + " " + w;
+    }
+  });
+
   // Insert space before numbers (e.g. tranqui1 -> tranqui 1)
   const restFormatted = rest.replace(/([a-zA-Z]+)(\d+)/g, "$1 $2");
   
   // Format in Title Case (Capitalize each word, no company prefix code)
   const nombre_centro = restFormatted
-    .split(/[\s-]+/)
+    .split(/[\s-_]+/)
     .filter(w => w.length > 0)
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
@@ -72,7 +88,7 @@ function parseLocationInfo(loc) {
     empresa = MAPA_ABREVIATURAS_EMPRESAS[prefix].empresa;
   }
 
-  return { empresa: empresa, nombre_centro: nombre_centro };
+  return { empresa: empresa, nombre_centro: nombre_centro, location: locClean };
 }
 const TIPOS_EQUIPOS = [
   "Jennic simple", "Jennic doble", "Notebook", "Cámara", "Antena", "Estación Meteorológica", "Otro"
@@ -179,27 +195,27 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   poblarDropdownsConstantes();
   bindFormInputs();
-  poblarFormularioDesdeState();
-  cargarListaCertificadosHeader(true);
+  crearNuevoCertificadoSinPopup();
+  cargarListaCertificadosHeader(false);
   setupDragAndDrop();
 
-  // Dark Mode Toggle
+  // Dark / Light Mode Toggle
   const themeBtn = document.getElementById("btnToggleTheme");
   if (themeBtn) {
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("dark-theme");
       const isDark = document.body.classList.contains("dark-theme");
-      themeBtn.textContent = isDark ? "Modo Claro" : "Modo Oscuro";
+      themeBtn.textContent = isDark ? "☀️ Modo Claro" : "🌓 Modo Oscuro";
     });
   }
 
   // Header Actions (Sin Popups)
-  document.getElementById("btnHeaderNuevo").addEventListener("click", () => {
+  document.getElementById("btnHeaderNuevo")?.addEventListener("click", () => {
     crearNuevoCertificadoSinPopup();
   });
 
-  document.getElementById("btnHeaderCargar").addEventListener("click", () => {
-    const loc = document.getElementById("headerCertSelect").value;
+  document.getElementById("btnHeaderCargar")?.addEventListener("click", () => {
+    const loc = document.getElementById("headerCertSelect")?.value;
     if (loc) cargarCertificadoPorLocation(loc);
     else mostrarToast("Seleccione un certificado de la lista del encabezado", "error");
   });
@@ -207,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnEliminar = document.getElementById("btnHeaderEliminar");
   if (btnEliminar) {
     btnEliminar.addEventListener("click", () => {
-      const loc = document.getElementById("headerCertSelect").value || (certificadoState.datos_generales ? certificadoState.datos_generales.location : "");
+      const loc = document.getElementById("headerCertSelect")?.value || (certificadoState.datos_generales ? certificadoState.datos_generales.location : "");
       if (!loc) {
         mostrarToast("Seleccione un certificado de la lista del encabezado para eliminar", "warning");
         return;
@@ -218,11 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.getElementById("btnProcesarAutofill").addEventListener("click", procesarAutofill);
+  document.getElementById("btnProcesarAutofill")?.addEventListener("click", procesarAutofill);
   document.getElementById("btnEjecutarSSHAutofill")?.addEventListener("click", ejecutarSSHAutofill);
   document.getElementById("btnCopiarComandoAutofill")?.addEventListener("click", copiarComandoPortapapeles);
-  document.getElementById("btnGuardar").addEventListener("click", guardarAvance);
-  document.getElementById("btnGenerarPDF").addEventListener("click", compilarYMostrarPDF);
+  document.getElementById("btnGuardar")?.addEventListener("click", guardarAvance);
   setupNavButtons();
 
 
@@ -268,10 +283,24 @@ document.addEventListener("DOMContentLoaded", () => {
       construirPlantillaRevisorDesdeFormulario();
     });
   }
-  const revClavePcEl = document.getElementById("rev_clave_pc");
-  if (revClavePcEl) {
-    revClavePcEl.addEventListener("input", () => {
-      revClavePcEl.dataset.synced = "custom";
+  const revHostEl = document.getElementById("rev_host");
+  if (revHostEl) {
+    revHostEl.addEventListener("input", (e) => {
+      const val = e.target.value.trim();
+      const elCentro = document.getElementById("rev_centro");
+      if (elCentro && val) {
+        const parsed = parseLocationInfo(val.split(".")[0]);
+        if (parsed.nombre_centro && (!elCentro.value || elCentro.dataset.synced !== "custom")) {
+          elCentro.value = parsed.nombre_centro;
+        }
+      }
+      construirPlantillaRevisorDesdeFormulario();
+    });
+  }
+  const revCentroEl = document.getElementById("rev_centro");
+  if (revCentroEl) {
+    revCentroEl.addEventListener("input", () => {
+      revCentroEl.dataset.synced = "custom";
     });
   }
 
@@ -320,17 +349,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const btnCopiarTextoPlanoHeader = document.getElementById("btnCopiarTextoPlanoHeader");
-  if (btnCopiarTextoPlanoHeader) {
-    btnCopiarTextoPlanoHeader.addEventListener("click", () => {
-      if (moduloActivoActual === "revisor") {
-        copiarPlantillaRevisor();
-      } else if (moduloActivoActual === "ingreso_tecnico") {
-        copiarPlantillaIngreso();
-      }
-    });
-  }
-
   inicializarObservacionesGeneralesDefault();
 
   // Configurar Selector Principal de Módulos de Soporte
@@ -340,14 +358,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSubtabDocumentoLive = document.getElementById("btnSubtabDocumentoLive");
   if (btnSubtabPlantilla && btnSubtabDocumentoLive) {
     btnSubtabPlantilla.addEventListener("click", () => {
-      document.getElementById("viewPlantillaTexto").style.display = "block";
-      document.getElementById("viewDocumentoLive").style.display = "none";
+      const p = document.getElementById("viewPlantillaTexto");
+      const d = document.getElementById("viewDocumentoLive");
+      if (p) p.style.display = "block";
+      if (d) d.style.display = "none";
       btnSubtabPlantilla.classList.add("active");
       btnSubtabDocumentoLive.classList.remove("active");
     });
     btnSubtabDocumentoLive.addEventListener("click", () => {
-      document.getElementById("viewPlantillaTexto").style.display = "none";
-      document.getElementById("viewDocumentoLive").style.display = "block";
+      const p = document.getElementById("viewPlantillaTexto");
+      const d = document.getElementById("viewDocumentoLive");
+      if (p) p.style.display = "none";
+      if (d) d.style.display = "block";
       btnSubtabDocumentoLive.classList.add("active");
       btnSubtabPlantilla.classList.remove("active");
       actualizarFrameDocumentoLive();
@@ -358,43 +380,63 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSubtabIngresoTexto = document.getElementById("btnSubtabIngresoTexto");
   if (btnSubtabIngresoLive && btnSubtabIngresoTexto) {
     btnSubtabIngresoLive.addEventListener("click", () => {
-      document.getElementById("viewIngresoLive").style.display = "block";
-      document.getElementById("viewIngresoTexto").style.display = "none";
+      const l = document.getElementById("viewIngresoLive");
+      const t = document.getElementById("viewIngresoTexto");
+      if (l) l.style.display = "block";
+      if (t) t.style.display = "none";
       btnSubtabIngresoLive.classList.add("active");
       btnSubtabIngresoTexto.classList.remove("active");
       actualizarFrameDocumentoIngresoLive();
     });
     btnSubtabIngresoTexto.addEventListener("click", () => {
-      document.getElementById("viewIngresoLive").style.display = "none";
-      document.getElementById("viewIngresoTexto").style.display = "block";
+      const l = document.getElementById("viewIngresoLive");
+      const t = document.getElementById("viewIngresoTexto");
+      if (l) l.style.display = "none";
+      if (t) t.style.display = "block";
       btnSubtabIngresoTexto.classList.add("active");
       btnSubtabIngresoLive.classList.remove("active");
     });
   }
 
   // Toggles de Vista Previa Derecha
-  document.getElementById("btnToggleVistaHTML").addEventListener("click", () => {
+  document.getElementById("btnToggleVistaHTML")?.addEventListener("click", () => {
     modoVistaPreviaModulos = "html";
-    document.getElementById("liveHtmlContainer").style.display = "flex";
-    document.getElementById("pdfContainer").style.display = "none";
-    document.getElementById("btnToggleVistaHTML").classList.add("active");
-    if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
-    if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+    const liveC = document.getElementById("liveHtmlContainer");
+    if (liveC) liveC.style.display = "block";
+    document.getElementById("btnToggleVistaHTML")?.classList.add("active");
+    document.getElementById("btnToggleVistaPDF")?.classList.remove("active");
+    document.getElementById("btnToggleVistaTexto")?.classList.remove("active");
     actualizarVistaPreviaDerechaPorModulo();
   });
 
-  document.getElementById("btnToggleVistaPDF").addEventListener("click", () => {
+  document.getElementById("btnToggleVistaPDF")?.addEventListener("click", () => {
     modoVistaPreviaModulos = "html";
-    if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
+    document.getElementById("btnToggleVistaTexto")?.classList.remove("active");
     compilarYMostrarPDF();
   });
 
-  const btnToggleTexto = document.getElementById("btnToggleVistaTexto");
-  if (btnToggleTexto) {
-    btnToggleTexto.addEventListener("click", () => {
-      mostrarTextoPlanoEnPanelDerecho();
-    });
-  }
+  document.getElementById("btnToggleVistaTexto")?.addEventListener("click", () => {
+    mostrarTextoPlanoEnPanelDerecho();
+  });
+
+  document.getElementById("btnCopiarDesdePreview")?.addEventListener("click", async () => {
+    let txt = "";
+    if (moduloActivoActual === "revisor") {
+      txt = document.getElementById("txtPlantillaRevisor")?.value || construirPlantillaRevisorTextoClientSide();
+    } else if (moduloActivoActual === "ingreso_tecnico") {
+      txt = document.getElementById("txtPlantillaIngresoTecnico")?.value || construirPlantillaIngresoTextoClientSide();
+    } else {
+      txt = document.getElementById("preTextoPlanoDerecho")?.textContent || "";
+    }
+    const copiado = await copiarTextoAlPortapapeles(txt);
+    const btn = document.getElementById("btnCopiarDesdePreview");
+    if (btn && copiado) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = "✓ Copiado";
+      setTimeout(() => { btn.innerHTML = orig; }, 1800);
+    }
+    mostrarToast(copiado ? "Texto copiado al portapapeles" : "No se pudo copiar el texto", copiado ? "success" : "error");
+  });
 
   // Pre-generar datos iniciales de Revisor e Ingreso Técnico
   setTimeout(() => {
@@ -403,39 +445,47 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 100);
 
   // Formulario Integrado Repuestos
-  document.getElementById("btnToggleFormRepuesto").addEventListener("click", () => {
+  document.getElementById("btnToggleFormRepuesto")?.addEventListener("click", () => {
     const f = document.getElementById("formNuevoRepuesto");
-    f.style.display = f.style.display === "none" ? "block" : "none";
+    if (f) f.style.display = f.style.display === "none" ? "block" : "none";
   });
-  document.getElementById("btnCancelarRepuesto").addEventListener("click", () => {
-    document.getElementById("formNuevoRepuesto").style.display = "none";
+  document.getElementById("btnCancelarRepuesto")?.addEventListener("click", () => {
+    const f = document.getElementById("formNuevoRepuesto");
+    if (f) f.style.display = "none";
   });
-  document.getElementById("btnGuardarRepuesto").addEventListener("click", guardarNuevoRepuestoInline);
+  document.getElementById("btnGuardarRepuesto")?.addEventListener("click", guardarNuevoRepuestoInline);
 
-  document.getElementById("rep_tipo_select").addEventListener("change", (e) => {
+  document.getElementById("rep_tipo_select")?.addEventListener("change", (e) => {
     const esJennic = e.target.value === "Equipo Jennic";
-    document.getElementById("group_rep_mac").style.display = esJennic ? "flex" : "none";
-    document.getElementById("group_rep_serie").style.display = esJennic ? "none" : "flex";
-    document.getElementById("group_rep_metraje").style.display = esJennic ? "none" : "flex";
+    const gMac = document.getElementById("group_rep_mac");
+    const gSerie = document.getElementById("group_rep_serie");
+    const gMet = document.getElementById("group_rep_metraje");
+    if (gMac) gMac.style.display = esJennic ? "flex" : "none";
+    if (gSerie) gSerie.style.display = esJennic ? "none" : "flex";
+    if (gMet) gMet.style.display = esJennic ? "none" : "flex";
   });
 
   // Formulario Ubicación
-  document.getElementById("btnToggleFormUbicacion").addEventListener("click", () => {
+  document.getElementById("btnToggleFormUbicacion")?.addEventListener("click", () => {
     const f = document.getElementById("formNuevaUbicacion");
-    f.style.display = f.style.display === "none" ? "block" : "none";
+    if (f) f.style.display = f.style.display === "none" ? "block" : "none";
   });
-  document.getElementById("btnCancelarUbicacion").addEventListener("click", () => {
-    document.getElementById("formNuevaUbicacion").style.display = "none";
+  document.getElementById("btnCancelarUbicacion")?.addEventListener("click", () => {
+    const f = document.getElementById("formNuevaUbicacion");
+    if (f) f.style.display = "none";
   });
-  document.getElementById("btnGuardarUbicacion").addEventListener("click", guardarNuevaUbicacionInline);
+  document.getElementById("btnGuardarUbicacion")?.addEventListener("click", guardarNuevaUbicacionInline);
 
-  document.getElementById("btnAgregarFilaAlarma").addEventListener("click", agregarFilaAlarmaVacia);
+  document.getElementById("btnAgregarFilaAlarma")?.addEventListener("click", agregarFilaAlarmaVacia);
   document.getElementById("btnProcesarPegadoAlarmas")?.addEventListener("click", procesarPegadoTextoAlarmas);
 
-  document.getElementById("ub_repuestos_general").addEventListener("input", (e) => {
+  document.getElementById("ub_repuestos_general")?.addEventListener("input", (e) => {
     certificadoState.ubicacion_repuestos = e.target.value;
     renderLiveHtmlSheet();
   });
+
+  // Inicializar componentes del Portal Unificado
+  iniciarPortalUnificado();
 });
 
 // Crear nuevo certificado sin popup emergente
@@ -535,91 +585,106 @@ function poblarDropdownsConstantes() {
   // Empresas
   const empSel = document.getElementById("gen_empresa_select");
   const empCustom = document.getElementById("gen_empresa_custom");
-  empSel.innerHTML = "";
-  EMPRESAS.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp;
-    opt.textContent = emp;
-    empSel.appendChild(opt);
-  });
+  if (empSel) {
+    empSel.innerHTML = "";
+    EMPRESAS.forEach(emp => {
+      const opt = document.createElement("option");
+      opt.value = emp;
+      opt.textContent = emp;
+      empSel.appendChild(opt);
+    });
 
-  empSel.addEventListener("change", (e) => {
-    if (e.target.value === "Otro...") {
-      empCustom.style.display = "block";
-      certificadoState.datos_generales.empresa = empCustom.value;
-    } else {
-      empCustom.style.display = "none";
+    empSel.addEventListener("change", (e) => {
+      if (e.target.value === "Otro...") {
+        if (empCustom) empCustom.style.display = "block";
+        if (empCustom) certificadoState.datos_generales.empresa = empCustom.value;
+      } else {
+        if (empCustom) empCustom.style.display = "none";
+        certificadoState.datos_generales.empresa = e.target.value;
+      }
+      renderLiveHtmlSheet();
+    });
+  }
+
+  if (empCustom) {
+    empCustom.addEventListener("input", (e) => {
       certificadoState.datos_generales.empresa = e.target.value;
-    }
-    renderLiveHtmlSheet();
-  });
-
-  empCustom.addEventListener("input", (e) => {
-    certificadoState.datos_generales.empresa = e.target.value;
-    renderLiveHtmlSheet();
-  });
+      renderLiveHtmlSheet();
+    });
+  }
 
   // Encargados
   const encSel = document.getElementById("gen_encargado_select");
-  encSel.innerHTML = "";
-  Object.keys(ENCARGADOS).forEach(enc => {
-    const opt = document.createElement("option");
-    opt.value = enc;
-    opt.textContent = enc;
-    encSel.appendChild(opt);
-  });
+  if (encSel) {
+    encSel.innerHTML = "";
+    Object.keys(ENCARGADOS).forEach(enc => {
+      const opt = document.createElement("option");
+      opt.value = enc;
+      opt.textContent = enc;
+      encSel.appendChild(opt);
+    });
 
-  encSel.addEventListener("change", (e) => {
-    certificadoState.datos_generales.encargado_area = e.target.value;
-    actualizarDropdownTecnicos(e.target.value);
-    renderLiveHtmlSheet();
-  });
+    encSel.addEventListener("change", (e) => {
+      certificadoState.datos_generales.encargado_area = e.target.value;
+      actualizarDropdownTecnicos(e.target.value);
+      renderLiveHtmlSheet();
+    });
+  }
 
   // Técnicos
   actualizarDropdownTecnicos("Rodrigo Bustamante");
+  const tecSel = document.getElementById("gen_tecnico_select");
   const tecCustom = document.getElementById("gen_tecnico_custom");
-  document.getElementById("gen_tecnico_select").addEventListener("change", (e) => {
-    if (e.target.value === "Otro...") {
-      tecCustom.style.display = "block";
-      certificadoState.datos_generales.tecnico_visita = tecCustom.value;
-    } else {
-      tecCustom.style.display = "none";
-      certificadoState.datos_generales.tecnico_visita = e.target.value;
-    }
-    renderLiveHtmlSheet();
-  });
+  if (tecSel) {
+    tecSel.addEventListener("change", (e) => {
+      if (e.target.value === "Otro...") {
+        if (tecCustom) tecCustom.style.display = "block";
+        if (tecCustom) certificadoState.datos_generales.tecnico_visita = tecCustom.value;
+      } else {
+        if (tecCustom) tecCustom.style.display = "none";
+        certificadoState.datos_generales.tecnico_visita = e.target.value;
+      }
+      renderLiveHtmlSheet();
+    });
+  }
 
-  tecCustom.addEventListener("input", (e) => {
-    certificadoState.datos_generales.tecnico_visita = e.target.value;
-    renderLiveHtmlSheet();
-  });
+  if (tecCustom) {
+    tecCustom.addEventListener("input", (e) => {
+      certificadoState.datos_generales.tecnico_visita = e.target.value;
+      renderLiveHtmlSheet();
+    });
+  }
 
   // Responsables Activación
   const respSel = document.getElementById("act_responsable_select");
   const respCustom = document.getElementById("act_responsable_custom");
-  respSel.innerHTML = "";
-  RESPONSABLES_ACTIVACION.forEach(r => {
-    const opt = document.createElement("option");
-    opt.value = r;
-    opt.textContent = r;
-    respSel.appendChild(opt);
-  });
+  if (respSel) {
+    respSel.innerHTML = "";
+    RESPONSABLES_ACTIVACION.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r;
+      respSel.appendChild(opt);
+    });
 
-  respSel.addEventListener("change", (e) => {
-    if (e.target.value === "Otro...") {
-      respCustom.style.display = "block";
-      certificadoState.activacion.responsable_activacion = respCustom.value;
-    } else {
-      respCustom.style.display = "none";
+    respSel.addEventListener("change", (e) => {
+      if (e.target.value === "Otro...") {
+        if (respCustom) respCustom.style.display = "block";
+        if (respCustom) certificadoState.activacion.responsable_activacion = respCustom.value;
+      } else {
+        if (respCustom) respCustom.style.display = "none";
+        certificadoState.activacion.responsable_activacion = e.target.value;
+      }
+      renderLiveHtmlSheet();
+    });
+  }
+
+  if (respCustom) {
+    respCustom.addEventListener("input", (e) => {
       certificadoState.activacion.responsable_activacion = e.target.value;
-    }
-    renderLiveHtmlSheet();
-  });
-
-  respCustom.addEventListener("input", (e) => {
-    certificadoState.activacion.responsable_activacion = e.target.value;
-    renderLiveHtmlSheet();
-  });
+      renderLiveHtmlSheet();
+    });
+  }
 }
 
 function actualizarDropdownTecnicos(encargado) {
@@ -675,74 +740,78 @@ function activarSeccionTab(targetTab) {
   actualizarVistaPreviaDerechaPorModulo();
 }
 
+window.cambiarModuloActivo = function(mod) {
+  const moduleBtns = document.querySelectorAll(".module-btn");
+  moduleBtns.forEach(b => {
+    if (b.dataset.module === mod) {
+      b.classList.add("active");
+      b.style.background = "#0284c7";
+      b.style.color = "#ffffff";
+      b.style.borderColor = "#0284c7";
+    } else {
+      b.classList.remove("active");
+      b.style.background = "var(--card-bg)";
+      b.style.color = "var(--text-color)";
+      b.style.borderColor = "var(--border-color)";
+    }
+  });
+
+  moduloActivoActual = mod;
+
+  const navTabs = document.querySelector(".nav-tabs");
+  const certControls = document.getElementById("certContextControls");
+  const certGroup = document.getElementById("certSelectorGroup");
+  const btnGuardar = document.getElementById("btnGuardar");
+  const btnToggleVistaPDF = document.getElementById("btnToggleVistaPDF");
+  const btnToggleVistaTexto = document.getElementById("btnToggleVistaTexto");
+  const btnToggleVistaHTML = document.getElementById("btnToggleVistaHTML");
+  const btnCopiarDesdePreview = document.getElementById("btnCopiarDesdePreview");
+
+  // Resetear toggles de vista previa al cambiar de módulo
+  if (btnToggleVistaHTML) btnToggleVistaHTML.classList.add("active");
+  if (btnToggleVistaPDF) btnToggleVistaPDF.classList.remove("active");
+  if (btnToggleVistaTexto) btnToggleVistaTexto.classList.remove("active");
+  const liveC = document.getElementById("liveHtmlContainer");
+  if (liveC) liveC.style.display = "block";
+
+  if (mod === "certificado") {
+    if (navTabs) navTabs.style.display = "flex";
+    if (certControls) certControls.style.display = "flex";
+    if (certGroup) certGroup.style.display = "flex";
+    if (btnGuardar) btnGuardar.style.display = "inline-block";
+    if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "inline-block";
+    if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "none";
+    if (btnCopiarDesdePreview) btnCopiarDesdePreview.style.display = "none";
+
+    activarSeccionTab("autofill");
+  } else if (mod === "revisor") {
+    if (navTabs) navTabs.style.display = "none";
+    if (certControls) certControls.style.display = "none";
+    if (certGroup) certGroup.style.display = "none";
+    if (btnGuardar) btnGuardar.style.display = "none";
+    if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
+    if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
+    if (btnCopiarDesdePreview) btnCopiarDesdePreview.style.display = "inline-flex";
+
+    activarSeccionTab("revisor");
+  } else if (mod === "ingreso_tecnico") {
+    if (navTabs) navTabs.style.display = "none";
+    if (certControls) certControls.style.display = "none";
+    if (certGroup) certGroup.style.display = "none";
+    if (btnGuardar) btnGuardar.style.display = "none";
+    if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
+    if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
+    if (btnCopiarDesdePreview) btnCopiarDesdePreview.style.display = "inline-flex";
+
+    activarSeccionTab("ingreso_tecnico");
+  }
+};
+
 function setupModuleSwitcher() {
   const moduleBtns = document.querySelectorAll(".module-btn");
   moduleBtns.forEach(btn => {
     btn.addEventListener("click", () => {
-      moduleBtns.forEach(b => {
-        b.classList.remove("active");
-        b.style.background = "var(--card-bg)";
-        b.style.color = "var(--text-color)";
-        b.style.borderColor = "var(--border-color)";
-      });
-
-      btn.classList.add("active");
-      btn.style.background = "#0284c7";
-      btn.style.color = "#ffffff";
-      btn.style.borderColor = "#0284c7";
-
-      const mod = btn.dataset.module;
-      moduloActivoActual = mod;
-
-      const navTabs = document.querySelector(".nav-tabs");
-      const certGroup = document.getElementById("certSelectorGroup");
-      const btnPDF = document.getElementById("btnGenerarPDF");
-      const btnGuardar = document.getElementById("btnGuardar");
-      const btnCopiarHeader = document.getElementById("btnCopiarTextoPlanoHeader");
-      const btnToggleVistaPDF = document.getElementById("btnToggleVistaPDF");
-      const btnToggleVistaTexto = document.getElementById("btnToggleVistaTexto");
-      const btnToggleVistaHTML = document.getElementById("btnToggleVistaHTML");
-
-      // Resetear toggles de vista previa al cambiar de módulo
-      if (btnToggleVistaHTML) btnToggleVistaHTML.classList.add("active");
-      if (btnToggleVistaPDF) btnToggleVistaPDF.classList.remove("active");
-      if (btnToggleVistaTexto) btnToggleVistaTexto.classList.remove("active");
-      const liveC = document.getElementById("liveHtmlContainer");
-      const pdfC = document.getElementById("pdfContainer");
-      if (liveC) liveC.style.display = "flex";
-      if (pdfC) pdfC.style.display = "none";
-
-      if (mod === "certificado") {
-        if (navTabs) navTabs.style.display = "flex";
-        if (certGroup) certGroup.style.display = "flex";
-        if (btnPDF) btnPDF.style.display = "inline-block";
-        if (btnGuardar) btnGuardar.style.display = "inline-block";
-        if (btnCopiarHeader) btnCopiarHeader.style.display = "none";
-        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "inline-block";
-        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "none";
-
-        activarSeccionTab("autofill");
-      } else if (mod === "revisor") {
-        if (navTabs) navTabs.style.display = "none";
-        if (certGroup) certGroup.style.display = "none";
-        if (btnPDF) btnPDF.style.display = "none";
-        if (btnGuardar) btnGuardar.style.display = "none";
-        if (btnCopiarHeader) btnCopiarHeader.style.display = "inline-block";
-        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
-        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
-
-        activarSeccionTab("revisor");
-      } else if (mod === "ingreso_tecnico") {
-        if (navTabs) navTabs.style.display = "none";
-        if (certGroup) certGroup.style.display = "none";
-        if (btnPDF) btnPDF.style.display = "none";
-        if (btnGuardar) btnGuardar.style.display = "none";
-        if (btnCopiarHeader) btnCopiarHeader.style.display = "inline-block";
-        if (btnToggleVistaPDF) btnToggleVistaPDF.style.display = "none";
-        if (btnToggleVistaTexto) btnToggleVistaTexto.style.display = "inline-block";
-
-        activarSeccionTab("ingreso_tecnico");
-      }
+      window.cambiarModuloActivo(btn.dataset.module);
     });
   });
 }
@@ -786,11 +855,9 @@ function actualizarVistaPreviaDerechaPorModulo() {
 }
 
 function restaurarVistaPreviaCertificadoDerecha() {
-  // Asegurar que el contenedor HTML Live esté visible y el PDF oculto
+  // Asegurar que el contenedor HTML Live esté visible
   const liveContainer = document.getElementById("liveHtmlContainer");
-  const pdfContainer = document.getElementById("pdfContainer");
-  if (liveContainer) liveContainer.style.display = "flex";
-  if (pdfContainer) pdfContainer.style.display = "none";
+  if (liveContainer) liveContainer.style.display = "block";
 
   // Asegurar el toggle activo correcto
   const btnHTML = document.getElementById("btnToggleVistaHTML");
@@ -2228,15 +2295,12 @@ async function compilarYMostrarPDF() {
     });
     const data = await res.json();
 
-    if (data.status === "ok") {
-      document.getElementById("liveHtmlContainer").style.display = "none";
-      document.getElementById("pdfContainer").style.display = "flex";
-      document.getElementById("btnToggleVistaPDF").classList.add("active");
-      document.getElementById("btnToggleVistaHTML").classList.remove("active");
-
-      const frame = document.getElementById("pdfFrame");
-      if (frame) frame.src = data.pdf_preview_url + "?t=" + new Date().getTime();
-      mostrarToast("PDF Oficial listo.", "success");
+    if (data.status === "ok" && data.pdf_preview_url) {
+      const urlConCacheBuster = data.pdf_preview_url + "?t=" + new Date().getTime();
+      window.open(urlConCacheBuster, "_blank");
+      mostrarToast("✓ PDF Oficial generado y abierto en nueva pestaña.", "success");
+    } else {
+      mostrarToast("Error al compilar PDF: " + (data.mensaje || "Error desconocido"), "error");
     }
   } catch (err) {
     mostrarToast("Error al generar PDF: " + err.message, "error");
@@ -2249,65 +2313,185 @@ function abrirVistaPreviaPopout() {
   window.open(url, "_blank", "width=900,height=1000");
 }
 
+function verificarYEjecutarAutofill(nuevoHost, accionEjecutar) {
+  const parsed = parseLocationInfo(nuevoHost);
+  const locationActual = certificadoState.datos_generales?.location || "";
+  const tieneDatosPrevios = Boolean(
+    (locationActual && locationActual !== parsed.location && locationActual !== "ce-tranqui1") ||
+    (certificadoState.motes && certificadoState.motes.length > 0) ||
+    (certificadoState.ubicaciones && certificadoState.ubicaciones.length > 0) ||
+    (certificadoState.configuracion_alarmas && certificadoState.configuracion_alarmas.length > 0)
+  );
+
+  if (!tieneDatosPrevios) {
+    accionEjecutar({ limpiar: true });
+    return;
+  }
+
+  const modal = document.getElementById("modalConfirmarCambioCentro");
+  const modalTexto = document.getElementById("modalConfirmarTexto");
+  const nombreCentroActual = certificadoState.datos_generales?.nombre_centro || locationActual || "Centro Previo";
+  
+  if (modalTexto) {
+    modalTexto.innerHTML = `
+      La ficha actual contiene datos cargados de <strong>${htmlEscapeAttr(nombreCentroActual)}</strong> (<em>${htmlEscapeAttr(locationActual)}</em> con ${certificadoState.motes?.length || 0} equipos y ${certificadoState.ubicaciones?.length || 0} ubicaciones).
+      <br><br>
+      ¿Desea <strong>limpiar e iniciar una ficha nueva</strong> para <strong>${htmlEscapeAttr(parsed.nombre_centro || nuevoHost)}</strong> o prefiere combinar los datos?
+    `;
+  }
+
+  if (modal) modal.style.display = "flex";
+
+  const btnLimpiar = document.getElementById("btnModalCambioLimpiar");
+  const btnGuardar = document.getElementById("btnModalCambioGuardarPrimero");
+  const btnCombinar = document.getElementById("btnModalCambioCombinar");
+  const btnCancelar = document.getElementById("btnModalCambioCancelar");
+
+  const cleanupListeners = () => {
+    if (modal) modal.style.display = "none";
+    if (btnLimpiar) btnLimpiar.onclick = null;
+    if (btnGuardar) btnGuardar.onclick = null;
+    if (btnCombinar) btnCombinar.onclick = null;
+    if (btnCancelar) btnCancelar.onclick = null;
+  };
+
+  if (btnCancelar) {
+    btnCancelar.onclick = () => {
+      cleanupListeners();
+      mostrarToast("Operación cancelada.", "info");
+    };
+  }
+
+  if (btnLimpiar) {
+    btnLimpiar.onclick = () => {
+      cleanupListeners();
+      crearNuevoCertificadoSinPopup();
+      accionEjecutar({ limpiar: true });
+    };
+  }
+
+  if (btnGuardar) {
+    btnGuardar.onclick = async () => {
+      cleanupListeners();
+      mostrarToast("Guardando certificado anterior...", "info");
+      await guardarAvance();
+      crearNuevoCertificadoSinPopup();
+      accionEjecutar({ limpiar: true });
+    };
+  }
+
+  if (btnCombinar) {
+    btnCombinar.onclick = () => {
+      cleanupListeners();
+      accionEjecutar({ limpiar: false });
+    };
+  }
+}
+
 async function procesarAutofill() {
-  const texto = document.getElementById("autofillText").value;
+  const texto = document.getElementById("autofillText")?.value || "";
   if (!texto.trim()) {
     mostrarToast("Por favor pegue la salida de consola en el cuadro", "warning");
     return;
   }
 
-  try {
-    const res = await fetch("/api/autofill", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto: texto, certificado: certificadoState })
-    });
-    const data = await res.json();
+  const matchHost = texto.match(/static hostname:\s*([^\s\n]+)/i) || texto.match(/([a-z]{2}-[a-z0-9_-]+(?:\.acuimatic\.com)?)/i);
+  const targetHost = matchHost ? matchHost[1] : "";
 
-    if (data.status === "ok") {
-      certificadoState = data.certificado;
-      poblarFormularioDesdeState();
-      mostrarToast("Documento autorellenado con éxito.", "success");
-      
-      // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
-      activarSeccionTab("generales");
-      document.querySelectorAll(".tab-btn").forEach(t => {
-        if (t.dataset.tab === "generales") t.classList.add("active");
-        else t.classList.remove("active");
+  verificarYEjecutarAutofill(targetHost || "Texto Pegado", async (opciones) => {
+    try {
+      const res = await fetch("/api/autofill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto: texto,
+          certificado: certificadoState,
+          limpiar_previos: opciones?.limpiar ?? false
+        })
       });
+      const data = await res.json();
+
+      if (data.status === "ok") {
+        certificadoState = data.certificado;
+        if (targetHost && targetHost !== "Texto Pegado") {
+          const parsedTarget = parseLocationInfo(targetHost);
+          if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
+          if (parsedTarget.location) certificadoState.datos_generales.location = parsedTarget.location;
+          if (parsedTarget.empresa) certificadoState.datos_generales.empresa = parsedTarget.empresa;
+          if (parsedTarget.nombre_centro) certificadoState.datos_generales.nombre_centro = parsedTarget.nombre_centro;
+        }
+        poblarFormularioDesdeState();
+        mostrarToast("Documento autorellenado con éxito.", "success");
+        
+        // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
+        activarSeccionTab("generales");
+        document.querySelectorAll(".tab-btn").forEach(t => {
+          if (t.dataset.tab === "generales") t.classList.add("active");
+          else t.classList.remove("active");
+        });
+      } else {
+        mostrarToast(`Error al procesar: ${data.mensaje || "Error desconocido"}`, "error");
+      }
+    } catch (err) {
+      mostrarToast(`Error de conexión al parsear datos: ${err.message}`, "error");
     }
-  } catch (err) {
-    mostrarToast("Error de conexión al parsear datos", "error");
-  }
+  });
 }
 
 async function ejecutarSSHAutofill() {
+  const host = document.getElementById("ssh_autofill_host")?.value.trim();
+  if (!host) {
+    mostrarToast("Ingrese la IP o DNS del equipo remoto para conectar", "warning");
+    return;
+  }
+
+  verificarYEjecutarAutofill(host, async (opciones) => {
+    await realizarLlamadaSSHAutofill(opciones?.limpiar ?? true);
+  });
+}
+
+async function realizarLlamadaSSHAutofill(limpiarPrevios = true) {
   const host = document.getElementById("ssh_autofill_host")?.value.trim();
   const usuario = document.getElementById("ssh_autofill_user")?.value.trim() || "innovex";
   const clave = document.getElementById("ssh_autofill_pass")?.value || "CERMAQ@sh20";
   const puerto_ssh = document.getElementById("ssh_autofill_port")?.value.trim() || "22";
   const puerto_telnet = document.getElementById("ssh_autofill_telnet_port")?.value.trim() || "9999";
 
-  if (!host) {
-    mostrarToast("Ingrese la IP o DNS del equipo remoto para conectar", "warning");
-    return;
-  }
-
   const btn = document.getElementById("btnEjecutarSSHAutofill");
-  const origText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Conectando...";
+  const origText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Conectando...";
+  }
 
   try {
     const res = await fetch("/api/ssh_autofill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ host, usuario, clave, puerto_ssh, puerto_telnet, certificado: certificadoState })
+      body: JSON.stringify({
+        host, usuario, clave, puerto_ssh, puerto_telnet,
+        certificado: certificadoState,
+        limpiar_previos: limpiarPrevios
+      })
     });
     const data = await res.json();
 
     if (data.status === "ok" && data.certificado) {
       certificadoState = data.certificado;
+      if (host) {
+        const parsedHost = parseLocationInfo(host);
+        if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
+        certificadoState.datos_generales.location = parsedHost.location;
+        if (parsedHost.empresa) {
+          certificadoState.datos_generales.empresa = parsedHost.empresa;
+        }
+        if (parsedHost.nombre_centro) {
+          certificadoState.datos_generales.nombre_centro = parsedHost.nombre_centro;
+        }
+        if (!certificadoState.infraestructura) certificadoState.infraestructura = {};
+        certificadoState.infraestructura.pc_id = host;
+        if (clave) certificadoState.infraestructura.pc_password = clave;
+      }
       poblarFormularioDesdeState();
       mostrarToast("Auto-rellenado por SSH/Telnet completado con éxito.", "success");
       
@@ -2318,13 +2502,15 @@ async function ejecutarSSHAutofill() {
         else t.classList.remove("active");
       });
     } else {
-      mostrarToast(`Error SSH: ${data.mensaje || "No se pudo consultar el equipo remoto"}`, "error");
+      mostrarToast(`❌ Error: ${data.mensaje || "No se pudo consultar el equipo remoto"}`, "error");
     }
   } catch (err) {
-    mostrarToast(`Error de conexión SSH: ${err.message}`, "error");
+    mostrarToast(`❌ Error de conexión SSH: ${err.message}`, "error");
   } finally {
-    btn.disabled = false;
-    btn.textContent = origText;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
   }
 }
 
@@ -2393,8 +2579,8 @@ let ultimoResultadoRevisor = null;
 
 function setInputValue(id, val) {
   const el = document.getElementById(id);
-  if (el && val !== undefined && val !== null && val !== "") {
-    el.value = val;
+  if (el) {
+    el.value = (val !== undefined && val !== null) ? String(val) : "";
   }
 }
 
@@ -2421,44 +2607,63 @@ async function ejecutarRevisorEquipos() {
       })
     });
     const data = await response.json();
+    if (data.status === "error" || (data.resultado && data.resultado.error && !data.resultado.log_cacheton_raw && !data.resultado.status_raw && !data.resultado.motes_raw && !data.resultado.motes_texto_raw)) {
+      const errMsg = data.mensaje || data.resultado?.error || "No fue posible conectar con el equipo. Verifique DNS/Host y credenciales SSH/Telnet.";
+      mostrarToast(`❌ Error de conexión: ${errMsg}`, "error");
+      return;
+    }
+
     if (data.status === "ok" && data.resultado) {
       const res = data.resultado;
       ultimoResultadoRevisor = res;
 
-      if (res.sistema_operativo) setInputValue("rev_sistema_operativo", res.sistema_operativo);
-      if (res.kernel) setInputValue("rev_kernel", res.kernel);
-      if (res.clave_pc && res.clave_pc !== "No configurada") setInputValue("rev_clave_pc", res.clave_pc);
-      else if (contrasena) setInputValue("rev_clave_pc", contrasena);
-      if (res.dataweb) setInputValue("rev_dataweb", res.dataweb);
+      setInputValue("rev_tipo_conexion", res.tipo_conexion || "Wifi");
+      setInputValue("rev_sistema_operativo", res.sistema_operativo || "N/D");
+      setInputValue("rev_kernel", res.kernel || "N/D");
+      setInputValue("rev_clave_pc", res.clave_pc || clave_pc || contrasena || "No configurada");
+      setInputValue("rev_dataweb", res.dataweb || "Ok");
 
-      if (res.pcinnovex) setInputValue("rev_pcinnovex", res.pcinnovex);
-      if (res.cacheton) setInputValue("rev_cacheton", res.cacheton);
-      if (res.python3_cacheton || res.python3) setInputValue("rev_python3", res.python3_cacheton || res.python3);
-      if (res.weather_davis) setInputValue("rev_weather_davis", res.weather_davis);
-      if (res.visibility_cam) setInputValue("rev_visibility_cam", res.visibility_cam);
+      setInputValue("rev_pcinnovex", res.pcinnovex || "N/A");
+      setInputValue("rev_cacheton", res.cacheton || "N/A");
+      setInputValue("rev_python3", res.python3_cacheton || res.python3 || "N/A");
+      setInputValue("rev_weather_davis", res.weather_davis || "N/A");
+      setInputValue("rev_visibility_cam", res.visibility_cam || "N/A");
 
-      if (res.version_equipos) setInputValue("rev_version_equipos", res.version_equipos);
-      if (res.senal) setInputValue("rev_senal", res.senal);
-      if (res.voltajes) setInputValue("rev_voltajes", res.voltajes);
+      setInputValue("rev_version_equipos", res.version_equipos || "v2.0.2");
+      setInputValue("rev_senal", res.senal || "N/A");
+      setInputValue("rev_voltajes", res.voltajes || "N/A");
 
-      if (res.saturacion) setInputValue("rev_saturacion", res.saturacion);
-      if (res.salinidad) setInputValue("rev_salinidad", res.salinidad);
-      if (res.temperatura) setInputValue("rev_temperatura", res.temperatura);
-      if (res.camara_estado) setInputValue("rev_camara", res.camara_estado);
-      if (res.estacion_estado) setInputValue("rev_estacion", res.estacion_estado);
+      setInputValue("rev_saturacion", res.saturacion || "OK");
+      setInputValue("rev_salinidad", res.salinidad || "OK");
+      setInputValue("rev_temperatura", res.temperatura || "OK");
+      setInputValue("rev_camara", res.camara_estado || "OK");
+      setInputValue("rev_estacion", res.estacion_estado || "OK");
 
-      if (res.repuesto_equipo) setInputValue("rev_repuesto_equipo", res.repuesto_equipo);
-      if (res.repuesto_sensor) setInputValue("rev_repuesto_sensor", res.repuesto_sensor);
-      if (res.repuesto_kit) setInputValue("rev_repuesto_kit", res.repuesto_kit);
+      setInputValue("rev_repuesto_equipo", res.repuesto_equipo || "OK");
+      setInputValue("rev_repuesto_sensor", res.repuesto_sensor || "OK");
+      setInputValue("rev_repuesto_kit", res.repuesto_kit || "OK");
+      setInputValue("rev_telefono", res.telefono || "");
+      setInputValue("rev_correo", res.correo || "");
+
+      const txtPlanoRev = res.plantilla_texto || construirPlantillaRevisorTextoClientSide();
+      const txtAreaRev = document.getElementById("txtPlantillaRevisor");
+      if (txtAreaRev) txtAreaRev.value = txtPlanoRev;
+
+      const preDerechoRev = document.getElementById("preTextoPlanoDerecho");
+      if (preDerechoRev && moduloActivoActual === "revisor") {
+        preDerechoRev.textContent = txtPlanoRev;
+      }
+
       generarPlantillaRevisor();
+      actualizarVistaPreviaDerechaPorModulo();
 
       if (data.resultado.error) {
-        mostrarToast(`Revisión completada con observaciones: ${data.resultado.error}`, "warning");
+        mostrarToast(`⚠️ Revisión completada con observaciones: ${data.resultado.error}`, "warning");
       } else {
-        mostrarToast("Verificación completada y formulario autollenado con éxito", "success");
+        mostrarToast("✅ Verificación completada y formulario autollenado con éxito", "success");
       }
     } else {
-      mostrarToast(`Error: ${data.mensaje || "No se pudo realizar la revisión"}`, "error");
+      mostrarToast(`❌ Error: ${data.mensaje || "No se pudo realizar la revisión"}`, "error");
     }
   } catch (err) {
     mostrarToast(`Error al ejecutar revisión: ${err.message}`, "error");
@@ -2469,21 +2674,27 @@ async function ejecutarRevisorEquipos() {
 }
 
 function construirPlantillaRevisorTextoClientSide() {
-  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
-  let centroTitulo = centroRaw.toUpperCase();
-  if (!centroTitulo.startsWith("CE-") && !centroTitulo.startsWith("MW-") && !centroTitulo.startsWith("CENTRO")) {
-    centroTitulo = "CE-" + centroTitulo;
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || document.getElementById("rev_host")?.value.trim() || "CENTRO";
+  const centroClean = centroRaw.split(".")[0].trim();
+  const parsed = parseLocationInfo(centroClean);
+  let centroTitulo = centroClean.toUpperCase();
+  if (centroClean.includes("-")) {
+    const parts = centroClean.split("-");
+    const prefix = parts[0].toUpperCase();
+    if (parsed.nombre_centro) {
+      centroTitulo = `${prefix}-${parsed.nombre_centro.toUpperCase()}`;
+    }
   }
 
   const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
-  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
-  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "N/D";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "N/D";
   const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
   const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
 
-  function fmtChangeset(val, defaultNum) {
+  function fmtChangeset(val) {
     let str = (val || "").trim();
-    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO" || str.toUpperCase() === "NONE") return "N/A";
     const m = str.match(/changeset:\s*(\d+)/i);
     if (m) return `changeset:   ${m[1]}`;
     const m2 = str.match(/^(\d+)$/);
@@ -2491,24 +2702,24 @@ function construirPlantillaRevisorTextoClientSide() {
     return str;
   }
 
-  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
-  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
-  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
-  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
-  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value);
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value);
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value);
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "N/A";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "N/A";
 
   let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
   if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
     version_equipos = "v" + version_equipos;
   }
 
-  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
-  if (senal && !senal.startsWith("igual o mayor a")) {
+  let senal = document.getElementById("rev_senal")?.value.trim() || "N/A";
+  if (senal && !senal.startsWith("igual o mayor a") && senal.toUpperCase() !== "N/A") {
     senal = "igual o mayor a " + senal;
   }
 
-  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
-  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "N/A";
+  if (voltajes && !voltajes.startsWith("igual o mayor a") && voltajes.toUpperCase() !== "N/A") {
     const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
     voltajes = "igual o mayor a " + vVal;
   }
@@ -2571,20 +2782,28 @@ ${obs_formatted}`;
 }
 
 function renderHtmlLiveRevisorClientSide() {
-  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
-  let centroTitulo = centroRaw.toUpperCase();
-  if (centroTitulo.startsWith("CE-")) centroTitulo = centroTitulo.substring(3).trim();
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || document.getElementById("rev_host")?.value.trim() || "CENTRO";
+  const centroClean = centroRaw.split(".")[0].trim();
+  const parsed = parseLocationInfo(centroClean);
+  let centroTitulo = centroClean.toUpperCase();
+  if (centroClean.includes("-")) {
+    const parts = centroClean.split("-");
+    const prefix = parts[0].toUpperCase();
+    if (parsed.nombre_centro) {
+      centroTitulo = `${prefix}-${parsed.nombre_centro.toUpperCase()}`;
+    }
+  }
 
   const host = document.getElementById("rev_host")?.value.trim() || "N/D";
   const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
-  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
-  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const so = document.getElementById("rev_sistema_operativo")?.value.trim() || "N/D";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "N/D";
   const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
   const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
 
-  function fmtChangeset(val, defaultNum) {
+  function fmtChangeset(val) {
     let str = (val || "").trim();
-    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO" || str.toUpperCase() === "NONE") return "N/A";
     const m = str.match(/changeset:\s*(\d+)/i);
     if (m) return `changeset:   ${m[1]}`;
     const m2 = str.match(/^(\d+)$/);
@@ -2592,28 +2811,28 @@ function renderHtmlLiveRevisorClientSide() {
     return str;
   }
 
-  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
-  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
-  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
-  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
-  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value);
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value);
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value);
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "N/A";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "N/A";
 
   let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
   if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
     version_equipos = "v" + version_equipos;
   }
 
-  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
-  if (senal && !senal.startsWith("igual o mayor a")) {
+  let senal = document.getElementById("rev_senal")?.value.trim() || "N/A";
+  if (senal && !senal.startsWith("igual o mayor a") && senal.toUpperCase() !== "N/A") {
     senal = "igual o mayor a " + senal;
   }
 
-  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
-  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "N/A";
+  if (voltajes && !voltajes.startsWith("igual o mayor a") && voltajes.toUpperCase() !== "N/A") {
     const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
     voltajes = "igual o mayor a " + vVal;
   }
-  const voltDefaultVal = voltajes.replace("igual o mayor a", "").trim() || "3.33V";
+  const voltDefaultVal = (voltajes && voltajes.toUpperCase() !== "N/A") ? (voltajes.replace("igual o mayor a", "").trim() || "N/D") : "N/D";
 
   const saturacion = document.getElementById("rev_saturacion")?.value.trim() || "OK";
   const salinidad = document.getElementById("rev_salinidad")?.value.trim() || "OK";
@@ -2816,22 +3035,28 @@ async function generarPlantillaRevisor({ notificar = false } = {}) {
   temporizadorActualizacionRevisor = null;
   const solicitudActual = ++secuenciaGeneracionRevisor;
 
-  const centroRaw = document.getElementById("rev_centro")?.value.trim() || "CE-YELCHO";
-  let centroTitulo = centroRaw.toUpperCase();
-  if (!centroTitulo.startsWith("CE-") && !centroTitulo.startsWith("MW-") && !centroTitulo.startsWith("CENTRO")) {
-    centroTitulo = "CE-" + centroTitulo;
+  const centroRaw = document.getElementById("rev_centro")?.value.trim() || document.getElementById("rev_host")?.value.trim() || "CENTRO";
+  const centroClean = centroRaw.split(".")[0].trim();
+  const parsed = parseLocationInfo(centroClean);
+  let centroTitulo = centroClean.toUpperCase();
+  if (centroClean.includes("-")) {
+    const parts = centroClean.split("-");
+    const prefix = parts[0].toUpperCase();
+    if (parsed.nombre_centro) {
+      centroTitulo = `${prefix}-${parsed.nombre_centro.toUpperCase()}`;
+    }
   }
 
   const host = document.getElementById("rev_host")?.value.trim() || "";
   const tipo_conexion = document.getElementById("rev_tipo_conexion")?.value || "Wifi";
-  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "Linux Ubuntu 20.04 LTS";
-  const kernel = document.getElementById("rev_kernel")?.value.trim() || "5.4.0-105-generic";
+  const sistema_operativo = document.getElementById("rev_sistema_operativo")?.value.trim() || "N/D";
+  const kernel = document.getElementById("rev_kernel")?.value.trim() || "N/D";
   const clave_pc = document.getElementById("rev_clave_pc")?.value.trim() || document.getElementById("rev_contrasena")?.value.trim() || "No configurada";
   const dataweb = document.getElementById("rev_dataweb")?.value.trim() || "Ok";
 
-  function fmtChangeset(val, defaultNum) {
+  function fmtChangeset(val) {
     let str = (val || "").trim();
-    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO") return `changeset:   ${defaultNum}`;
+    if (!str || str.toUpperCase() === "N/A" || str.toUpperCase() === "NO DETECTADO" || str.toUpperCase() === "NONE") return "N/A";
     const m = str.match(/changeset:\s*(\d+)/i);
     if (m) return `changeset:   ${m[1]}`;
     const m2 = str.match(/^(\d+)$/);
@@ -2839,24 +3064,24 @@ async function generarPlantillaRevisor({ notificar = false } = {}) {
     return str;
   }
 
-  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value, "387");
-  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value, "631");
-  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value, "415");
-  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "1.1.1";
-  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "3.6";
+  const pcinnovex = fmtChangeset(document.getElementById("rev_pcinnovex")?.value);
+  const cacheton = fmtChangeset(document.getElementById("rev_cacheton")?.value);
+  const python3_ver = fmtChangeset(document.getElementById("rev_python3")?.value);
+  const weather_davis = document.getElementById("rev_weather_davis")?.value.trim() || "N/A";
+  const visibility_cam = document.getElementById("rev_visibility_cam")?.value.trim() || "N/A";
 
   let version_equipos = document.getElementById("rev_version_equipos")?.value.trim() || "v2.0.2";
   if (version_equipos && !version_equipos.startsWith("v") && !version_equipos.startsWith("V")) {
     version_equipos = "v" + version_equipos;
   }
 
-  let senal = document.getElementById("rev_senal")?.value.trim() || "57/198";
-  if (senal && !senal.startsWith("igual o mayor a")) {
+  let senal = document.getElementById("rev_senal")?.value.trim() || "N/A";
+  if (senal && !senal.startsWith("igual o mayor a") && senal.toUpperCase() !== "N/A") {
     senal = "igual o mayor a " + senal;
   }
 
-  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "3.33V";
-  if (voltajes && !voltajes.startsWith("igual o mayor a")) {
+  let voltajes = document.getElementById("rev_voltajes")?.value.trim() || "N/A";
+  if (voltajes && !voltajes.startsWith("igual o mayor a") && voltajes.toUpperCase() !== "N/A") {
     const vVal = voltajes.endsWith("V") || voltajes.endsWith("v") ? voltajes : voltajes + "V";
     voltajes = "igual o mayor a " + vVal;
   }
@@ -3034,8 +3259,7 @@ function mostrarVistaPreviaRevisorDerecha() {
   const liveSheet = document.getElementById("liveHtmlSheet");
   if (!liveSheet) return;
 
-  document.getElementById("liveHtmlContainer").style.display = "flex";
-  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("liveHtmlContainer").style.display = "block";
   document.getElementById("btnToggleVistaHTML").classList.add("active");
   if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
   if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
@@ -3048,8 +3272,7 @@ function mostrarTextoPlanoEnPanelDerecho() {
   const liveSheet = document.getElementById("liveHtmlSheet");
   if (!liveSheet) return;
 
-  document.getElementById("liveHtmlContainer").style.display = "flex";
-  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("liveHtmlContainer").style.display = "block";
   document.getElementById("btnToggleVistaHTML").classList.remove("active");
   if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
   if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.add("active");
@@ -3071,13 +3294,10 @@ function mostrarTextoPlanoEnPanelDerecho() {
     <div class="plain-text-preview">
       <div class="plain-text-preview-header">
         <h3>Vista Texto Plano</h3>
-        <button class="btn btn-small btn-secondary" id="btnCopiarTextoPlanoDerecho">Copiar Texto</button>
       </div>
       <pre id="preTextoPlanoDerecho" class="plain-text-preview-content">${htmlEscapeAttr(textoPlano || "Sin texto disponible.")}</pre>
     </div>
   `;
-
-  document.getElementById("btnCopiarTextoPlanoDerecho")?.addEventListener("click", copiarTextoPlanoDerecho);
 }
 
 function htmlEscapeAttr(str) {
@@ -3356,9 +3576,19 @@ async function ejecutarIngresoTecnico() {
       if (res.clave_pc) document.getElementById("ingreso_clave_pc").value = res.clave_pc;
       if (res.acceso_remoto) document.getElementById("ingreso_acceso_remoto").value = res.acceso_remoto;
 
-      document.getElementById("txtPlantillaIngresoTecnico").value = res.plantilla_texto || "";
+      // Sincronizar plantilla de texto plano de inmediato tanto en el input como en la vista previa
+      const txtPlano = res.plantilla_texto || construirPlantillaIngresoTextoClientSide();
+      const txtArea = document.getElementById("txtPlantillaIngresoTecnico");
+      if (txtArea) txtArea.value = txtPlano;
+
+      const preDerecho = document.getElementById("preTextoPlanoDerecho");
+      if (preDerecho && moduloActivoActual === "ingreso_tecnico") {
+        preDerecho.textContent = txtPlano;
+      }
+
       actualizarFrameDocumentoIngresoLive();
       actualizarVistaPreviaDerechaPorModulo();
+      generarPlantillaIngreso();
 
       mostrarToast("Información para ingreso de técnico cargada con éxito", "success");
     } else {
@@ -3370,7 +3600,7 @@ async function ejecutarIngresoTecnico() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = "Consultar Remotamente (SSH / Telnet)";
+      btn.innerHTML = "🔍 Consultar Remotamente";
     }
   }
 }
@@ -3466,8 +3696,7 @@ function mostrarVistaPreviaIngresoDerecha() {
   const liveSheet = document.getElementById("liveHtmlSheet");
   if (!liveSheet) return;
 
-  document.getElementById("liveHtmlContainer").style.display = "flex";
-  document.getElementById("pdfContainer").style.display = "none";
+  document.getElementById("liveHtmlContainer").style.display = "block";
   document.getElementById("btnToggleVistaHTML").classList.add("active");
   if (document.getElementById("btnToggleVistaPDF")) document.getElementById("btnToggleVistaPDF").classList.remove("active");
   if (document.getElementById("btnToggleVistaTexto")) document.getElementById("btnToggleVistaTexto").classList.remove("active");
@@ -3493,3 +3722,561 @@ async function copiarPlantillaIngreso() {
     copiado ? "success" : "error"
   );
 }
+
+// ===================================================================
+// FUNCIONALIDADES DEL PORTAL UNIFICADO DE SOPORTE INNOVEX
+// ===================================================================
+
+function iniciarPortalUnificado() {
+  iniciarRelojSidebar();
+  setupSidebarNavigation();
+  setupBitacoraHandlers();
+  setupCorreosMasivosHandlers();
+  setupGestorDestinatariosHandlers();
+  setupPoseidon();
+  setupTracSearch();
+  setupMusicPlayer();
+
+  // Carga inicial de datos de fondo
+  cargarBitacora();
+  cargarDatosCorreosMasivos();
+  cargarListaDestinatarios();
+  cargarIndiceTracWiki();
+}
+
+// --- 1. Navegación entre Secciones del Portal ---
+window.navegarSeccionPortal = function(vista, submodulo) {
+  // Actualizar estado activo en los botones del sidebar
+  document.querySelectorAll(".sidebar-nav .nav-item:not(.external)").forEach(item => {
+    const v = item.getAttribute("data-view");
+    const sub = item.getAttribute("data-submodule");
+    if (v === vista && (!submodulo || sub === submodulo)) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
+
+  // Mostrar la vista correspondiente y ocultar las demás
+  document.querySelectorAll(".portal-view").forEach(v => {
+    v.classList.remove("active");
+    v.style.display = "none";
+  });
+
+  const targetView = document.getElementById(`view-${vista}`);
+  if (targetView) {
+    targetView.classList.add("active");
+    targetView.style.display = "block";
+  }
+
+  // Título en la barra superior (Breadcrumb)
+  const titulos = {
+    "dashboard": "Dashboard General",
+    "bitacora": "Pizarra de Turno",
+    "certificado-suite": "Suite de Certificados",
+    "correos-masivos": "Correos Masivos Fin de Semana",
+    "gestionar-correos": "Gestor de Destinatarios",
+    "poseidon": "Poseidón (Dual Monitor)",
+    "calendario": "Calendario de Turnos",
+    "trac-wiki": "Buscador Trac Wiki",
+    "music": "Control Multimedia"
+  };
+
+  const titleElem = document.getElementById("currentViewTitle");
+  if (titleElem) {
+    titleElem.textContent = titulos[vista] || vista;
+  }
+
+  // Controles contextuales del módulo Certificado en la barra superior (solo en submódulo certificado)
+  const certControls = document.getElementById("certContextControls");
+  if (certControls) {
+    const esCert = (vista === "certificado-suite" && (submodulo === "certificado" || (!submodulo && moduloActivoActual === "certificado")));
+    certControls.style.display = esCert ? "flex" : "none";
+  }
+
+  // Si se entra a la suite de certificados, activar el submódulo correcto
+  if (vista === "certificado-suite") {
+    cambiarModuloActivo(submodulo || moduloActivoActual || "certificado");
+  }
+
+  // Recargar datos relevantes al entrar en ciertas vistas
+  if (vista === "bitacora" || vista === "dashboard") {
+    cargarBitacora();
+  } else if (vista === "correos-masivos") {
+    cargarDatosCorreosMasivos();
+  } else if (vista === "gestionar-correos") {
+    cargarListaDestinatarios();
+  } else if (vista === "trac-wiki") {
+    cargarIndiceTracWiki();
+  }
+};
+
+function setupSidebarNavigation() {
+  document.querySelectorAll(".sidebar-nav .nav-item:not(.external)").forEach(item => {
+    item.addEventListener("click", (e) => {
+      const btn = e.target.closest(".nav-item");
+      if (!btn) return;
+      const view = btn.getAttribute("data-view");
+      const sub = btn.getAttribute("data-submodule");
+      if (view) {
+        window.navegarSeccionPortal(view, sub);
+        // En móviles, cerrar sidebar al hacer clic
+        if (window.innerWidth <= 768) {
+          document.getElementById("portalSidebar")?.classList.remove("open");
+        }
+      }
+    });
+  });
+
+  document.getElementById("btnToggleSidebar")?.addEventListener("click", () => {
+    document.getElementById("portalSidebar")?.classList.toggle("open");
+  });
+}
+
+function iniciarRelojSidebar() {
+  const clockElem = document.getElementById("sidebarClock");
+  if (!clockElem) return;
+  const updateClock = () => {
+    const now = new Date();
+    const hrs = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const sec = String(now.getSeconds()).padStart(2, '0');
+    clockElem.textContent = `${hrs}:${min}:${sec}`;
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+// --- 2. Bitácora / Pizarra de Turno (Autosave + Live Polling) ---
+let debounceBitacoraTimer = null;
+let isUserTypingBitacora = false;
+
+async function cargarBitacora() {
+  try {
+    const res = await fetch("/api/bitacora");
+    const data = await res.json();
+    if (data.status === "ok") {
+      if (!isUserTypingBitacora) {
+        const dashT = document.getElementById("dashBitacoraTexto");
+        const fullT = document.getElementById("fullBitacoraTexto");
+        if (dashT && document.activeElement !== dashT) dashT.value = data.texto || "";
+        if (fullT && document.activeElement !== fullT) fullT.value = data.texto || "";
+      }
+      actualizarStatusBitacora(`Sincronizado (${data.actualizado_en || 'Hoy'})`, false);
+    }
+  } catch (err) {
+    console.error("Error al cargar bitacora:", err);
+  }
+}
+
+async function guardarBitacora(texto) {
+  actualizarStatusBitacora("Guardando...", true);
+  try {
+    const res = await fetch("/api/bitacora", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      actualizarStatusBitacora(`Guardado (${data.actualizado_en})`, false);
+    }
+  } catch (err) {
+    actualizarStatusBitacora("Error de conexión", true);
+  }
+}
+
+function actualizarStatusBitacora(txt, isWarning) {
+  const s1 = document.getElementById("dashBitacoraStatus");
+  const s2 = document.getElementById("fullBitacoraStatus");
+  [s1, s2].forEach(elem => {
+    if (elem) {
+      elem.innerHTML = `<span class="dot-indicator" style="background:${isWarning ? '#f59e0b' : '#10b981'};"></span> ${txt}`;
+    }
+  });
+}
+
+function setupBitacoraHandlers() {
+  const dashT = document.getElementById("dashBitacoraTexto");
+  const fullT = document.getElementById("fullBitacoraTexto");
+
+  const onInput = (e) => {
+    isUserTypingBitacora = true;
+    const val = e.target.value;
+    if (dashT && e.target !== dashT) dashT.value = val;
+    if (fullT && e.target !== fullT) fullT.value = val;
+
+    actualizarStatusBitacora("Escribiendo...", true);
+    clearTimeout(debounceBitacoraTimer);
+    debounceBitacoraTimer = setTimeout(() => {
+      isUserTypingBitacora = false;
+      guardarBitacora(val);
+    }, 1000);
+  };
+
+  if (dashT) dashT.addEventListener("input", onInput);
+  if (fullT) fullT.addEventListener("input", onInput);
+
+  // Live polling cada 5 segundos
+  setInterval(() => {
+    if (!isUserTypingBitacora) {
+      cargarBitacora();
+    }
+  }, 5000);
+
+  document.getElementById("btnCopiarBitacora")?.addEventListener("click", async () => {
+    const val = fullT?.value || dashT?.value || "";
+    if (await copiarTextoAlPortapapeles(val)) {
+      mostrarToast("Bitácora copiada al portapapeles", "success");
+    }
+  });
+}
+
+// --- 3. Correos Masivos Fin de Semana ---
+function setupCorreosMasivosHandlers() {
+  document.getElementById("btnGenerarPrevisualizarCorreo")?.addEventListener("click", () => {
+    procesarEnvioPrevisualizacionCorreos(false);
+  });
+
+  document.getElementById("btnEnviarCorreosMasivos")?.addEventListener("click", () => {
+    procesarEnvioPrevisualizacionCorreos(true);
+  });
+}
+
+async function cargarDatosCorreosMasivos() {
+  try {
+    const [resFechas, resAsist] = await Promise.all([
+      fetch("/api/fechas_fin_semana").then(r => r.json()),
+      fetch("/api/asistentes").then(r => r.json())
+    ]);
+
+    if (resFechas.status === "ok") {
+      const semEl = document.getElementById("correoSemana");
+      const sabEl = document.getElementById("correoFechaSabado");
+      const domEl = document.getElementById("correoFechaDomingo");
+      if (semEl) semEl.value = resFechas.semana;
+      if (sabEl) sabEl.value = resFechas.fecha_sabado;
+      if (domEl) domEl.value = resFechas.fecha_domingo;
+    }
+
+    if (resAsist.status === "ok") {
+      const select = document.getElementById("correoPersonalSelect");
+      if (select) {
+        select.innerHTML = "";
+        resAsist.asistentes.forEach(a => {
+          const opt = document.createElement("option");
+          opt.value = a.id;
+          opt.textContent = `${a.nombre} (${a.telefono})`;
+          select.appendChild(opt);
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error al cargar datos de correos masivos:", err);
+  }
+}
+
+async function procesarEnvioPrevisualizacionCorreos(esEnvioReal) {
+  const personal_id = document.getElementById("correoPersonalSelect")?.value;
+  const fecha_sabado = document.getElementById("correoFechaSabado")?.value || "";
+  const fecha_domingo = document.getElementById("correoFechaDomingo")?.value || "";
+  const correo_prueba = document.getElementById("correoPrueba")?.value || "";
+
+  try {
+    const res = await fetch("/api/enviar_correos_masivos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personal_id,
+        fecha_sabado,
+        fecha_domingo,
+        correo_prueba
+      })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      const previewContainer = document.getElementById("previewCorreoContainer");
+      const previewSheet = document.getElementById("previewCorreoSheet");
+      if (previewContainer && previewSheet) {
+        previewContainer.style.display = "block";
+        previewSheet.innerHTML = data.html_correo;
+      }
+      mostrarToast(data.mensaje, "success");
+    } else {
+      mostrarToast(data.mensaje || "Error al generar correo", "error");
+    }
+  } catch (err) {
+    mostrarToast("Error de conexión al procesar correo", "error");
+  }
+}
+
+// --- 4. Gestor de Destinatarios y Empresas ---
+let listaDestinatariosCache = [];
+
+function setupGestorDestinatariosHandlers() {
+  document.getElementById("searchDestinatario")?.addEventListener("input", renderizarTablaDestinatarios);
+  document.getElementById("filterEmpresaDestinatario")?.addEventListener("change", renderizarTablaDestinatarios);
+
+  document.getElementById("btnAbrirModalNuevoDestinatario")?.addEventListener("click", () => {
+    const modal = document.getElementById("modalNuevoDestinatario");
+    if (modal) modal.style.display = "flex";
+  });
+
+  document.getElementById("btnCerrarModalDestinatario")?.addEventListener("click", () => {
+    const modal = document.getElementById("modalNuevoDestinatario");
+    if (modal) modal.style.display = "none";
+  });
+
+  document.getElementById("btnGuardarNuevoDestinatario")?.addEventListener("click", async () => {
+    const empresa = document.getElementById("nuevoDestEmpresa")?.value.trim();
+    const correo = document.getElementById("nuevoDestCorreo")?.value.trim();
+    if (!empresa || !correo) {
+      mostrarToast("Complete la empresa y el correo", "warning");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/destinatarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", empresa, correo })
+      });
+      const data = await res.json();
+      if (data.status === "ok") {
+        document.getElementById("nuevoDestEmpresa").value = "";
+        document.getElementById("nuevoDestCorreo").value = "";
+        document.getElementById("modalNuevoDestinatario").style.display = "none";
+        mostrarToast("Destinatario agregado correctamente", "success");
+        cargarListaDestinatarios();
+      }
+    } catch (err) {
+      mostrarToast("Error al guardar destinatario", "error");
+    }
+  });
+}
+
+async function cargarListaDestinatarios() {
+  try {
+    const res = await fetch("/api/destinatarios");
+    const data = await res.json();
+    if (data.status === "ok") {
+      listaDestinatariosCache = data.destinatarios || [];
+      poblarEmpresasFiltroDestinatarios();
+      renderizarTablaDestinatarios();
+    }
+  } catch (err) {
+    console.error("Error cargando destinatarios:", err);
+  }
+}
+
+function poblarEmpresasFiltroDestinatarios() {
+  const select = document.getElementById("filterEmpresaDestinatario");
+  if (!select) return;
+  const empresas = [...new Set(listaDestinatariosCache.map(d => d.empresa))].sort();
+  select.innerHTML = '<option value="">Todas las Empresas</option>';
+  empresas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    select.appendChild(opt);
+  });
+}
+
+function renderizarTablaDestinatarios() {
+  const tbody = document.getElementById("tablaDestinatariosBody");
+  if (!tbody) return;
+
+  const q = document.getElementById("searchDestinatario")?.value.toLowerCase().trim() || "";
+  const filterEmp = document.getElementById("filterEmpresaDestinatario")?.value || "";
+
+  const filtrados = listaDestinatariosCache.filter(d => {
+    const matchQ = !q || (d.correo && d.correo.toLowerCase().includes(q)) || (d.empresa && d.empresa.toLowerCase().includes(q));
+    const matchEmp = !filterEmp || d.empresa === filterEmp;
+    return matchQ && matchEmp;
+  });
+
+  tbody.innerHTML = "";
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 20px;">No se encontraron destinatarios.</td></tr>';
+    return;
+  }
+
+  filtrados.forEach(d => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${d.correo}</strong></td>
+      <td><span class="badge" style="background: rgba(2,132,199,0.15); color: #38bdf8;">${d.empresa}</span></td>
+      <td style="text-align: center;">
+        <label class="switch">
+          <input type="checkbox" ${d.activo ? 'checked' : ''} onchange="toggleDestinatarioActivo(${d.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td style="text-align: right;">
+        <button class="btn btn-danger btn-small" onclick="eliminarDestinatario(${d.id})">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.toggleDestinatarioActivo = async function(id, activo) {
+  try {
+    const res = await fetch("/api/destinatarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle_destinatario", id, activo })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      const item = listaDestinatariosCache.find(d => d.id === id);
+      if (item) item.activo = activo;
+      mostrarToast(`Destinatario ${activo ? 'activado' : 'desactivado'}`, "success");
+    }
+  } catch (err) {
+    mostrarToast("Error al cambiar estado", "error");
+  }
+};
+
+window.eliminarDestinatario = async function(id) {
+  if (!confirm("¿Está seguro de eliminar este destinatario?")) return;
+  try {
+    const res = await fetch("/api/destinatarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_destinatario", id })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      listaDestinatariosCache = listaDestinatariosCache.filter(d => d.id !== id);
+      renderizarTablaDestinatarios();
+      mostrarToast("Destinatario eliminado", "success");
+    }
+  } catch (err) {
+    mostrarToast("Error al eliminar", "error");
+  }
+};
+
+// --- 5. Poseidón (Monitor Dual Multipantalla) ---
+function setupPoseidon() {
+  document.getElementById("btnLaunchPoseidon")?.addEventListener("click", () => {
+    const width = Math.floor(window.screen.availWidth / 2);
+    const height = window.screen.availHeight;
+
+    // Ventana Izquierda (Llancacheo)
+    window.open(
+      "http://ce-llancacheo-inyeccion.acuimatic.com:8000/",
+      "monitor_llancacheo",
+      `width=${width},height=${height},left=0,top=0,location=no,toolbar=no,menubar=no`
+    );
+
+    // Ventana Derecha (Aulen)
+    window.open(
+      "http://ce-aulen-inyeccion.acuimatic.com:8000/",
+      "monitor_aulen",
+      `width=${width},height=${height},left=${width},top=0,location=no,toolbar=no,menubar=no`
+    );
+
+    mostrarToast("Monitores de inyección abiertos en modo dual", "success");
+  });
+}
+
+// --- 6. Buscador & Índice Trac Wiki ---
+async function cargarIndiceTracWiki() {
+  try {
+    const res = await fetch("/api/wiki/indice");
+    const data = await res.json();
+    if (data.status === "ok" && data.indice) {
+      const container = document.getElementById("tracIndexContainer");
+      if (!container) return;
+      container.innerHTML = "";
+      for (const [cat, items] of Object.entries(data.indice)) {
+        const card = document.createElement("div");
+        card.className = "trac-cat-card";
+        let linksHtml = "";
+        items.forEach(it => {
+          linksHtml += `<a href="${it.url}" target="_blank" class="trac-link-item">📄 ${it.titulo}</a>`;
+        });
+        card.innerHTML = `<h4>📁 ${cat}</h4><div class="trac-link-list">${linksHtml}</div>`;
+        container.appendChild(card);
+      }
+    }
+  } catch (err) {
+    console.error("Error al cargar indice wiki:", err);
+  }
+}
+
+function setupTracSearch() {
+  const input = document.getElementById("inputTracSearch");
+  const resultsDiv = document.getElementById("tracSearchResults");
+  let timeout;
+
+  if (!input || !resultsDiv) return;
+
+  input.addEventListener("input", () => {
+    clearTimeout(timeout);
+    const q = input.value.trim();
+    if (q.length < 2) {
+      resultsDiv.style.display = "none";
+      return;
+    }
+
+    timeout = setTimeout(async () => {
+      resultsDiv.style.display = "block";
+      resultsDiv.innerHTML = '<p style="color: var(--text-muted);">Buscando en la Wiki...</p>';
+      try {
+        const res = await fetch(`/api/wiki/buscar?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+          data.results.forEach(r => {
+            html += `
+              <a href="${r.link}" target="_blank" style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-left: 4px solid var(--innovex-cyan); border-radius: 6px; text-decoration: none; color: inherit;">
+                <h4 style="color: var(--innovex-cyan); margin-bottom: 4px;">${r.title}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0;">${r.snippet}</p>
+              </a>
+            `;
+          });
+          html += '</div>';
+          resultsDiv.innerHTML = html;
+        } else {
+          resultsDiv.innerHTML = `<p style="color: #f59e0b;">No se encontraron resultados para "${q}".</p>`;
+        }
+      } catch (err) {
+        resultsDiv.innerHTML = '<p style="color: #ef4444;">Error al consultar la Wiki.</p>';
+      }
+    }, 400);
+  });
+}
+
+// --- 7. Control Multimedia Host ---
+function setupMusicPlayer() {
+  const updateMusicStatus = async () => {
+    try {
+      const res = await fetch("/api/music/status");
+      const data = await res.json();
+      const t = document.getElementById("musicTrackTitle");
+      const a = document.getElementById("musicTrackArtist");
+      if (t) t.textContent = data.title || "No hay reproducción activa";
+      if (a) a.textContent = data.artist || "Innovex Support Host";
+    } catch (err) {}
+  };
+
+  const sendMusicCmd = async (action) => {
+    try {
+      await fetch(`/api/music/control?action=${action}`);
+      setTimeout(updateMusicStatus, 300);
+    } catch (err) {}
+  };
+
+  document.getElementById("btnMusicPlay")?.addEventListener("click", () => sendMusicCmd("play"));
+  document.getElementById("btnMusicNext")?.addEventListener("click", () => sendMusicCmd("next"));
+  document.getElementById("btnMusicPrev")?.addEventListener("click", () => sendMusicCmd("prev"));
+  document.getElementById("btnMusicVolUp")?.addEventListener("click", () => sendMusicCmd("volup"));
+  document.getElementById("btnMusicVolDown")?.addEventListener("click", () => sendMusicCmd("voldn"));
+  document.getElementById("btnMusicMute")?.addEventListener("click", () => sendMusicCmd("mute"));
+
+  setInterval(updateMusicStatus, 4000);
+  updateMusicStatus();
+}
+

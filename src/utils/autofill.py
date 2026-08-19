@@ -9,24 +9,42 @@ def parse_cmd_status(texto: str) -> dict:
     res = {}
     for line in texto.splitlines():
         line_s = line.strip()
-        # Versión de Firmware / Pancoordinator
-        if line_s.lower().startswith("version"):
-            partes = line_s.split(maxsplit=1)
-            if len(partes) > 1 and not partes[1].lower().startswith("mote") and not partes[1].lower().startswith("microlib"):
-                res["version"] = partes[1].strip()
-        elif "firmware version" in line_s.lower():
-            res["version"] = line_s.split(":", 1)[1].strip()
+        if not line_s:
+            continue
 
-        # MAC
-        if "mac:" in line_s.lower():
-            res["mac"] = line_s.split(":", 1)[1].strip()
+        # Versión de Firmware / Pancoordinator
+        m_ver = re.search(r"(?:firmware\s+version|pancoordinator\s+version|firmware|version)\s*[:=\s]\s*([vV]?[0-9]+(?:\.[0-9]+)*[a-zA-Z0-9._-]*)", line_s, re.I)
+        if m_ver and not any(k in line_s.lower() for k in ("mote", "microlib", "kernel", "linux")):
+            res["version"] = m_ver.group(1).strip()
+        elif line_s.lower().startswith("version") and not any(k in line_s.lower() for k in ("mote", "microlib")):
+            partes = line_s.split(maxsplit=1)
+            if len(partes) > 1:
+                res["version"] = partes[1].strip()
+
+        # MAC de Antena Concentradora
+        m_mac = re.search(r"(?:coordinator\s+)?mac\s*[:=\s]\s*([0-9a-fA-F:]{17,23}|[0-9a-fA-F-]{17,23}|[0-9a-fA-F]{16})", line_s, re.I)
+        if m_mac:
+            raw_mac = m_mac.group(1).strip(",;()[]").replace("-", ":").upper()
+            if len(raw_mac) == 16 and ":" not in raw_mac:
+                raw_mac = ":".join(raw_mac[i:i+2] for i in range(0, 16, 2))
+            res["mac"] = raw_mac
+        elif "mac:" in line_s.lower():
+            res["mac"] = line_s.split(":", 1)[1].strip().upper()
 
         # Pan ID
-        if "pan id:" in line_s.lower():
-            res["panid"] = line_s.split(":", 1)[1].strip()
+        m_pan = re.search(r"\bpan\s*id\s*[:=\s]\s*([0-9a-fA-FxX]+)", line_s, re.I)
+        if m_pan:
+            res["panid"] = m_pan.group(1).strip()
+        elif "pan id:" in line_s.lower() or "panid:" in line_s.lower():
+            res["panid"] = line_s.split(":", 1)[1].strip().split()[0]
+
+        # Canal RF
+        m_ch = re.search(r"\b(?:channel|canal|ch)\s*[:=\s]\s*(\d+)", line_s, re.I)
+        if m_ch:
+            res["canal"] = m_ch.group(1).strip()
 
         # Cantidad de motes / equipos asociados
-        m_att = re.search(r"(?:N\s+of\s+motes\s+attached|motes\s+attached|equipos\s+asociados)\s*:\s*(\d+)", line_s, re.IGNORECASE)
+        m_att = re.search(r"(?:N\s*(?:of|°)?\s*motes\s*attached|motes\s*attached|equipos\s*asociados|motes\s*conectados|attached\s*motes|total\s*motes|motes\s*asociados)\s*[:=\s]\s*(\d+)", line_s, re.IGNORECASE)
         if m_att:
             res["cantidad_equipos_asociados"] = m_att.group(1)
 

@@ -118,9 +118,78 @@ def test_parse_kernel_and_hostnamectl_autofill():
     print("✅ test_parse_kernel_and_hostnamectl_autofill PASSED!")
 
 
+def test_robust_cmd_status_and_motes_parsing():
+    from src.utils.autofill import parse_cmd_status, procesar_autofill
+    from src.tui.motes import parse_cmd_motes
+
+    # 1. Probar múltiples formatos de cmd status
+    txt_status = """
+    pancoordinator> cmd status
+    Firmware Version : v2.0.4
+    Coordinator MAC : 00-15-8d-00-00-5f-e3-10
+    PAN ID : 0x1234
+    Channel : 19
+    N of motes attached : 5
+    """
+    st = parse_cmd_status(txt_status)
+    assert st.get("version") == "v2.0.4", f"Versión obtenida: {st.get('version')}"
+    assert st.get("mac") == "00:15:8D:00:00:5F:E3:10", f"MAC obtenida: {st.get('mac')}"
+    assert st.get("panid") == "0x1234", f"Pan ID obtenido: {st.get('panid')}"
+    assert st.get("canal") == "19", f"Canal obtenido: {st.get('canal')}"
+    assert st.get("cantidad_equipos_asociados") == "5", f"Cantidad obtenida: {st.get('cantidad_equipos_asociados')}"
+
+    # 2. Probar múltiples formatos de cmd motes
+    txt_motes = """
+    cmd> motes
+    Mote MAC Signal Last RX Name
+    1 00:15:8D:00:00:23:45:67 114:120 12s Jaula 1
+    2 00158d0000234568 -75dBm 4s Jaula 2
+    3 00-15-8D-00-00-23-45-69 110/120 0:15 3
+    [4] 00:15:8D:00:00:23:45:6A 115:120 5s MALO
+    """
+    motes = parse_cmd_motes(txt_motes)
+    assert len(motes) == 4, f"Se esperaban 4 motes, se obtuvieron {len(motes)}"
+    assert motes[0]["mac"] == "00:15:8D:00:00:23:45:67"
+    assert motes[0]["asociacion"] == "Jaula 1"
+    assert motes[1]["mac"] == "00:15:8D:00:00:23:45:68"
+    assert motes[1]["signal"] == "-75dBm"
+    assert motes[2]["mac"] == "00:15:8D:00:00:23:45:69"
+    assert motes[2]["asociacion"] == "Equipo 3"
+    assert motes[3]["mac"] == "00:15:8D:00:00:23:45:6A"
+    assert motes[3]["asociacion"] == "MALO"
+
+    print("✅ test_robust_cmd_status_and_motes_parsing PASSED!")
+
+
+def test_autofill_new_center_overwrites_old_center():
+    from src.utils.autofill import procesar_autofill
+    cert = {
+        "datos_generales": {
+            "location": "ce-tranqui1",
+            "nombre_centro": "Tranqui 1",
+            "empresa": "Cermaq"
+        }
+    }
+
+    # Simular nuevo hostnamectl de otro centro
+    nuevo_txt = """
+    Static hostname: ce-unicorniosur
+    Operating System: Ubuntu 22.04.4 LTS
+    Kernel: Linux 5.15.0-105-generic
+    """
+    procesar_autofill(cert, nuevo_txt)
+    assert cert["datos_generales"]["location"] == "ce-unicorniosur"
+    assert cert["datos_generales"]["nombre_centro"] == "Unicornio Sur"
+    assert cert["datos_generales"]["empresa"] == "Cermaq"
+    print("✅ test_autofill_new_center_overwrites_old_center PASSED!")
+
+
 if __name__ == "__main__":
     test_cacheton_config_json_parsing()
     test_pegar_alarmas_texto()
     test_incremental_autofill_preserves_data()
     test_eliminar_certificado()
     test_parse_kernel_and_hostnamectl_autofill()
+    test_robust_cmd_status_and_motes_parsing()
+    test_autofill_new_center_overwrites_old_center()
+

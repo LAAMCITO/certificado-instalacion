@@ -68,7 +68,7 @@ def parse_location_info(location: str):
     if not location:
         return None, ""
     
-    loc_clean = location.strip().lower()
+    loc_clean = location.strip().lower().split(".")[0]
     if not loc_clean:
         return None, ""
     
@@ -77,11 +77,21 @@ def parse_location_info(location: str):
     
     if len(parts) > 1:
         rest = parts[1]
-        rest_formatted = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', rest)
-        nombre_centro = rest_formatted.replace("-", " ").title()
     else:
-        rest_formatted = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', loc_clean)
-        nombre_centro = rest_formatted.replace("-", " ").title()
+        rest = loc_clean
+
+    for p in ("acopio", "piscicultura", "planta", "ensenada", "isla", "canal", "bahia", "seno", "punta", "puerto", "boca", "paso", "estero", "rio", "caleta"):
+        if rest.startswith(p) and len(rest) > len(p):
+            rest = p + " " + rest[len(p):]
+            break
+
+    for w in ("sur", "norte", "este", "oeste", "alto", "bajo"):
+        if rest.endswith(w) and len(rest) > len(w):
+            rest = rest[:-len(w)] + " " + w
+            break
+
+    rest_formatted = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', rest)
+    nombre_centro = rest_formatted.replace("-", " ").replace("_", " ").title()
 
     if prefix in MAPA_ABREVIATURAS_EMPRESAS:
         empresa = MAPA_ABREVIATURAS_EMPRESAS[prefix]["empresa"]

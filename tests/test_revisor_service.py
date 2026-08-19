@@ -147,5 +147,101 @@ VERSION_ID="20.04"
         self.assertEqual(kernel, "5.15.0-134-generic")
 
 
+    def test_parsear_paquetes_sin_dependencias(self):
+        log_vacio = "=== HG PAQUETERIA ===\n=== LS OPT SOFTWARE ==="
+        paquetes = parsear_paquetes(log_vacio)
+        self.assertEqual(paquetes["weather_davis"], "N/A")
+        self.assertEqual(paquetes["visibility_cam"], "N/A")
+        self.assertEqual(paquetes["pcinnovex"], "N/A")
+        self.assertEqual(paquetes["cacheton"], "N/A")
+
+    def test_parsear_voltaje_minimo_vacio(self):
+        self.assertEqual(parsear_voltaje_minimo({}), "N/A")
+
+    def test_centro_titulo_no_forzar_ce(self):
+        datos = {
+            "centro": "sc-acopiocululil",
+            "tipo_conexion": "Wifi",
+            "sistema_operativo": "Linux Ubuntu 20.04 LTS",
+            "kernel": "5.15.0-134-generic",
+            "clave_pc": "SC@Acululil",
+            "dataweb": "Ok",
+            "weather_davis": "N/A",
+            "visibility_cam": "N/A",
+            "voltajes": "N/A"
+        }
+        plantilla = RevisorService.generar_plantilla_texto(datos)
+        self.assertIn("VERIFICACIÓN INGRESO  SC-ACOPIO CULULIL", plantilla)
+        self.assertNotIn("CE-SC-ACOPIO", plantilla)
+        self.assertIn("* Weather Davis: N/A", plantilla)
+        self.assertIn("* Visibility-cam: N/A", plantilla)
+        self.assertIn("* Voltajes: N/A", plantilla)
+
+
+    def test_parsear_so_y_kernel_ubuntu_24_modern(self):
+        sample_hostnamectl = """
+ Static hostname: sc-acopiocululil
+       Icon name: computer-laptop
+         Chassis: laptop 💻
+      Machine ID: 953aba5775f645459986d61f59b189cb
+         Boot ID: 85560e20661d42b5980d5d26add415c7
+Operating System: Ubuntu 24.04.4 LTS              
+          Kernel: Linux 7.0.0-29-generic
+    Architecture: x86-64
+ Hardware Vendor: Dell Inc.
+  Hardware Model: Vostro 3400
+Firmware Version: 1.5.0
+   Firmware Date: Tue 2021-04-27
+    Firmware Age: 5y 3month 3w 2d
+        """
+        so, kernel = parsear_so_y_kernel(sample_hostnamectl)
+        self.assertEqual(so, "Linux Ubuntu 24.04.4 LTS")
+        self.assertEqual(kernel, "7.0.0-29-generic")
+
+    def test_parsear_voltajes_epoch_timestamp(self):
+        sample_log = """
+2026-08-19 13:31:18,951 DEBUG    Received: :1787160667:1:0:NODE 0 3.320 4.930 21.0 111 46 6.00 9.00 1 0
+2026-08-19 13:33:36,573 DEBUG    Received: :1787160797:20:0:NODE 0 3.320 4.930 23.0 117 67 6.00 9.00 1 0
+2026-08-19 13:35:22,472 DEBUG    Received: :1787160909:2:0:NODE 0 3.330 4.930 22.0 78 52 6.00 9.00 1 0
+2026-08-19 13:36:33,894 DEBUG    Received: :1787160981:1:0:NODE 0 3.310 4.930 21.0 114 -3 6.00 9.00 1 0
+        """
+        from src.services.revisor_service import parsear_voltajes_y_sensores, parsear_tipo_conexion
+        voltajes, sensores = parsear_voltajes_y_sensores(sample_log)
+        self.assertIn(1, voltajes)
+        self.assertEqual(voltajes[1]["voltaje"], 3.31)
+        self.assertIn(20, voltajes)
+        self.assertEqual(voltajes[20]["voltaje"], 3.32)
+        self.assertIn(2, voltajes)
+        self.assertEqual(voltajes[2]["voltaje"], 3.33)
+
+        volt_min = parsear_voltaje_minimo(voltajes)
+        self.assertEqual(volt_min, "igual o mayor a 3.31V")
+
+    def test_parsear_tipo_conexion_cableada(self):
+        from src.services.revisor_service import parsear_tipo_conexion
+        sample_ip_a = """
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+2: enp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    inet 10.150.20.14/24 brd 10.150.20.255 scope global dynamic noprefixroute enp2s0
+3: wlp3s0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+        """
+        tipo = parsear_tipo_conexion(sample_ip_a)
+        self.assertEqual(tipo, "Cableada")
+
+    def test_parsear_tipo_conexion_wifi(self):
+        from src.services.revisor_service import parsear_tipo_conexion
+        sample_ip_a = """
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group default qlen 1000
+3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 192.168.1.50/24 brd 192.168.1.255 scope global dynamic noprefixroute wlan0
+        """
+        tipo = parsear_tipo_conexion(sample_ip_a)
+        self.assertEqual(tipo, "Wifi")
+
+
 if __name__ == "__main__":
     unittest.main()
+

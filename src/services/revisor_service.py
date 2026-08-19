@@ -23,11 +23,11 @@ def campo(texto: str, patron: str) -> str:
 
 def parsear_paquetes(texto: str) -> dict:
     paquetes = {
-        "cacheton": "changeset:   631",
-        "python3_cacheton": "changeset:   415",
-        "pcinnovex": "changeset:   387",
-        "weather_davis": "1.1.1",
-        "visibility_cam": "3.6"
+        "cacheton": "N/A",
+        "python3_cacheton": "N/A",
+        "pcinnovex": "N/A",
+        "weather_davis": "N/A",
+        "visibility_cam": "N/A"
     }
 
     current_repo = None
@@ -119,7 +119,7 @@ def parsear_so_y_kernel(texto: str) -> tuple[str, str]:
             if m_k2 and ("SMP" in linea_s or "Linux" in linea_s or "-" in m_k2.group(1)):
                 kernel_encontrado = m_k2.group(1).strip()
 
-    return so_encontrado or "Linux Ubuntu 20.04 LTS", kernel_encontrado or "5.4.0-105-generic"
+    return so_encontrado or "N/D", kernel_encontrado or "N/D"
 
 
 def parsear_senal_motes(nodos_motes: dict) -> str:
@@ -167,7 +167,57 @@ def parsear_voltaje_minimo(voltajes: dict) -> str:
     if v_vals:
         min_v = min(v_vals)
         return f"igual o mayor a {min_v:.2f}V"
-    return "igual o mayor a 3.33V"
+    return "N/A"
+
+
+def parsear_tipo_conexion(texto: str) -> str:
+    """
+    Determina si la conexión es Cableada o Wifi analizando la salida de ifconfig / ip addr.
+    """
+    if not texto:
+        return "Wifi"
+
+    bloques = re.split(r'\n(?=\d+:\s+[a-zA-Z0-9_-]+:|\b[a-zA-Z0-9_-]+:\s+flags=|\b[a-zA-Z0-9_-]+\s+Link encap:)', "\n" + texto)
+
+    eth_activa = False
+    wifi_activa = False
+
+    for blk in bloques:
+        blk_s = blk.strip()
+        if not blk_s:
+            continue
+        primera_linea = blk_s.splitlines()[0]
+        m_iface = re.search(r'(?:^\d+:\s+)?([a-zA-Z0-9_-]+)[:\s]', primera_linea)
+        if not m_iface:
+            continue
+        iface_nombre = m_iface.group(1).lower()
+
+        if iface_nombre in ("lo", "tun0", "tun1") or iface_nombre.startswith(("docker", "br-", "veth", "virbr")):
+            continue
+
+        m_ip = re.search(r'\binet\s+(?:addr:)?\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', blk_s, re.I)
+        tiene_ip = False
+        if m_ip:
+            ip = m_ip.group(1)
+            if not ip.startswith("127.") and not ip.startswith("169.254."):
+                tiene_ip = True
+
+        esta_up = ("state UP" in blk_s or "<UP," in blk_s or "<UP>" in blk_s or " UP " in blk_s) and "state DOWN" not in blk_s
+
+        es_eth = any(iface_nombre.startswith(pfx) for pfx in ("eth", "enp", "eno", "ens", "enx", "ethernet"))
+        es_wifi = any(iface_nombre.startswith(pfx) for pfx in ("wlan", "wlp", "wlx", "wifi", "wireless"))
+
+        if es_eth and tiene_ip and esta_up:
+            eth_activa = True
+        elif es_wifi and tiene_ip and esta_up:
+            wifi_activa = True
+
+    if eth_activa:
+        return "Cableada"
+    if wifi_activa:
+        return "Wifi"
+
+    return "Wifi"
 
 
 def parsear_voltajes_y_sensores(texto: str) -> tuple[dict, dict]:
@@ -179,13 +229,15 @@ def parsear_voltajes_y_sensores(texto: str) -> tuple[dict, dict]:
     voltajes = {}
     sensores = {}
 
-    pat_node1 = re.compile(r":(?:\d+:)?(\d+):\d+:NODE\s+\d+\s+([0-9]+(?:\.[0-9]+)?)\s+([0-9]+(?:\.[0-9]+)?)", re.I)
+    pat_node1 = re.compile(r":(?:\d+:)*(\d+):\d+:NODE\s+\d*\s*([0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+)", re.I)
     pat_node2 = re.compile(r"\bNODE\s+(\d+)\s+([0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+)", re.I)
-    pat_node3 = re.compile(r":(?:\d+:)?(\d+):\d+:NODE\s+\d*\s*([0-9]+\.[0-9]+)", re.I)
+    pat_node3 = re.compile(r":(?:\d+:)*(\d+):\d+:NODE\s+\d*\s*([0-9]+\.[0-9]+)", re.I)
+    pat_node4 = re.compile(r":NODE\s+(\d+)\s+([0-9]+\.[0-9]+)", re.I)
+    pat_node5 = re.compile(r":(\d+):NODE\s+\d*\s*([0-9]+\.[0-9]+)", re.I)
 
-    pat_oxy = re.compile(r":(?:\d+:)?(\d+):\d+:OXY\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
-    pat_cond = re.compile(r":(?:\d+:)?(\d+):\d+:COND\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
-    pat_flow = re.compile(r":(?:\d+:)?(\d+):\d+:FLOW\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
+    pat_oxy = re.compile(r":(?:\d+:)*(\d+):\d+:OXY\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
+    pat_cond = re.compile(r":(?:\d+:)*(\d+):\d+:COND\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
+    pat_flow = re.compile(r":(?:\d+:)*(\d+):\d+:FLOW\s+(\d+)\s+([0-9.]+)\s+([0-9.-]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)", re.I)
 
     for linea in texto.splitlines():
         linea_s = linea.strip()
@@ -200,7 +252,7 @@ def parsear_voltajes_y_sensores(texto: str) -> tuple[dict, dict]:
             v_alim = float(m_node.group(3))
             voltajes[nodo] = {"voltaje": v_bat, "alimentacion": v_alim}
             continue
-        m_node3 = pat_node3.search(linea_s)
+        m_node3 = pat_node3.search(linea_s) or pat_node4.search(linea_s) or pat_node5.search(linea_s)
         if m_node3:
             nodo = int(m_node3.group(1))
             v_bat = float(m_node3.group(2))
@@ -286,12 +338,77 @@ def parsear_lecturas_sensores(texto: str) -> dict:
 
 def parsear_motes(texto: str) -> dict:
     motes = {}
-    patron = re.compile(r"^\s*(\d+)\s+([0-9A-F:]{17,})\s+(\d+:\d+)\s+(\d+)\s+(.+?)\s*$", re.I)
-    for linea in texto.splitlines():
-        m = patron.match(linea)
-        if m:
-            numero, mac, signal, last_rx, nombre = m.groups()
-            motes[int(numero)] = {"mac": mac, "signal": signal, "last_rx": last_rx, "nombre": nombre}
+    if not texto:
+        return motes
+
+    macs_vistas = set()
+    for linea in texto.strip().splitlines():
+        linea_str = linea.strip()
+        if not linea_str:
+            continue
+        # Descartar encabezados
+        if "mote" in linea_str.lower() and "mac" in linea_str.lower():
+            continue
+
+        # Limpiar prompt cmd> si viene pegado
+        if linea_str.lower().startswith("cmd>"):
+            linea_str = linea_str[4:].strip()
+
+        partes = linea_str.split()
+        if len(partes) >= 2:
+            mac_idx = -1
+            for i, p in enumerate(partes):
+                p_clean = p.strip(",;()[]")
+                if re.match(r"^[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){7}$", p_clean, re.I) or (":" in p_clean and len(p_clean) == 23):
+                    mac_idx = i
+                    break
+                elif re.match(r"^00:15:8[dD]:[0-9a-fA-F:]{11,}$", p_clean, re.I):
+                    mac_idx = i
+                    break
+
+            if mac_idx != -1:
+                mac = partes[mac_idx].strip(",;()[]").upper()
+                if mac in macs_vistas:
+                    continue
+                macs_vistas.add(mac)
+
+                num_cand = partes[mac_idx - 1] if mac_idx > 0 and partes[mac_idx - 1].isdigit() else str(len(motes) + 1)
+                nodo_id = int(num_cand) if num_cand.isdigit() else (len(motes) + 1)
+                signal = partes[mac_idx + 1] if len(partes) > mac_idx + 1 else "N/D"
+                last_rx = partes[mac_idx + 2] if len(partes) > mac_idx + 2 else "N/D"
+                nom_cand = " ".join(partes[mac_idx + 3:]) if len(partes) > mac_idx + 3 else ""
+
+                if nom_cand.isdigit():
+                    nombre = f"Equipo {nom_cand}"
+                elif nom_cand:
+                    nombre = nom_cand
+                else:
+                    nombre = f"Equipo {nodo_id}"
+
+                motes[nodo_id] = {
+                    "mac": mac,
+                    "signal": signal,
+                    "last_rx": last_rx,
+                    "nombre": nombre
+                }
+                continue
+
+        # Fallback regex para cualquier MAC Jennic en la línea
+        matches_mac = re.findall(r"(00:15:8[dD]:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})", linea_str, re.I)
+        if not matches_mac:
+            matches_mac = re.findall(r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){7})", linea_str, re.I)
+        for mac_found in matches_mac:
+            mac_u = mac_found.upper()
+            if mac_u not in macs_vistas:
+                macs_vistas.add(mac_u)
+                nodo_id = len(motes) + 1
+                motes[nodo_id] = {
+                    "mac": mac_u,
+                    "signal": "N/D",
+                    "last_rx": "N/D",
+                    "nombre": f"Equipo {nodo_id}"
+                }
+
     return motes
 
 
@@ -383,44 +500,59 @@ class RevisorService:
         """
         Genera la plantilla de Verificación de Ingreso en formato texto plano exacto.
         """
-        centro = (datos.get("centro") or "CENTRO").upper()
-        if not centro.startswith("CE-") and not centro.startswith("MW-") and not centro.startswith("CENTRO"):
-            centro_titulo = f"CE-{centro}"
+        from src.constants.empresas import parse_location_info
+        centro_raw = str(datos.get("centro") or datos.get("host") or "CENTRO").strip()
+        centro_clean = centro_raw.split(".")[0].strip()
+        emp, nom_c = parse_location_info(centro_clean)
+
+        if "-" in centro_clean:
+            prefix, rest = centro_clean.split("-", 1)
+            if nom_c:
+                centro_titulo = f"{prefix.upper()}-{nom_c.upper()}"
+            else:
+                centro_titulo = centro_clean.upper()
         else:
-            centro_titulo = centro
+            centro_titulo = centro_clean.upper()
 
         tipo_conexion = datos.get("tipo_conexion") or "Wifi"
-        sistema_operativo = datos.get("sistema_operativo") or "Linux Ubuntu 20.04 LTS"
-        kernel = datos.get("kernel") or "5.4.0-105-generic"
+        sistema_operativo = datos.get("sistema_operativo") or "N/D"
+        kernel = datos.get("kernel") or "N/D"
         clave_pc = datos.get("clave_pc") or "No configurada"
         dataweb = datos.get("dataweb") or "Ok"
 
-        def fmt_changeset(val, default_num):
+        def fmt_changeset(val):
             val_str = str(val or "").strip()
-            if not val_str or val_str.upper() == "N/A":
-                return f"changeset:   {default_num}"
-            m = re.search(r"(\d+)", val_str)
+            if not val_str or val_str.upper() in ("N/A", "NO DETECTADO", "NONE"):
+                return "N/A"
+            m = re.search(r"changeset:\s*(\d+)", val_str, re.I)
             if m:
                 return f"changeset:   {m.group(1)}"
+            m2 = re.search(r"^(\d+)$", val_str)
+            if m2:
+                return f"changeset:   {m2.group(1)}"
             return val_str
 
-        pcinnovex = fmt_changeset(datos.get("pcinnovex"), "387")
-        cacheton = fmt_changeset(datos.get("cacheton"), "631")
-        python3_ver = fmt_changeset(datos.get("python3_cacheton") or datos.get("python3"), "415")
+        pcinnovex = fmt_changeset(datos.get("pcinnovex"))
+        cacheton = fmt_changeset(datos.get("cacheton"))
+        python3_ver = fmt_changeset(datos.get("python3_cacheton") or datos.get("python3"))
 
-        w_davis = str(datos.get("weather_davis") or "1.1.1").strip()
-        if "weather-station-davis" in w_davis:
+        w_davis = str(datos.get("weather_davis") or "N/A").strip()
+        if w_davis.upper() in ("N/A", "NO DETECTADO", "NONE", ""):
+            weather_davis = "N/A"
+        elif "weather-station-davis" in w_davis:
             m_d = re.search(r"weather-station-davis[_-]([\d\.]+)", w_davis)
-            weather_davis = m_d.group(1) if m_d else "1.1.1"
+            weather_davis = m_d.group(1) if m_d else "N/A"
         else:
-            weather_davis = w_davis if w_davis and w_davis.upper() not in ("N/A", "NO DETECTADO") else "1.1.1"
+            weather_davis = w_davis
 
-        v_cam = str(datos.get("visibility_cam") or "3.6").strip()
-        if "visibility-cam" in v_cam:
+        v_cam = str(datos.get("visibility_cam") or "N/A").strip()
+        if v_cam.upper() in ("N/A", "NO DETECTADO", "NONE", ""):
+            visibility_cam = "N/A"
+        elif "visibility-cam" in v_cam:
             m_v = re.search(r"visibility-cam[_-]([\d\.]+)", v_cam)
-            visibility_cam = m_v.group(1) if m_v else "3.6"
+            visibility_cam = m_v.group(1) if m_v else "N/A"
         else:
-            visibility_cam = v_cam if v_cam and v_cam.upper() not in ("N/A", "NO DETECTADO") else "3.6"
+            visibility_cam = v_cam
 
         version_equipos_raw = str(datos.get("version_equipos") or "2.0.2").strip()
         if not version_equipos_raw.startswith("v") and not version_equipos_raw.startswith("V"):
@@ -428,18 +560,22 @@ class RevisorService:
         else:
             version_equipos = version_equipos_raw
 
-        raw_senal = datos.get("senal") or datos.get("signal") or "57/198"
-        if raw_senal and not str(raw_senal).startswith("igual o mayor a"):
+        raw_senal = str(datos.get("senal") or datos.get("signal") or "N/A").strip()
+        if raw_senal.upper() in ("N/A", "NO DETECTADO", "NONE", ""):
+            senal = "N/A"
+        elif not raw_senal.startswith("igual o mayor a"):
             senal = f"igual o mayor a {raw_senal}"
         else:
-            senal = raw_senal or "igual o mayor a 57/198"
+            senal = raw_senal
 
-        raw_voltajes = datos.get("voltajes") or datos.get("voltaje") or "3.28V"
-        if raw_voltajes and not str(raw_voltajes).startswith("igual o mayor a"):
-            v_val = raw_voltajes if str(raw_voltajes).endswith("V") or str(raw_voltajes).endswith("v") else f"{raw_voltajes}V"
+        raw_voltajes = str(datos.get("voltajes") or datos.get("voltaje") or "N/A").strip()
+        if raw_voltajes.upper() in ("N/A", "NO DETECTADO", "SIN REGISTROS", "NONE", ""):
+            voltajes = "N/A"
+        elif not raw_voltajes.startswith("igual o mayor a"):
+            v_val = raw_voltajes if raw_voltajes.endswith("V") or raw_voltajes.endswith("v") else f"{raw_voltajes}V"
             voltajes = f"igual o mayor a {v_val}"
         else:
-            voltajes = raw_voltajes or "igual o mayor a 3.28V"
+            voltajes = raw_voltajes
 
         saturacion = datos.get("saturacion") or "OK"
         salinidad = datos.get("salinidad") or "OK"
@@ -515,22 +651,29 @@ class RevisorService:
         """
         Genera un Documento Live HTML con diseño corporativo Innovex idéntico al estándar del Módulo 3.
         """
-        raw_centro = str(datos.get("centro") or "S/C").strip()
-        if raw_centro.upper().startswith("CE-"):
-            centro_titulo = raw_centro[3:].strip()
+        from src.constants.empresas import parse_location_info
+        raw_centro = str(datos.get("centro") or datos.get("host") or "S/C").strip()
+        centro_clean = raw_centro.split(".")[0].strip()
+        emp, nom_c = parse_location_info(centro_clean)
+        if "-" in centro_clean:
+            prefix, rest = centro_clean.split("-", 1)
+            if nom_c:
+                centro_titulo = f"{prefix.upper()}-{nom_c.upper()}"
+            else:
+                centro_titulo = centro_clean.upper()
         else:
-            centro_titulo = raw_centro
+            centro_titulo = centro_clean.upper()
         centro_titulo = html.escape(centro_titulo)
 
         host = html.escape(str(datos.get("host") or "N/D"))
-        so = html.escape(str(datos.get("sistema_operativo") or "Linux Ubuntu 20.04 LTS"))
-        kernel = html.escape(str(datos.get("kernel") or "5.4.0-105-generic"))
+        so = html.escape(str(datos.get("sistema_operativo") or "N/D"))
+        kernel = html.escape(str(datos.get("kernel") or "N/D"))
         tipo_conexion = html.escape(str(datos.get("tipo_conexion") or "Wifi"))
         clave_pc = html.escape(str(datos.get("clave_pc") or "No configurada"))
         dataweb = html.escape(str(datos.get("dataweb") or "Ok"))
         version_equipos = html.escape(str(datos.get("version_equipos") or "v2.0.2"))
-        final_senal_display = html.escape(str(datos.get("senal") or "igual o mayor a 57/198"))
-        final_volt_display = html.escape(str(datos.get("voltajes") or "igual o mayor a 3.28V"))
+        final_senal_display = html.escape(str(datos.get("senal") or "N/A"))
+        final_volt_display = html.escape(str(datos.get("voltajes") or "N/A"))
         status_raw = str(datos.get("salida_status") or datos.get("status") or "Sin datos")
         motes_texto_raw = str(datos.get("motes_texto_raw") or datos.get("cmd_motes") or "Sin datos")
 
@@ -593,32 +736,39 @@ class RevisorService:
             </tr>
             """
 
-        def fmt_changeset(val, default_num):
+        def fmt_changeset(val):
             val_str = str(val or "").strip()
-            if not val_str or val_str.upper() == "N/A":
-                return f"changeset:   {default_num}"
-            m = re.search(r"(\d+)", val_str)
+            if not val_str or val_str.upper() in ("N/A", "NO DETECTADO", "NONE"):
+                return "N/A"
+            m = re.search(r"changeset:\s*(\d+)", val_str, re.I)
             if m:
                 return f"changeset:   {m.group(1)}"
+            m2 = re.search(r"^(\d+)$", val_str)
+            if m2:
+                return f"changeset:   {m2.group(1)}"
             return val_str
 
-        pcinnovex = html.escape(fmt_changeset(datos.get("pcinnovex"), "387"))
-        cacheton = html.escape(fmt_changeset(datos.get("cacheton"), "631"))
-        python3_ver = html.escape(fmt_changeset(datos.get("python3_cacheton") or datos.get("python3"), "415"))
+        pcinnovex = html.escape(fmt_changeset(datos.get("pcinnovex")))
+        cacheton = html.escape(fmt_changeset(datos.get("cacheton")))
+        python3_ver = html.escape(fmt_changeset(datos.get("python3_cacheton") or datos.get("python3")))
 
-        w_davis = str(datos.get("weather_davis") or "1.1.1").strip()
-        if "weather-station-davis" in w_davis:
+        w_davis = str(datos.get("weather_davis") or "N/A").strip()
+        if w_davis.upper() in ("N/A", "NO DETECTADO", "NONE", ""):
+            weather_davis = "N/A"
+        elif "weather-station-davis" in w_davis:
             m_d = re.search(r"weather-station-davis[_-]([\d]+(?:\.[\d]+)*)", w_davis)
-            weather_davis = html.escape(m_d.group(1).rstrip(".") if m_d else "1.1.1")
+            weather_davis = html.escape(m_d.group(1).rstrip(".") if m_d else "N/A")
         else:
-            weather_davis = html.escape(w_davis if w_davis and w_davis.upper() not in ("N/A", "NO DETECTADO") else "1.1.1")
+            weather_davis = html.escape(w_davis)
 
-        v_cam = str(datos.get("visibility_cam") or "3.6").strip()
-        if "visibility-cam" in v_cam:
+        v_cam = str(datos.get("visibility_cam") or "N/A").strip()
+        if v_cam.upper() in ("N/A", "NO DETECTADO", "NONE", ""):
+            visibility_cam = "N/A"
+        elif "visibility-cam" in v_cam:
             m_v = re.search(r"visibility-cam[_-]([\d]+(?:\.[\d]+)*)", v_cam)
-            visibility_cam = html.escape(m_v.group(1).rstrip(".") if m_v else "3.6")
+            visibility_cam = html.escape(m_v.group(1).rstrip(".") if m_v else "N/A")
         else:
-            visibility_cam = html.escape(v_cam if v_cam and v_cam.upper() not in ("N/A", "NO DETECTADO") else "3.6")
+            visibility_cam = html.escape(v_cam)
 
         saturacion = html.escape(str(datos.get("saturacion") or "OK"))
         salinidad = html.escape(str(datos.get("salinidad") or "OK"))
@@ -1117,20 +1267,30 @@ class RevisorService:
         log_cacheton = ""
         errores = []
 
+        hosts_a_probar = [host]
+        if host and "." not in host and not host.startswith("10.") and not host.startswith("192.") and not host.startswith("127.") and host != "localhost":
+            hosts_a_probar.append(f"{host}.acuimatic.com")
+
         # Telnet es independiente de SSH: el servidor del pancoordinator puede
         # consultarse incluso cuando no se dispone de credenciales SSH.
         status_telnet = ""
         motes_telnet = ""
         if host:
-            try:
-                status_telnet = consultar_telnet(host, puerto_telnet, "cmd status")
-            except Exception as exc:
-                errores.append(f"Telnet status ({host}:{puerto_telnet}): {exc}")
+            for h_tel in hosts_a_probar:
+                try:
+                    status_telnet = consultar_telnet(h_tel, puerto_telnet, "cmd status")
+                    if status_telnet:
+                        break
+                except Exception as exc:
+                    pass
 
-            try:
-                motes_telnet = consultar_telnet(host, puerto_telnet, "cmd motes")
-            except Exception as exc:
-                errores.append(f"Telnet motes ({host}:{puerto_telnet}): {exc}")
+            for h_tel in hosts_a_probar:
+                try:
+                    motes_telnet = consultar_telnet(h_tel, puerto_telnet, "cmd motes")
+                    if motes_telnet:
+                        break
+                except Exception as exc:
+                    pass
 
         status = status_telnet
         motes_texto = motes_telnet
@@ -1141,7 +1301,11 @@ class RevisorService:
                 "hostnamectl 2>/dev/null || true; "
                 "echo '=== OS_RELEASE ==='; "
                 "(cat /etc/os-release 2>/dev/null || lsb_release -ds 2>/dev/null || uname -s); "
-                "echo '--- KERNEL ---'; uname -r; "
+                "echo '--- KERNEL ---'; uname -r 2>/dev/null || true; "
+                "echo '=== IFCONFIG ==='; "
+                "(ifconfig 2>/dev/null || ip addr 2>/dev/null || ip a 2>/dev/null); "
+                "echo '=== CACHETON CONFIG ==='; "
+                "(cat /opt/software/cacheton/config.json 2>/dev/null || cat /opt/software/python3_cacheton/config.json 2>/dev/null || cat /etc/cacheton.json 2>/dev/null || true); "
                 "echo '=== HG PAQUETERIA ==='; "
                 "for p in pcinnovex cacheton python3_cacheton python3; do "
                 "  if [ -d \"/opt/software/$p\" ]; then "
@@ -1151,66 +1315,87 @@ class RevisorService:
                 "done; "
                 "echo '=== LS OPT SOFTWARE ==='; "
                 "ls -1 /opt/software/ 2>/dev/null || true; "
+                "echo '=== LOCAL TELNET STATUS ==='; "
+                "(echo 'cmd status'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd status'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "echo '=== LOCAL TELNET MOTES ==='; "
+                "(echo 'cmd motes'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
                 "echo '=== VOLTAJES & LOG ==='; "
-                "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -3); do "
-                "  test -f \"$f\" && tail -n 800 \"$f\" | grep -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
-                "done || true"
+                "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -5); do "
+                "  test -f \"$f\" && tail -n 1200 \"$f\" | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
+                "done || true; "
+                "journalctl -u cacheton -n 500 --no-pager 2>/dev/null | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW' || true"
             )
             ssh_rev = None
-            try:
-                import paramiko
+            ssh_exito = False
+            for h_ssh in hosts_a_probar:
+                try:
+                    import paramiko
 
-                ssh_rev = paramiko.SSHClient()
-                ssh_rev.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_rev.connect(
-                    hostname=host,
-                    port=int(puerto_ssh),
-                    username=usuario,
-                    password=password,
-                    timeout=12,
-                    look_for_keys=False,
-                    allow_agent=False
+                    ssh_rev = paramiko.SSHClient()
+                    ssh_rev.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    ssh_rev.connect(
+                        hostname=h_ssh,
+                        port=int(puerto_ssh),
+                        username=usuario,
+                        password=password,
+                        timeout=12,
+                        look_for_keys=False,
+                        allow_agent=False
+                    )
+                    _in, _out, _err = ssh_rev.exec_command(remoto_cmd, timeout=15)
+                    res_out = _out.read().decode("utf-8", errors="replace")
+                    if res_out:
+                        log_cacheton = res_out
+                        if not status and "=== LOCAL TELNET STATUS ===" in log_cacheton:
+                            part_st = log_cacheton.split("=== LOCAL TELNET STATUS ===", 1)[1]
+                            st_cand = part_st.split("===", 1)[0].strip()
+                            if st_cand:
+                                status = limpiar_salida_telnet(st_cand)
+                        if not motes_texto and "=== LOCAL TELNET MOTES ===" in log_cacheton:
+                            part_mo = log_cacheton.split("=== LOCAL TELNET MOTES ===", 1)[1]
+                            mo_cand = part_mo.split("===", 1)[0].strip()
+                            if mo_cand:
+                                motes_texto = limpiar_salida_telnet(mo_cand)
+                    ssh_exito = True
+                    break
+                except Exception as exc:
+                    errores.append(f"SSH ({h_ssh}): {exc}")
+                finally:
+                    if ssh_rev is not None:
+                        ssh_rev.close()
+
+        if not host:
+            if not status:
+                status = (
+                    "Pancoordinator status\n"
+                    "Version v2.0.2\n"
+                    "Microlib version 2fa37f3\n"
+                    "MAC: 00:15:8D:00:08:DD:0B:8A\n"
+                    "Pan ID: 1313\n"
+                    "Channel: 19\n"
+                    "N of motes attached: 7\n"
+                    "No external EEPROM\n"
+                    "CRC program block: 32143\n"
+                    "CRC data block: 41792\n"
+                    "Last reset normal\n"
+                    "Repeater connected 0"
                 )
-                _in, _out, _err = ssh_rev.exec_command(remoto_cmd, timeout=15)
-                res_out = _out.read().decode("utf-8", errors="replace")
-                if res_out:
-                    log_cacheton = res_out
-            except Exception as exc:
-                errores.append(f"SSH ({host}): {exc}")
-            finally:
-                if ssh_rev is not None:
-                    ssh_rev.close()
-
-        if not status:
-            status = (
-                "Pancoordinator status\n"
-                "Version v2.0.2\n"
-                "Microlib version 2fa37f3\n"
-                "MAC: 00:15:8D:00:08:DD:0B:8A\n"
-                "Pan ID: 1313\n"
-                "Channel: 19\n"
-                "N of motes attached: 7\n"
-                "No external EEPROM\n"
-                "CRC program block: 32143\n"
-                "CRC data block: 41792\n"
-                "Last reset normal\n"
-                "Repeater connected 0"
-            )
-        if not motes_texto:
-            motes_texto = (
-                " 1 00:15:8D:00:08:E4:BF:C5   114:120      12  3\n"
-                "2 00:15:8D:00:08:BA:90:5D   78:84      17  1\n"
-                "3 00:15:8D:00:09:F3:09:96   174:183      22  MALO\n"
-                "4 00:15:8D:00:09:F3:09:E3   57:72      109  4\n"
-                "5 00:15:8D:00:05:69:EA:30   189:189      8  1\n"
-                "6 00:15:8D:00:09:6C:A4:35   198:201      22  2\n"
-                "7 00:15:8D:00:09:24:3D:A4   141:150      18  1"
-            )
+            if not motes_texto:
+                motes_texto = (
+                    " 1 00:15:8D:00:08:E4:BF:C5   114:120      12  3\n"
+                    "2 00:15:8D:00:08:BA:90:5D   78:84      17  1\n"
+                    "3 00:15:8D:00:09:F3:09:96   174:183      22  MALO\n"
+                    "4 00:15:8D:00:09:F3:09:E3   57:72      109  4\n"
+                    "5 00:15:8D:00:05:69:EA:30   189:189      8  1\n"
+                    "6 00:15:8D:00:09:6C:A4:35   198:201      22  2\n"
+                    "7 00:15:8D:00:09:24:3D:A4   141:150      18  1"
+                )
 
         nodos_motes = parsear_motes(motes_texto)
         voltajes, sensores = parsear_voltajes_y_sensores(log_cacheton)
         paquetes = parsear_paquetes(log_cacheton)
         so_str, kernel_str = parsear_so_y_kernel(log_cacheton)
+        tipo_conexion_detectado = parsear_tipo_conexion(log_cacheton) if log_cacheton else (datos.get("tipo_conexion") or "Wifi")
 
         default_voltaje_val = 0.0
         v_vals = [v_info["voltaje"] for v_info in voltajes.values() if isinstance(v_info, dict) and v_info.get("voltaje", 0) > 0]
@@ -1264,7 +1449,7 @@ class RevisorService:
             })
 
         senal_display = parsear_senal_motes(nodos_motes)
-        volt_display = parsear_voltaje_minimo(voltajes) if voltajes else (f"igual o mayor a {default_voltaje_val:.2f}V" if default_voltaje_val > 0 else "igual o mayor a 3.33V")
+        volt_display = parsear_voltaje_minimo(voltajes) if voltajes else (f"igual o mayor a {default_voltaje_val:.2f}V" if default_voltaje_val > 0 else "N/A")
         version_equipos_raw = extraer_version_status(status)
         if version_equipos_raw != "No detectada":
             version_equipos = f"v{version_equipos_raw}" if not version_equipos_raw.startswith("v") and not version_equipos_raw.startswith("V") else version_equipos_raw
@@ -1296,7 +1481,7 @@ class RevisorService:
         fila = {
             "centro": datos.get("centro") or host or "mw-apiao.acuimatic.com",
             "host": host,
-            "tipo_conexion": datos.get("tipo_conexion", "Wifi"),
+            "tipo_conexion": tipo_conexion_detectado,
             "clave_pc": clave_pc,
             "dataweb": datos.get("dataweb", "Ok"),
             "saturacion": saturacion_val,
@@ -1317,12 +1502,12 @@ class RevisorService:
             "version_equipos": version_equipos,
             "so": so_str,
             "kernel": kernel_str,
-            "pcinnovex": paquetes.get("pcinnovex", "changeset:   387"),
-            "cacheton": paquetes.get("cacheton", "changeset:   631"),
-            "python3_cacheton": paquetes.get("python3_cacheton", "changeset:   415"),
-            "python3": paquetes.get("python3_cacheton", "changeset:   415"),
-            "weather_davis": paquetes.get("weather_davis", "1.1.1"),
-            "visibility_cam": paquetes.get("visibility_cam", "3.6"),
+            "pcinnovex": paquetes.get("pcinnovex") or "N/A",
+            "cacheton": paquetes.get("cacheton") or "N/A",
+            "python3_cacheton": paquetes.get("python3_cacheton") or "N/A",
+            "python3": paquetes.get("python3_cacheton") or "N/A",
+            "weather_davis": paquetes.get("weather_davis") or "N/A",
+            "visibility_cam": paquetes.get("visibility_cam") or "N/A",
             "cmd_motes": motes_texto,
             "status": status
         }
@@ -1463,8 +1648,8 @@ class RevisorService:
         res_revisor = RevisorService.consultar_remotamente(datos)
 
         salida_consolidada = []
-        status_raw = res_revisor.get("status_raw", "")
-        motes_raw = res_revisor.get("motes_raw", "")
+        status_raw = res_revisor.get("salida_status", "") or res_revisor.get("status_raw", "")
+        motes_raw = res_revisor.get("motes_texto_raw", "") or res_revisor.get("motes_raw", "")
         log_raw = res_revisor.get("log_cacheton_raw", "")
 
         if status_raw:
@@ -1477,8 +1662,17 @@ class RevisorService:
         resultado = "\n\n".join(salida_consolidada)
         if not resultado:
             detalle = res_revisor.get("error", "")
-            mensaje = f"No se pudo consultar la información del equipo {host}."
-            raise RuntimeError(f"{mensaje} {detalle}".strip())
+            if "Authentication failed" in detalle or "password" in detalle.lower():
+                raise RuntimeError(f"No se pudo consultar el equipo {host}. Error de autenticación SSH: Contraseña o usuario incorrectos.")
+            elif "timed out" in detalle.lower():
+                raise RuntimeError(f"No se pudo consultar el equipo {host}. Tiempo de espera agotado: Verifique si el computador está encendido y la VPN tun0 activa.")
+            elif "refused" in detalle.lower():
+                raise RuntimeError(f"No se pudo consultar el equipo {host}. Conexión rechazada: El servicio SSH/Telnet no está disponible.")
+            elif "no route" in detalle.lower() or "name or service not known" in detalle.lower():
+                raise RuntimeError(f"No se pudo consultar el equipo {host}. Host no alcanzable: Verifique el nombre DNS y su conexión VPN.")
+            else:
+                mensaje = f"No se pudo consultar la información del equipo {host}."
+                raise RuntimeError(f"{mensaje} {detalle}".strip())
 
         return resultado
 
@@ -1519,8 +1713,22 @@ class RevisorService:
 
         if host and password:
             remoto_cmd = (
+                "echo '=== HOSTNAMECTL ==='; "
+                "hostnamectl 2>/dev/null || true; "
+                "echo '=== OS_RELEASE ==='; "
+                "(cat /etc/os-release 2>/dev/null || lsb_release -ds 2>/dev/null || uname -s); "
+                "echo '--- KERNEL ---'; uname -r 2>/dev/null || true; "
+                "echo '=== IFCONFIG ==='; "
+                "(ifconfig 2>/dev/null || ip addr 2>/dev/null || ip a 2>/dev/null); "
+                "echo '=== CACHETON CONFIG ==='; "
+                "(cat /opt/software/cacheton/config.json 2>/dev/null || cat /opt/software/python3_cacheton/config.json 2>/dev/null || cat /etc/cacheton.json 2>/dev/null || true); "
+                "echo '=== LOCAL TELNET STATUS ==='; "
+                "(echo 'cmd status'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd status'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "echo '=== LOCAL TELNET MOTES ==='; "
+                "(echo 'cmd motes'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "echo '=== VOLTAJES & LOG ==='; "
                 "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -3); do "
-                "  test -f \"$f\" && tail -n 500 \"$f\" | grep -E ':NODE|NODE '; "
+                "  test -f \"$f\" && tail -n 500 \"$f\" | grep -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
                 "done | tail -30 || true"
             )
             ssh_client = None
@@ -1541,7 +1749,21 @@ class RevisorService:
                 _stdin, _stdout, _stderr = ssh_client.exec_command(remoto_cmd, timeout=15)
                 resultado_ssh = _stdout.read().decode("utf-8", errors="replace").strip()
                 if resultado_ssh:
-                    voltaje_pilas = resultado_ssh
+                    if not antena_status and "=== LOCAL TELNET STATUS ===" in resultado_ssh:
+                        part_st = resultado_ssh.split("=== LOCAL TELNET STATUS ===", 1)[1]
+                        st_cand = part_st.split("===", 1)[0].strip()
+                        if st_cand:
+                            antena_status = limpiar_salida_telnet(st_cand)
+                    if not equipos_conectados and "=== LOCAL TELNET MOTES ===" in resultado_ssh:
+                        part_mo = resultado_ssh.split("=== LOCAL TELNET MOTES ===", 1)[1]
+                        mo_cand = part_mo.split("===", 1)[0].strip()
+                        if mo_cand:
+                            equipos_conectados = limpiar_salida_telnet(mo_cand)
+
+                    if "=== VOLTAJES & LOG ===" in resultado_ssh:
+                        voltaje_pilas = resultado_ssh.split("=== VOLTAJES & LOG ===", 1)[1].strip()
+                    else:
+                        voltaje_pilas = resultado_ssh
             except Exception as exc:
                 errores.append(f"SSH: {exc}")
             finally:

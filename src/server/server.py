@@ -9,6 +9,7 @@ import sys
 import socket
 
 from src.services.certificado_service import CertificadoService
+from src.services.portal_service import PortalService
 from src.utils.autofill import procesar_autofill
 from src.pdf.generador_pdf import GeneradorPDF
 
@@ -78,6 +79,78 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
             self._responder_json({"status": "ok", "año": año, "certificados": certificados})
             return
 
+        if path == "/api/bitacora":
+            bitacora = PortalService.obtener_bitacora()
+            self._responder_json({"status": "ok", **bitacora})
+            return
+
+        if path == "/api/asistentes":
+            asistentes = PortalService.obtener_asistentes()
+            self._responder_json({"status": "ok", "asistentes": asistentes})
+            return
+
+        if path == "/api/destinatarios":
+            destinatarios = PortalService.obtener_destinatarios()
+            self._responder_json({"status": "ok", "destinatarios": destinatarios})
+            return
+
+        if path == "/api/fechas_fin_semana":
+            sab, dom, sem = PortalService.calcular_fechas_fin_semana_actual()
+            self._responder_json({"status": "ok", "fecha_sabado": sab, "fecha_domingo": dom, "semana": sem})
+            return
+
+        if path == "/api/wiki/buscar":
+            query = urllib.parse.parse_qs(parsed.query)
+            q = query.get("q", [""])[0]
+            res = PortalService.buscar_trac_wiki(q)
+            self._responder_json({"status": "ok", **res})
+            return
+
+        if path == "/api/wiki/indice":
+            res = PortalService.obtener_indice_trac_wiki()
+            self._responder_json({"status": "ok", **res})
+            return
+
+        if path == "/api/music/status":
+            # Estado del reproductor
+            status_data = {"status": "stopped", "title": "Portal de Soporte Innovex", "artist": "Música Host"}
+            try:
+                res_st = subprocess.run(["playerctl", "status"], capture_output=True, text=True, timeout=2)
+                if res_st.returncode == 0:
+                    status_data["status"] = res_st.stdout.strip().lower()
+                    t_st = subprocess.run(["playerctl", "metadata", "title"], capture_output=True, text=True, timeout=2)
+                    if t_st.returncode == 0 and t_st.stdout.strip():
+                        status_data["title"] = t_st.stdout.strip()
+                    a_st = subprocess.run(["playerctl", "metadata", "artist"], capture_output=True, text=True, timeout=2)
+                    if a_st.returncode == 0 and a_st.stdout.strip():
+                        status_data["artist"] = a_st.stdout.strip()
+            except Exception:
+                pass
+            self._responder_json(status_data)
+            return
+
+        if path == "/api/music/control":
+            query = urllib.parse.parse_qs(parsed.query)
+            action = query.get("action", [""])[0]
+            q_search = query.get("query", [""])[0]
+            commands = {
+                "volup": ["pactl", "set-sink-volume", "@DEFAULT_SINK@", "+5%"],
+                "voldn": ["pactl", "set-sink-volume", "@DEFAULT_SINK@", "-5%"],
+                "mute": ["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"],
+                "play": ["playerctl", "play-pause"],
+                "next": ["playerctl", "next"],
+                "prev": ["playerctl", "previous"]
+            }
+            if action in commands:
+                try:
+                    subprocess.run(commands[action], timeout=3)
+                    self._responder_json({"status": "ok"})
+                except Exception as exc:
+                    self._responder_json({"status": "error", "message": str(exc)})
+                return
+            self._responder_json({"status": "ok"})
+            return
+
         if path.startswith("/api/pdf_preview/"):
             # Servir PDF generado para previsualización directa en la web
             partes = path.replace("/api/pdf_preview/", "").split("/")
@@ -98,18 +171,26 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
             self.send_error(404, "PDF no encontrado")
             return
 
-        # Servir archivos estáticos del frontend
+        # Servir archivos estáticos del frontend y assets corporativos
         dir_web = obtener_ruta_assets_web()
+        dir_assets = dir_web.parent
         if path == "/" or path == "":
             ruta_target = dir_web / "index.html"
+        elif path.startswith("/assets/"):
+            rel_asset = path[len("/assets/"):]
+            ruta_target = dir_assets / rel_asset
         else:
             rel_path = path.lstrip("/")
             ruta_target = dir_web / rel_path
+            if not (ruta_target.exists() and ruta_target.is_file()):
+                posible_asset = dir_assets / rel_path
+                if posible_asset.exists() and posible_asset.is_file():
+                    ruta_target = posible_asset
 
         if ruta_target.exists() and ruta_target.is_file():
             self._responder_archivo(ruta_target)
         else:
-            self.send_error(404, "Página no encontrada")
+            self.send_error(404, f"Archivo no encontrado: {path}")
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -272,23 +353,75 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
 
             elif path == "/api/ssh_autofill":
                 from src.services.revisor_service import RevisorService
-                salida_ssh = RevisorService.ejecutar_ssh_autofill(body)
-                certificado = body.get("certificado", {})
-                resumen_dict = procesar_autofill(certificado, salida_ssh)
-                self._responder_json({
-                    "status": "ok",
-                    "certificado": certificado,
-                    "resumen": resumen_dict.get("resumen", []),
-                    "exito": resumen_dict.get("exito", False)
-                })
+                from src.constants.empresas import parse_location_info
+                try:
+                    salida_ssh = RevisorService.ejecutar_ssh_autofill(body)
+                    certificado = body.get("certificado", {})
+                    host = body.get("host", "").strip()
+                    clave = body.get("clave", "").strip()
+                    
+                    if body.get("limpiar_previos", False):
+                        certificado["motes"] = []
+                        certificado["ubicaciones"] = []
+                        certificado["equipos_repuesto"] = []
+                        certificado["configuracion_alarmas"] = []
+
+                    if host:
+                        emp, nom_c = parse_location_info(host)
+                        if "datos_generales" not in certificado:
+                            certificado["datos_generales"] = {}
+                        loc_clean = host.split(".")[0].strip().lower()
+                        certificado["datos_generales"]["location"] = loc_clean
+                        if nom_c:
+                            certificado["datos_generales"]["nombre_centro"] = nom_c
+                        if emp:
+                            certificado["datos_generales"]["empresa"] = emp
+                        if "infraestructura" not in certificado:
+                            certificado["infraestructura"] = {}
+                        certificado["infraestructura"]["pc_id"] = host
+                        if clave:
+                            certificado["infraestructura"]["pc_password"] = clave
+
+                    resumen_dict = procesar_autofill(certificado, salida_ssh)
+
+                    # Asegurar coherencia de location y nombre_centro post autofill
+                    if host:
+                        emp, nom_c = parse_location_info(host)
+                        loc_clean = host.split(".")[0].strip().lower()
+                        if not certificado.get("datos_generales"):
+                            certificado["datos_generales"] = {}
+                        certificado["datos_generales"]["location"] = loc_clean
+                        if nom_c and (not certificado["datos_generales"].get("nombre_centro") or certificado["datos_generales"].get("nombre_centro") == loc_clean.upper()):
+                            certificado["datos_generales"]["nombre_centro"] = nom_c
+                        if emp and not certificado["datos_generales"].get("empresa"):
+                            certificado["datos_generales"]["empresa"] = emp
+
+                    self._responder_json({
+                        "status": "ok",
+                        "certificado": certificado,
+                        "resumen": resumen_dict.get("resumen", []),
+                        "exito": resumen_dict.get("exito", False)
+                    })
+                except Exception as exc:
+                    self._responder_json({
+                        "status": "error",
+                        "mensaje": str(exc)
+                    })
 
             elif path == "/api/revisor/verificar":
                 from src.services.revisor_service import RevisorService
                 resultado = RevisorService.verificar_equipo(body)
-                self._responder_json({
-                    "status": "ok",
-                    "resultado": resultado
-                })
+                if resultado.get("error") and not resultado.get("log_cacheton_raw") and not resultado.get("status_raw") and not resultado.get("motes_raw") and not resultado.get("motes_texto_raw"):
+                    self._responder_json({
+                        "status": "error",
+                        "mensaje": f"Error de conexión: {resultado.get('error')}",
+                        "resultado": resultado
+                    })
+                else:
+                    self._responder_json({
+                        "status": "ok",
+                        "resultado": resultado
+                    })
 
             elif path == "/api/revisor/generar_plantilla":
                 from src.services.revisor_service import RevisorService
@@ -316,6 +449,56 @@ class CertificadoHTTPHandler(BaseHTTPRequestHandler):
                     "status": "ok",
                     "plantilla_texto": plantilla,
                     "documento_live_html": html_doc
+                })
+
+            elif path == "/api/bitacora":
+                texto = body.get("texto", "")
+                res = PortalService.actualizar_bitacora(texto)
+                self._responder_json(res)
+
+            elif path == "/api/destinatarios":
+                action = body.get("action", "")
+                if action == "toggle_destinatario":
+                    dest_id = int(body.get("id", 0))
+                    activo = bool(body.get("activo", True))
+                    res = PortalService.toggle_destinatario(dest_id, activo)
+                    self._responder_json(res)
+                elif action == "create":
+                    empresa = body.get("empresa", "")
+                    correo = body.get("correo", "")
+                    res = PortalService.crear_destinatario(empresa, correo)
+                    self._responder_json(res)
+                elif action == "delete_destinatario":
+                    dest_id = int(body.get("id", 0))
+                    res = PortalService.eliminar_destinatario(dest_id)
+                    self._responder_json(res)
+                else:
+                    self._responder_json({"status": "error", "mensaje": "Acción desconocida"}, 400)
+
+            elif path == "/api/enviar_correos_masivos":
+                personal_id = body.get("personal_id")
+                fecha_sabado = body.get("fecha_sabado") or ""
+                fecha_domingo = body.get("fecha_domingo") or ""
+                correo_prueba = body.get("correo_prueba", "").strip()
+
+                asistentes = PortalService.obtener_asistentes()
+                personal = next((p for p in asistentes if str(p.get("id")) == str(personal_id)), None)
+                if not personal and asistentes:
+                    personal = asistentes[0]
+                elif not personal:
+                    personal = {"nombre": "Asistente de Soporte", "cargo": "ASISTENTE DE SOPORTE", "telefono": "+56 9 8419 4843", "correo": "soporte@innovex.cl"}
+
+                html_content = PortalService.generar_html_correo_fin_semana(personal, fecha_sabado, fecha_domingo)
+                destinatarios = PortalService.obtener_destinatarios()
+                activos = [d for d in destinatarios if d.get("activo")]
+
+                self._responder_json({
+                    "status": "ok",
+                    "mensaje": f"Correo generado exitosamente para {len(activos)} destinatarios activos." if not correo_prueba else f"Modo prueba: correo generado para {correo_prueba}.",
+                    "html_correo": html_content,
+                    "destinatarios_count": len(activos),
+                    "personal": personal,
+                    "modo_prueba": bool(correo_prueba)
                 })
 
             else:
