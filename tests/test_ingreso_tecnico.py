@@ -1,11 +1,17 @@
+import os
 import unittest
 from unittest.mock import patch
 
-from src.services.revisor_service import RevisorService
+# Setup Django test environment
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+import django
+django.setup()
+
+from apps.revisor.services import RevisorService
 
 
 class TestIngresoTecnico(unittest.TestCase):
-    @patch("src.services.revisor_service.consultar_telnet")
+    @patch("apps.revisor.services.consultar_telnet")
     def test_consulta_telnet_sin_contrasena_ssh_y_acceso_ok(self, consultar_telnet_mock):
         def responder_telnet(host, puerto, comando):
             if comando == "cmd status":

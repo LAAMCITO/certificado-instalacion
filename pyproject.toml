@@ -3,20 +3,24 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "certificado-instalacion"
-version = "0.1.0"
-description = "Aplicación TUI para la generación de certificados de instalación"
+name = "suite-soporte-innovex"
+version = "2.0.0"
+description = "Portal Unificado y Suite de Soporte Técnico — Innovex"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "django>=5.1",
+    "django-cors-headers>=4.0",
+    "python-dotenv>=1.0",
     "reportlab>=4.0.0",
     "pillow>=10.0.0",
+    "openpyxl>=3.1.0",
     "charset-normalizer>=3.0.0",
     "paramiko>=3.0.0"
 ]
 
 [project.scripts]
-certificado = "src.app.main:main"
+suite-soporte = "src.app.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

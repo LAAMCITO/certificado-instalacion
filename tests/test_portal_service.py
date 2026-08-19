@@ -1,22 +1,17 @@
+import os
 import unittest
-import json
-import shutil
 from pathlib import Path
-from src.services.portal_service import PortalService, STORAGE_DIR, BITACORA_PATH, DESTINATARIOS_PATH
 
-class TestPortalService(unittest.TestCase):
+# Setup Django test environment
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+import django
+django.setup()
 
-    def setUp(self):
-        # Backup storage files if exist
-        self.backup_dir = Path("storage_backup_test")
-        if STORAGE_DIR.exists():
-            shutil.copytree(STORAGE_DIR, self.backup_dir, dirs_exist_ok=True)
+from django.test import TestCase
+from apps.portal.services import PortalService
 
-    def tearDown(self):
-        # Restore storage files
-        if self.backup_dir.exists():
-            shutil.copytree(self.backup_dir, STORAGE_DIR, dirs_exist_ok=True)
-            shutil.rmtree(self.backup_dir)
+
+class TestPortalService(TestCase):
 
     def test_bitacora_crud(self):
         # Obtener bitácora inicial
@@ -99,6 +94,7 @@ class TestPortalService(unittest.TestCase):
         res_indice = PortalService.obtener_indice_trac_wiki()
         self.assertIn("indice", res_indice)
         self.assertIn("ANTENAS Y COMUNICACIÓN", res_indice["indice"])
+
 
 if __name__ == "__main__":
     unittest.main()

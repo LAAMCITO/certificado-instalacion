@@ -1,94 +1,102 @@
-# Certificado de Instalación - Guía de Instalación y Uso
+# Suite de Soporte Innovex — Portal Unificado (Django)
 
-Sistema de Validación y Generación Oficial de Certificados de Instalación para **Innovex Soluciones Tecnológicas**.
+Portal Web Unificado y Suite de Herramientas de Soporte Técnico para **Innovex Soluciones Tecnológicas**, desarrollado sobre **Django 5.1** y **SQLite**.
 
 ---
 
-## 🚀 Requisitos e Instalación
+## 🚀 Arquitectura y Módulos
 
-### Requisitos del Sistema
-- Sistema Operativo: Linux (Ubuntu 20.04 / 22.04 / 24.04 LTS recomendados) o cualquier distribución x86_64.
-- No requiere Python ni dependencias preinstaladas cuando se utiliza el ejecutable compilado.
+La plataforma integra los 3 módulos operativos clave de soporte técnico:
 
-### Instalación Rápida
-1. Descargue o copie el archivo ejecutable binario **`certificado-instalacion`** (ubicado en `dist/certificado-instalacion`).
-2. Dé permisos de ejecución al archivo en la terminal:
+1. **Dashboard y Pizarra de Turno (Bitácora & Comunicados)**: Handover de turno en vivo, gestión de asistentes, destinatarios y generador masivo de comunicados de fin de semana con firma corporativa.
+2. **Certificados de Instalación**: Validación de hardware, software, antenas Jennic, estaciones meteorológicas, cámaras PoE, sensores abióticos, planillas de alarmas y generación oficial de PDFs.
+3. **Revisor de Equipos & Ingreso Técnico**: Diagnóstico remoto automatizado (SSH/Telnet), verificación de estado de enlaces y generación de plantillas de ingreso técnico.
+4. **Panel de Administración Django (`/admin/`)**: Gestión visual y persistente de Asistentes, Destinatarios de Correos, Bitácora y Certificados en SQLite.
+
+---
+
+## 🛠️ Requisitos e Instalación
+
+### Requisitos
+- Python 3.10+ (Ubuntu 20.04 / 22.04 / 24.04 LTS o cualquier distribución Linux).
+
+### Instalación
+1. Clonar el repositorio y acceder a la carpeta:
    ```bash
-   chmod +x certificado-instalacion
+   git clone https://github.com/LAAMCITO/suite-soporte-innovex.git
+   cd suite-soporte-innovex
    ```
-3. Ejecute la aplicación:
-   ```bash
-   ./certificado-instalacion
-   ```
-
----
-
-## 📂 Flujo de Trabajo y Carpeta Personal `~/evidencias_instalacion`
-
-El sistema utiliza un flujo simplificado mediante una carpeta de entrada centralizada en el directorio personal del usuario:
-
-### 1. Carpeta de Entrada de Evidencias (`~/evidencias_instalacion`)
-- Al ejecutar la aplicación por primera vez, se crea automáticamente la carpeta:
-  `~/evidencias_instalacion` (ubicada en `/home/<usuario>/evidencias_instalacion`).
-- **Instrucciones para el Operador:**
-  - Deposite allí las **fotografías del centro** (`.jpg`, `.jpeg`, `.png`).
-  - Deposite allí la **planilla de configuración de alarmas** (`.ods` o `.xlsx`).
-
-### 2. Uso de la Interfaz TUI
-Al ejecutar `./certificado-instalacion`, se despliega el menú interactivo:
-1. **Crear / Editar Certificado:**
-   - Seleccione el año e ingrese el código del centro (ej. `ca-ahoni`).
-2. **Completar Secciones:**
-   - Navegue por las opciones (Datos Generales, Infraestructura, Acceso Remoto, Estación/Cámara, Monitoreo Abiótico, Ubicaciones y Sensores, Activación).
-   - **Opción 8 (Evidencias):** Permite ver los archivos detectados en `~/evidencias_instalacion` y presionar **`L`** para **Limpiar la carpeta** cuando vaya a comenzar la instalación de un nuevo centro.
-   - **Opción 9 (Configuración de Alarmas):** Presione **`C`** para cargar y procesar automáticamente la planilla de alarmas (`.ods` / `.xlsx`).
-3. **Guardar y Generar PDF:**
-   - Al seleccionar **`P` (Generar PDF)** o **`G` (Guardar)**, el sistema:
-     - Copia automáticamente las fotos y planillas de `~/evidencias_instalacion` al archivo histórico del centro.
-     - Genera la Ficha Oficial en PDF y la estructura en JSON.
-
----
-
-## 📁 Ubicación de Archivos Generados
-
-Todos los certificados procesados se archivan de manera estructurada en:
-
-```text
-storage/
-└── certificados/
-    └── <AÑO>/
-        └── <LOCATION>/
-            ├── certificado.json
-            ├── certificado.pdf
-            └── evidencias/
-```
-
-- **`certificado.json`**: Estructura de datos completa del certificado.
-- **`certificado.pdf`**: Documento oficial formateado y paginado listo para entrega al cliente.
-- **`evidencias/`**: Copia de respaldo histórica de las fotografías y planillas asociadas al centro.
-
----
-
-## 🛠️ Desarrollo y Compilación (Para Administradores)
-
-Si se desea modificar el código fuente o recompilar el ejecutable:
-
-1. **Entorno de Desarrollo Python:**
+2. Crear y activar el entorno virtual:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
+   ```
+3. Instalar dependencias:
+   ```bash
    pip install -r requirements.txt
    ```
-2. **Ejecución desde Código Fuente:**
+4. Aplicar migraciones de base de datos:
    ```bash
-   python main.py
+   python manage.py migrate
    ```
-3. **Pruebas Automatizadas:**
+5. (Opcional) Importar datos iniciales y crear administrador:
    ```bash
-   python tests/test_full_workflow.py
+   python scripts/import_json_to_sqlite.py
+   python scripts/create_default_admin.py
    ```
-4. **Compilar Nuevo Ejecutable:**
-   ```bash
-   pyinstaller --onefile --name "certificado-instalacion" --add-data "assets:assets" main.py
-   ```
-   *(El binario resultante se guardará en `dist/certificado-instalacion`)*.
+
+---
+
+## 🖥️ Ejecución del Servidor
+
+### Inicio Rápido (Recomendado)
+```bash
+python main.py
+```
+*Abre automáticamente el navegador en `http://localhost:8888/` y expone el portal en la red local para tus colegas.*
+
+### Parámetros opcionales
+```bash
+python main.py --port 8000           # Puerto personalizado
+python main.py --host 127.0.0.1      # Solo local
+python main.py --no-browser          # Sin abrir navegador automáticamente
+```
+
+### O mediante Django CLI estándar
+```bash
+python manage.py runserver 0.0.0.0:8888
+```
+
+---
+
+## 📂 Estructura del Proyecto
+
+```text
+suite-soporte-innovex/
+├── manage.py                   # CLI administrativo Django
+├── main.py                     # Launcher rápido con auto-detección de IPs
+├── config/                     # Configuración Django (settings, urls, wsgi, asgi)
+├── apps/
+│   ├── core/                   # Parsers, utilidades, constantes, generador PDF
+│   ├── certificados/           # CRUD Certificados, autofill, reportes PDF
+│   ├── revisor/                # Verificación SSH/Telnet, plantillas técnicas
+│   └── portal/                 # Bitácora, asistentes, destinatarios, correos
+├── static/                     # Archivos estáticos (CSS, JS, Logos)
+├── templates/                  # Templates HTML (index.html con tags Django)
+├── storage/                    # Almacenamiento histórico de PDFs y evidencias
+├── db.sqlite3                  # Base de datos SQLite
+└── tests/                      # Suite de pruebas automatizadas (36 tests)
+```
+
+---
+
+## 🧪 Pruebas Automatizadas
+
+Para ejecutar la suite completa de 36 pruebas unitarias:
+```bash
+python manage.py test tests
+```
+O con unittest:
+```bash
+python -m unittest discover tests
+```

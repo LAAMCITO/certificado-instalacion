@@ -1,5 +1,10 @@
+import os
 import unittest
-from src.services.revisor_service import (
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+import django
+django.setup()
+
+from apps.revisor.services import (
     parsear_paquetes,
     parsear_so_y_kernel,
     parsear_senal_motes,

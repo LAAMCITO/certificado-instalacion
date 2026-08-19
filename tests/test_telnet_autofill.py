@@ -2,9 +2,15 @@ import socket
 import socketserver
 import threading
 import unittest
+import os
 
-from src.services.revisor_service import RevisorService
-from src.utils.autofill import parse_cmd_status
+# Setup Django test environment
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+import django
+django.setup()
+
+from apps.revisor.services import RevisorService
+from apps.core.utils.autofill import parse_cmd_status
 
 
 class _PancoordinatorTelnetHandler(socketserver.BaseRequestHandler):
