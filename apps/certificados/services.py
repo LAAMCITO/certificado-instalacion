@@ -9,11 +9,12 @@ import json
 import uuid
 import shutil
 
+from django.conf import settings
 from apps.core.models.certificado import Certificado
 from apps.core.models.metadata import Metadata
 from .models import CertificadoInstalacion
 
-BASE_STORAGE = Path("storage/certificados")
+BASE_STORAGE = Path(getattr(settings, "STORAGE_DIR", Path(__file__).resolve().parent.parent.parent / "storage")) / "certificados"
 
 
 class CertificadoService:
@@ -137,9 +138,7 @@ class CertificadoService:
         except Exception as exc:
             print(f"Advertencia guardando en SQLite: {exc}")
 
-        # Autolimpiar almacenamiento para mantener únicamente los últimos 3 certificados
-        CertificadoService.rotar_certificados_max_3(año, max_guardados=3)
-
+        # Los certificados se preservan de forma íntegra en SQLite y Storage
         return archivo_json
 
     @staticmethod

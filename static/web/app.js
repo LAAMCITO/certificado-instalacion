@@ -2537,6 +2537,7 @@ async function compilarYMostrarPDF() {
       const urlConCacheBuster = data.pdf_preview_url + "?t=" + new Date().getTime();
       window.open(urlConCacheBuster, "_blank");
       mostrarToast("✓ PDF Oficial generado y abierto en nueva pestaña.", "success");
+      cargarListaCertificadosHeader(false);
     } else {
       mostrarToast("Error al compilar PDF: " + (data.mensaje || "Error desconocido"), "error");
     }

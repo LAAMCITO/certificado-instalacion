@@ -11,7 +11,7 @@ from django.http import JsonResponse, FileResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .services import CertificadoService
+from .services import CertificadoService, BASE_STORAGE
 from apps.core.utils.autofill import procesar_autofill
 from apps.core.pdf.generador_pdf import GeneradorPDF
 
@@ -31,15 +31,25 @@ def _parse_json_body(request):
 @require_GET
 def listar_certificados(request):
     """GET /api/list?año=2026"""
-    año = int(request.GET.get("año", datetime.now().year))
+    año_str = request.GET.get("año") or str(datetime.now().year)
+    try:
+        año = int(año_str)
+    except ValueError:
+        año = datetime.now().year
+
     certificados = CertificadoService.listar_certificados(año)
-    return JsonResponse({"status": "ok", "año": año, "certificados": certificados})
+    return JsonResponse({
+        "status": "ok",
+        "año": año,
+        "certificados": certificados,
+    })
 
 
-def pdf_preview(request, año, location, nombre_pdf=""):
+@require_GET
+def pdf_preview(request, año: str, location: str, nombre_pdf: str = ""):
     """GET /api/pdf_preview/<año>/<location>/"""
     nombre_pdf_gen = f"certificado_inst_{location}.pdf"
-    dir_location = Path("storage/certificados") / str(año) / location
+    dir_location = BASE_STORAGE / str(año) / location
 
     posibles = [
         dir_location / nombre_pdf_gen,
@@ -119,7 +129,7 @@ def generar_pdf(request):
     location = datos_gen.get("location") or "sin_location"
     año = datetime.now().year
 
-    dir_cert = Path("storage/certificados") / str(año) / location
+    dir_cert = BASE_STORAGE / str(año) / location
     dir_cert.mkdir(parents=True, exist_ok=True)
 
     ruta_json = CertificadoService.guardar_certificado(certificado, location, año)
