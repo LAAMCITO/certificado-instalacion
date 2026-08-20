@@ -219,13 +219,30 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarListaCertificadosHeader(false);
   setupDragAndDrop();
 
-  // Dark / Light Mode Toggle
+  // Dark / Light Mode Toggle con Persistencia
   const themeBtn = document.getElementById("btnToggleTheme");
   if (themeBtn) {
+    try {
+      const savedTheme = localStorage.getItem("portal_theme");
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+        themeBtn.textContent = "☀️ Modo Claro";
+      }
+    } catch (e) {}
+
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("dark-theme");
       const isDark = document.body.classList.contains("dark-theme");
+      if (isDark) {
+        document.body.classList.remove("light-theme");
+      } else {
+        document.body.classList.add("light-theme");
+      }
       themeBtn.textContent = isDark ? "☀️ Modo Claro" : "🌓 Modo Oscuro";
+      try {
+        localStorage.setItem("portal_theme", isDark ? "dark" : "light");
+      } catch (e) {}
     });
   }
 
@@ -3947,6 +3964,29 @@ async function copiarPlantillaIngreso() {
 // FUNCIONALIDADES DEL PORTAL UNIFICADO DE SOPORTE INNOVEX
 // ===================================================================
 
+function restaurarVistaActivaPortal() {
+  let vista = "";
+  let submodulo = "";
+
+  const hash = window.location.hash.replace("#", "").trim();
+  if (hash) {
+    const parts = hash.split("/");
+    vista = parts[0];
+    submodulo = parts[1] || "";
+  } else {
+    try {
+      vista = localStorage.getItem("active_portal_view") || "";
+      submodulo = localStorage.getItem("active_portal_submodule") || "";
+    } catch (e) {}
+  }
+
+  if (vista && document.getElementById(`view-${vista}`)) {
+    window.navegarSeccionPortal(vista, submodulo);
+  } else {
+    window.navegarSeccionPortal("dashboard");
+  }
+}
+
 function iniciarPortalUnificado() {
   iniciarRelojSidebar();
   setupSidebarNavigation();
@@ -3957,6 +3997,9 @@ function iniciarPortalUnificado() {
   setupTracSearch();
   // setupMusicPlayer(); // Deshabilitado temporalmente a petición del usuario
 
+  // Restaurar sección activa previa en F5 o enlace directo
+  restaurarVistaActivaPortal();
+
   // Carga inicial de datos de fondo
   cargarBitacora();
   cargarDatosCorreosMasivos();
@@ -3966,6 +4009,21 @@ function iniciarPortalUnificado() {
 
 // --- 1. Navegación entre Secciones del Portal ---
 window.navegarSeccionPortal = function(vista, submodulo) {
+  // Persistir vista activa en localStorage y Hash de la URL para que no vuelva al home tras F5
+  try {
+    localStorage.setItem("active_portal_view", vista);
+    if (submodulo) {
+      localStorage.setItem("active_portal_submodule", submodulo);
+    } else {
+      localStorage.removeItem("active_portal_submodule");
+    }
+
+    const hashTarget = submodulo ? `${vista}/${submodulo}` : vista;
+    if (window.location.hash !== `#${hashTarget}`) {
+      history.replaceState(null, "", `#${hashTarget}`);
+    }
+  } catch (e) {}
+
   // Actualizar estado activo en los botones del sidebar
   document.querySelectorAll(".sidebar-nav .nav-item:not(.external)").forEach(item => {
     const v = item.getAttribute("data-view");
@@ -4050,6 +4108,10 @@ function setupSidebarNavigation() {
 
   document.getElementById("btnToggleSidebar")?.addEventListener("click", () => {
     document.getElementById("portalSidebar")?.classList.toggle("open");
+  });
+
+  window.addEventListener("popstate", () => {
+    restaurarVistaActivaPortal();
   });
 }
 
