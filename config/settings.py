@@ -20,7 +20,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['10.9.30.178', 'localhost', '127.0.0.1',"*","portalsoporte.local"]
 
 # ──────────────────────────────────────────────
 # Application definition
