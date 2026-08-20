@@ -1305,7 +1305,7 @@ class RevisorService:
                 "echo '=== IFCONFIG ==='; "
                 "(ifconfig 2>/dev/null || ip addr 2>/dev/null || ip a 2>/dev/null); "
                 "echo '=== CACHETON CONFIG ==='; "
-                "(cat /opt/software/cacheton/config.json 2>/dev/null || cat /opt/software/python3_cacheton/config.json 2>/dev/null || cat /etc/cacheton.json 2>/dev/null || true); "
+                "(cat /opt/software/cacheton/config.json 2>/dev/null || cat /opt/software/python3_cacheton/config.json 2>/dev/null || cat /etc/cacheton.json 2>/dev/null || cat /opt/software/pcinnovex/config.json 2>/dev/null || true); "
                 "echo '=== HG PAQUETERIA ==='; "
                 "for p in pcinnovex cacheton python3_cacheton python3; do "
                 "  if [ -d \"/opt/software/$p\" ]; then "
@@ -1315,10 +1315,35 @@ class RevisorService:
                 "done; "
                 "echo '=== LS OPT SOFTWARE ==='; "
                 "ls -1 /opt/software/ 2>/dev/null || true; "
-                "echo '=== LOCAL TELNET STATUS ==='; "
-                "(echo 'cmd status'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd status'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
-                "echo '=== LOCAL TELNET MOTES ==='; "
-                "(echo 'cmd motes'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "python3 -c \"import socket, time\n"
+                "def q(cmd_str):\n"
+                "    for p in (9999, 9998):\n"
+                "        try:\n"
+                "            s = socket.create_connection(('127.0.0.1', p), timeout=2.0)\n"
+                "            s.settimeout(2.0)\n"
+                "            time.sleep(0.1)\n"
+                "            s.sendall((cmd_str + '\\r\\n').encode('latin-1'))\n"
+                "            time.sleep(0.4)\n"
+                "            chunks = []\n"
+                "            while True:\n"
+                "                try:\n"
+                "                    b = s.recv(4096)\n"
+                "                    if not b: break\n"
+                "                    chunks.append(b)\n"
+                "                except Exception:\n"
+                "                    break\n"
+                "            s.close()\n"
+                "            res = b''.join(chunks).decode('latin-1', 'replace').strip()\n"
+                "            if res: return res\n"
+                "        except Exception:\n"
+                "            pass\n"
+                "    return ''\n"
+                "print('=== LOCAL TELNET STATUS ===\\n' + q('cmd status'))\n"
+                "print('=== LOCAL TELNET MOTES ===\\n' + q('cmd motes'))\n"
+                "\" 2>/dev/null || ("
+                "  echo '=== LOCAL TELNET STATUS ==='; (echo 'cmd status'; sleep 0.5) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd status'; sleep 0.5) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "  echo '=== LOCAL TELNET MOTES ==='; (echo 'cmd motes'; sleep 0.5) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.5) | telnet 127.0.0.1 9999 2>/dev/null || true; "
+                "); "
                 "echo '=== VOLTAJES & LOG ==='; "
                 "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -5); do "
                 "  test -f \"$f\" && tail -n 1200 \"$f\" | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
@@ -1346,12 +1371,12 @@ class RevisorService:
                     res_out = _out.read().decode("utf-8", errors="replace")
                     if res_out:
                         log_cacheton = res_out
-                        if not status and "=== LOCAL TELNET STATUS ===" in log_cacheton:
+                        if "=== LOCAL TELNET STATUS ===" in log_cacheton:
                             part_st = log_cacheton.split("=== LOCAL TELNET STATUS ===", 1)[1]
                             st_cand = part_st.split("===", 1)[0].strip()
                             if st_cand:
                                 status = limpiar_salida_telnet(st_cand)
-                        if not motes_texto and "=== LOCAL TELNET MOTES ===" in log_cacheton:
+                        if "=== LOCAL TELNET MOTES ===" in log_cacheton:
                             part_mo = log_cacheton.split("=== LOCAL TELNET MOTES ===", 1)[1]
                             mo_cand = part_mo.split("===", 1)[0].strip()
                             if mo_cand:
@@ -1661,18 +1686,21 @@ class RevisorService:
 
         resultado = "\n\n".join(salida_consolidada)
         if not resultado:
-            detalle = res_revisor.get("error", "")
-            if "Authentication failed" in detalle or "password" in detalle.lower():
-                raise RuntimeError(f"No se pudo consultar el equipo {host}. Error de autenticación SSH: Contraseña o usuario incorrectos.")
-            elif "timed out" in detalle.lower():
-                raise RuntimeError(f"No se pudo consultar el equipo {host}. Tiempo de espera agotado: Verifique si el computador está encendido y la VPN tun0 activa.")
+            errores_lista = res_revisor.get("errores", [])
+            detalle = res_revisor.get("error", "") or ("; ".join(errores_lista) if isinstance(errores_lista, list) else str(errores_lista))
+            if "Authentication failed" in detalle or "password" in detalle.lower() or "authenticat" in detalle.lower():
+                raise RuntimeError(f"Error de autenticación SSH en {host}: Contraseña o usuario incorrectos. Verifique sus credenciales.")
+            elif "timed out" in detalle.lower() or "timeout" in detalle.lower():
+                raise RuntimeError(f"Tiempo de espera agotado al conectar a {host}: Verifique si el equipo remoto está encendido y la VPN tun0 activa.")
             elif "refused" in detalle.lower():
-                raise RuntimeError(f"No se pudo consultar el equipo {host}. Conexión rechazada: El servicio SSH/Telnet no está disponible.")
+                raise RuntimeError(f"Conexión rechazada en {host}: El puerto SSH {datos.get('puerto_ssh', 22)} está cerrado o el servicio SSH no está activo.")
             elif "no route" in detalle.lower() or "name or service not known" in detalle.lower():
-                raise RuntimeError(f"No se pudo consultar el equipo {host}. Host no alcanzable: Verifique el nombre DNS y su conexión VPN.")
+                raise RuntimeError(f"Host no alcanzable ({host}): Verifique el nombre DNS y su conexión a la red/VPN.")
             else:
-                mensaje = f"No se pudo consultar la información del equipo {host}."
-                raise RuntimeError(f"{mensaje} {detalle}".strip())
+                mensaje = f"No se pudo consultar el equipo remoto ({host})."
+                if detalle:
+                    mensaje += f" Detalle: {detalle}"
+                raise RuntimeError(mensaje)
 
         return resultado
 

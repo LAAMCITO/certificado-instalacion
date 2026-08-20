@@ -66,12 +66,25 @@ def procesar_autofill_view(request):
     body = _parse_json_body(request)
     texto = body.get("texto", "")
     certificado_actual = body.get("certificado", {})
-    resultado = procesar_autofill(certificado_actual, texto)
-    return JsonResponse({
-        "status": "ok",
-        "certificado": certificado_actual,
-        "resumen": resultado.get("resumen", []),
-    })
+    if body.get("limpiar_previos", False):
+        certificado_actual["motes"] = []
+        certificado_actual["ubicaciones"] = []
+        certificado_actual["equipos_repuesto"] = []
+        certificado_actual["configuracion_alarmas"] = []
+
+    try:
+        resultado = procesar_autofill(certificado_actual, texto)
+        return JsonResponse({
+            "status": "ok",
+            "certificado": certificado_actual,
+            "resumen": resultado.get("resumen", []),
+            "exito": resultado.get("exito", False),
+        })
+    except Exception as exc:
+        return JsonResponse({
+            "status": "error",
+            "mensaje": str(exc),
+        })
 
 
 @csrf_exempt

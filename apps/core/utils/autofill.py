@@ -28,7 +28,7 @@ def parse_cmd_status(texto: str) -> dict:
             if len(raw_mac) == 16 and ":" not in raw_mac:
                 raw_mac = ":".join(raw_mac[i:i+2] for i in range(0, 16, 2))
             res["mac"] = raw_mac
-        elif "mac:" in line_s.lower():
+        elif "mac:" in line_s.lower() and "mote" not in line_s.lower() and "node" not in line_s.lower():
             res["mac"] = line_s.split(":", 1)[1].strip().upper()
 
         # Pan ID
@@ -369,7 +369,40 @@ def procesar_autofill(certificado: dict, texto_pegado: str) -> dict:
                     certificado["motes"][macs_existentes[mac_u]].update(m)
                 else:
                     certificado["motes"].append(m)
+
+        # Monitoreo Abiótico automático si hay motes detectados
+        if "monitoreo_abiotico" not in certificado:
+            certificado["monitoreo_abiotico"] = {}
+        mon = certificado["monitoreo_abiotico"]
+        mon["instalado"] = "Si"
+        if not mon.get("cantidad_equipos_asociados") or mon.get("cantidad_equipos_asociados") == "0":
+            mon["cantidad_equipos_asociados"] = str(len(certificado["motes"]))
+        if not mon.get("tipo_antena"):
+            mon["tipo_antena"] = "Outdoor"
+        if not mon.get("ubicacion_antena"):
+            mon["ubicacion_antena"] = "Techo Pontón / Púlpito"
+
         resumen.append(f"Equipos Jennic -> {len(motes_parseados)} motes importados ({len(certificado['motes'])} total)")
+        resumen.append(f"Monitoreo Abiótico -> Instalado con {len(certificado['motes'])} equipos asociados")
+
+    # 5b. Logs con sensores y voltajes (:NODE, :OXY, :COND, :FLOW)
+    try:
+        from apps.revisor.services import parsear_voltajes_y_sensores
+        voltajes, sensores_dict = parsear_voltajes_y_sensores(texto_pegado)
+        if sensores_dict or voltajes:
+            if "monitoreo_abiotico" not in certificado:
+                certificado["monitoreo_abiotico"] = {}
+            mon = certificado["monitoreo_abiotico"]
+            mon["instalado"] = "Si"
+            if not mon.get("tipo_antena"):
+                mon["tipo_antena"] = "Outdoor"
+
+            if sensores_dict:
+                resumen.append(f"Sensores Abióticos -> {len(sensores_dict)} nodos con lecturas de sensores detectados (OXY/COND/FLOW)")
+            if voltajes:
+                resumen.append(f"Voltajes -> {len(voltajes)} voltajes de nodos detectados")
+    except Exception:
+        pass
 
     # 6. Tabla de alarmas por copiar y pegar (TSV/Excel/Texto)
     from apps.core.utils.excel_parser import parsear_alarmas_texto

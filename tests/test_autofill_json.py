@@ -76,13 +76,13 @@ Activo 	edwin 	4,5 	16,0 		(3583) Yatac - Aquachile 	Equipo 2 	(27944) Sensor 10
         txt2 = "1 00:15:8D:00:09:24:53:F8 -75dBm 2s 9"
         procesar_autofill(cert, txt2)
         self.assertEqual(cert["monitoreo_abiotico"]["version"], "v2.0.2")
-        self.assertEqual(len(cert["motes"]), 2)
+        self.assertEqual(len(cert["motes"]), 1)
 
         # Paso 3: Parsear alarmas en texto
         txt3 = "Estado\tUsuario\tMínima\tMáxima\tMedicion\tCentros\tEquipo\tSensor\nActivo\tadmin\t4.0\t15.0\tOxygen\tYatac\tEquipo 1\tSensor 1"
         procesar_autofill(cert, txt3)
         self.assertEqual(cert["monitoreo_abiotico"]["version"], "v2.0.2")
-        self.assertEqual(len(cert["motes"]), 2)
+        self.assertEqual(len(cert["motes"]), 1)
         self.assertEqual(len(cert["configuracion_alarmas"]), 1)
 
     def test_eliminar_certificado(self):
@@ -161,6 +161,68 @@ Activo 	edwin 	4,5 	16,0 		(3583) Yatac - Aquachile 	Equipo 2 	(27944) Sensor 10
         self.assertEqual(cert["datos_generales"]["location"], "ce-unicorniosur")
         self.assertEqual(cert["datos_generales"]["nombre_centro"], "Unicornio Sur")
         self.assertEqual(cert["datos_generales"]["empresa"], "Cermaq")
+
+
+    def test_abiotico_detection_for_mw_islasanchez(self):
+        cert = {}
+        salida_islasanchez = """
+        === HOSTNAMECTL ===
+        Static hostname: mw-islasanchez
+        Operating System: Ubuntu 22.04.4 LTS
+        Kernel: Linux 5.15.0-105-generic
+        === IFCONFIG ===
+        eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+                inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255
+                ether 00:1a:2b:3c:4d:5e  txqueuelen 1000  (Ethernet)
+        tun0: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
+                inet 10.8.0.45  netmask 255.255.255.255  destination 10.8.0.45
+        === PANCOORDINATOR STATUS ===
+        Pancoordinator status
+        Version v2.0.2
+        Microlib version 2fa37f3
+        MAC: 00:15:8D:00:08:DD:0B:8A
+        Pan ID: 1313
+        Channel: 19
+        N of motes attached: 4
+        === PANCOORDINATOR MOTES ===
+         1 00:15:8D:00:08:E4:BF:C5   114:120      12  Jaula 1
+         2 00:15:8D:00:08:BA:90:5D   78:84      17  Jaula 2
+         3 00:15:8D:00:09:F3:09:96   174:183      22  Jaula 3
+         4 00:15:8D:00:09:F3:09:E3   57:72      109  Jaula 4
+        === VOLTAJES & LOG ===
+        :1:NODE 3.32 0.00
+        :1:1:OXY 1 10.0 12.5 8.9 95.4 33.2
+        """
+        res = procesar_autofill(cert, salida_islasanchez)
+        self.assertTrue(res["exito"])
+        self.assertEqual(cert["datos_generales"]["location"], "mw-islasanchez")
+        self.assertEqual(cert["datos_generales"]["empresa"], "Mowi")
+        self.assertEqual(cert["datos_generales"]["nombre_centro"], "Isla Sanchez")
+        self.assertEqual(cert["monitoreo_abiotico"]["instalado"], "Si")
+        self.assertEqual(cert["monitoreo_abiotico"]["version"], "v2.0.2")
+        self.assertEqual(cert["monitoreo_abiotico"]["mac"], "00:15:8D:00:08:DD:0B:8A")
+        self.assertEqual(cert["monitoreo_abiotico"]["panid"], "1313")
+        self.assertEqual(cert["monitoreo_abiotico"]["cantidad_equipos_asociados"], "4")
+        self.assertEqual(len(cert["motes"]), 4)
+
+    def test_ssh_autofill_error_handling_view(self):
+        from django.test import Client
+        import json
+        client = Client()
+        # Enviar host inexistente para verificar respuesta JSON status error limpia
+        resp = client.post(
+            "/api/ssh_autofill",
+            data=json.dumps({
+                "host": "servidor-no-existente-12345.acuimatic.com",
+                "usuario": "innovex",
+                "clave": "clave_erronea_test"
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get("status"), "error")
+        self.assertTrue(len(data.get("mensaje", "")) > 0)
 
 
 if __name__ == "__main__":

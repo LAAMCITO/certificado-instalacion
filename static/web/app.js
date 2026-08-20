@@ -1404,17 +1404,18 @@ function poblarFormularioDesdeState() {
   actualizarVisibilidadCamaraEstacion();
 
   const ab = certificadoState.monitoreo_abiotico || {};
-  setVal("ab_instalado", ab.instalado);
+  const abInst = ab.instalado || ((ab.version || ab.mac || (certificadoState.motes && certificadoState.motes.length > 0)) ? "Si" : "Si");
+  setVal("ab_instalado", abInst);
   const containerAb = document.getElementById("abiotico_fields_container");
   if (containerAb) {
-    containerAb.style.display = ab.instalado === "No" ? "none" : "block";
+    containerAb.style.display = abInst === "No" ? "none" : "block";
   }
-  setVal("ab_tipo_antena", ab.tipo_antena);
+  setVal("ab_tipo_antena", ab.tipo_antena || "Outdoor");
   setVal("ab_ubicacion_antena", ab.ubicacion_antena || "Púlpito / Techo");
-  setVal("ab_version", ab.version);
-  setVal("ab_mac", ab.mac);
-  setVal("ab_panid", ab.panid);
-  setVal("ab_cantidad_equipos_asociados", ab.cantidad_equipos_asociados || "");
+  setVal("ab_version", ab.version || "");
+  setVal("ab_mac", ab.mac || "");
+  setVal("ab_panid", ab.panid || "");
+  setVal("ab_cantidad_equipos_asociados", ab.cantidad_equipos_asociados || (certificadoState.motes ? String(certificadoState.motes.length) : ""));
 
   const act = certificadoState.activacion || {};
   setVal("act_ip_final", act.ip_final);
@@ -2552,16 +2553,21 @@ function abrirVistaPreviaPopout() {
 
 function verificarYEjecutarAutofill(nuevoHost, accionEjecutar) {
   const parsed = parseLocationInfo(nuevoHost);
-  const locationActual = certificadoState.datos_generales?.location || "";
-  const tieneDatosPrevios = Boolean(
-    (locationActual && locationActual !== parsed.location && locationActual !== "ce-tranqui1") ||
-    (certificadoState.motes && certificadoState.motes.length > 0) ||
-    (certificadoState.ubicaciones && certificadoState.ubicaciones.length > 0) ||
-    (certificadoState.configuracion_alarmas && certificadoState.configuracion_alarmas.length > 0)
+  const locationActual = (certificadoState.datos_generales?.location || "").toLowerCase().trim();
+  const locationNueva = (parsed.location || "").toLowerCase().trim();
+
+  // Solo confirmar si realmente es un centro DISTINTO al actual y ninguno es el default vacío
+  const esCentroDistinto = Boolean(
+    locationActual &&
+    locationNueva &&
+    locationNueva !== "texto-pegado" &&
+    locationActual !== "ce-tranqui1" &&
+    locationActual !== locationNueva
   );
 
-  if (!tieneDatosPrevios) {
-    accionEjecutar({ limpiar: true });
+  if (!esCentroDistinto) {
+    // Es el mismo centro, texto de consola pegado o inicio de ficha: ejecutar combinando directamente
+    accionEjecutar({ limpiar: false });
     return;
   }
 
@@ -2653,12 +2659,18 @@ async function procesarAutofill() {
         if (targetHost && targetHost !== "Texto Pegado") {
           const parsedTarget = parseLocationInfo(targetHost);
           if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
-          if (parsedTarget.location) certificadoState.datos_generales.location = parsedTarget.location;
-          if (parsedTarget.empresa) certificadoState.datos_generales.empresa = parsedTarget.empresa;
-          if (parsedTarget.nombre_centro) certificadoState.datos_generales.nombre_centro = parsedTarget.nombre_centro;
+          if (parsedTarget.location && (!certificadoState.datos_generales.location || certificadoState.datos_generales.location === "ce-tranqui1")) {
+            certificadoState.datos_generales.location = parsedTarget.location;
+          }
+          if (parsedTarget.empresa && (!certificadoState.datos_generales.empresa || certificadoState.datos_generales.empresa === "Otro...")) {
+            certificadoState.datos_generales.empresa = parsedTarget.empresa;
+          }
+          if (parsedTarget.nombre_centro && (!certificadoState.datos_generales.nombre_centro || certificadoState.datos_generales.nombre_centro === "TRANQUI 1")) {
+            certificadoState.datos_generales.nombre_centro = parsedTarget.nombre_centro;
+          }
         }
         poblarFormularioDesdeState();
-        mostrarToast("Documento autorellenado con éxito.", "success");
+        mostrarToast("Documento autorellenado y complementado con éxito.", "success");
         
         // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
         activarSeccionTab("generales");
@@ -2667,10 +2679,10 @@ async function procesarAutofill() {
           else t.classList.remove("active");
         });
       } else {
-        mostrarToast(`Error al procesar: ${data.mensaje || "Error desconocido"}`, "error");
+        mostrarToast(`❌ Error al procesar: ${data.mensaje || "Error desconocido"}`, "error");
       }
     } catch (err) {
-      mostrarToast(`Error de conexión al parsear datos: ${err.message}`, "error");
+      mostrarToast(`❌ Error de conexión al parsear datos: ${err.message}`, "error");
     }
   });
 }
@@ -2683,16 +2695,21 @@ async function ejecutarSSHAutofill() {
   }
 
   verificarYEjecutarAutofill(host, async (opciones) => {
-    await realizarLlamadaSSHAutofill(opciones?.limpiar ?? true);
+    await realizarLlamadaSSHAutofill(opciones?.limpiar ?? false);
   });
 }
 
-async function realizarLlamadaSSHAutofill(limpiarPrevios = true) {
+async function realizarLlamadaSSHAutofill(limpiarPrevios = false) {
   const host = document.getElementById("ssh_autofill_host")?.value.trim();
   const usuario = document.getElementById("ssh_autofill_user")?.value.trim() || "innovex";
-  const clave = document.getElementById("ssh_autofill_pass")?.value || "CERMAQ@sh20";
+  const clave = document.getElementById("ssh_autofill_pass")?.value || "";
   const puerto_ssh = document.getElementById("ssh_autofill_port")?.value.trim() || "22";
   const puerto_telnet = document.getElementById("ssh_autofill_telnet_port")?.value.trim() || "9999";
+
+  if (!host) {
+    mostrarToast("Ingrese la IP o DNS del equipo remoto", "warning");
+    return;
+  }
 
   const btn = document.getElementById("btnEjecutarSSHAutofill");
   const origText = btn ? btn.textContent : "";
@@ -2718,11 +2735,13 @@ async function realizarLlamadaSSHAutofill(limpiarPrevios = true) {
       if (host) {
         const parsedHost = parseLocationInfo(host);
         if (!certificadoState.datos_generales) certificadoState.datos_generales = {};
-        certificadoState.datos_generales.location = parsedHost.location;
-        if (parsedHost.empresa) {
+        if (parsedHost.location) {
+          certificadoState.datos_generales.location = parsedHost.location;
+        }
+        if (parsedHost.empresa && (!certificadoState.datos_generales.empresa || certificadoState.datos_generales.empresa === "Otro...")) {
           certificadoState.datos_generales.empresa = parsedHost.empresa;
         }
-        if (parsedHost.nombre_centro) {
+        if (parsedHost.nombre_centro && (!certificadoState.datos_generales.nombre_centro || certificadoState.datos_generales.nombre_centro === "TRANQUI 1")) {
           certificadoState.datos_generales.nombre_centro = parsedHost.nombre_centro;
         }
         if (!certificadoState.infraestructura) certificadoState.infraestructura = {};
@@ -2739,7 +2758,7 @@ async function realizarLlamadaSSHAutofill(limpiarPrevios = true) {
         else t.classList.remove("active");
       });
     } else {
-      mostrarToast(`❌ Error: ${data.mensaje || "No se pudo consultar el equipo remoto"}`, "error");
+      mostrarToast(`❌ ${data.mensaje || "No se pudo consultar el equipo remoto"}`, "error");
     }
   } catch (err) {
     mostrarToast(`❌ Error de conexión SSH: ${err.message}`, "error");

@@ -22,8 +22,15 @@ def parse_cmd_motes(texto: str) -> list[dict]:
         if not linea_str:
             continue
 
-        # Encabezados de tabla y prompts
+        # Encabezados de tabla, status de pancoordinator y prompts
         if "mote" in linea_str.lower() and "mac" in linea_str.lower():
+            continue
+        if any(k in linea_str.lower() for k in (
+            "pancoordinator status", "coordinator mac", "version v", "microlib",
+            "crc program", "last reset", "repeater connected", "attached", "pan id", "channel"
+        )):
+            continue
+        if linea_str.lower().startswith("mac:") or linea_str.lower().startswith("coordinator"):
             continue
         if linea_str.lower().startswith(("cmd>", "pancoordinator>", "pancoordinator#", "pancoordinator$")):
             linea_str = re.sub(r"^(?:cmd|pancoordinator)[>#$]\s*", "", linea_str, flags=re.I).strip()
