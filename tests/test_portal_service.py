@@ -80,7 +80,7 @@ class TestPortalService(TestCase):
         }
 
         html = PortalService.generar_html_correo_fin_semana(personal, sab, dom)
-        self.assertIn("COMUNICADO DE SOPORTE", html)
+        self.assertIn("ASISTENCIA DE SOPORTE", html)
         self.assertIn("Hector Portillo", html)
         self.assertIn("+56 9 8419 4843", html)
         self.assertIn("hector.portillo@innovex.cl", html)
