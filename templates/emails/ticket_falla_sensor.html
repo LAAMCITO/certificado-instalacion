@@ -12,27 +12,30 @@
             Ticket - {{ centro_nombre }} - Falla sensor {{ tipo_sensor|default:'oxígeno' }} - Prof. {{ profundidad|default:'10' }} mts – Jaula {{ numero_jaula|default:'105' }}
         </div>
 
-        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
-            Estimados(as):
+        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
+            Estimados/as:
         </p>
 
         <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
             Junto con saludar, informamos que el <strong>sensor de {{ tipo_sensor|default:'oxígeno' }} ubicado en la Jaula {{ numero_jaula|default:'105' }}, a {{ profundidad|default:'10' }} metros de profundidad</strong>, presenta una falla en su funcionamiento.
         </p>
 
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 20px;">
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 18px;">
             Agradeceríamos su apoyo para reemplazar el sensor afectado por el sensor de repuesto disponible en el centro.
         </p>
 
-        <p style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
             El procedimiento es el siguiente:
         </p>
 
-        <ol style="font-size: 14px; line-height: 1.7; color: #334155; margin-top: 4px; margin-bottom: 22px; padding-left: 24px;">
-            <li><strong>Desconectar</strong> sensor instalado.</li>
-            <li><strong>Conectar</strong> el sensor de repuesto.</li>
-            <li><strong>Retirar la tapa amarilla</strong> antes de sumergirlo.</li>
-        </ol>
+        <!-- Caja de alerta para las indicaciones numeradas -->
+        <div style="background-color: #f0f9ff; border: 1px solid #e0f2fe; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px 20px; margin: 12px 0 20px 0;">
+            <ol style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; color: #0f172a;">
+                <li style="margin-bottom: 6px;"><strong>Desconectar</strong> sensor instalado.</li>
+                <li style="margin-bottom: 6px;"><strong>Conectar</strong> el sensor de repuesto.</li>
+                <li><strong>Retirar la tapa amarilla</strong> antes de sumergirlo.</li>
+            </ol>
+        </div>
 
         {% if imagen_defectuoso or imagen_repuesto %}
         <!-- Grilla de Imágenes Comparativas -->
@@ -73,14 +76,9 @@
             Desde ya, muchas gracias por su colaboración.
         </p>
 
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 6px;">
-            Quedamos atentos.
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 4px;">
+            Atentamente;
         </p>
-
-        <p style="font-size: 14.5px; color: #334155; margin-bottom: 8px;">
-            Saludos cordiales.
-        </p>
-        <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 12px;">--</p>
 
         <!-- Firma -->
         {% include "emails/components/firma_innovex.html" %}

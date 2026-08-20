@@ -12,16 +12,16 @@
             Ticket centro {{ centro_nombre }} / Falla equipo {{ numero_equipo|default:'N/D' }}{% if numero_jaula %} jaula {{ numero_jaula }}{% endif %}
         </div>
 
-        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
-            Estimados (as):
+        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
+            Estimados/as:
         </p>
 
-        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
+        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 18px;">
             Junto con saludar, Informamos que se ha generado un ticket de falla, con la siguiente referencia:
         </p>
 
         <!-- Referencia destacada -->
-        <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 20px 0 16px 0; line-height: 1.5;">
+        <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 18px 0 16px 0; line-height: 1.5;">
             {{ texto_referencia|default:'Equipo con corte de datos por posible falla en su funcionamiento.' }}
         </div>
 
@@ -56,10 +56,9 @@
         </table>
         {% endif %}
 
-        <p style="font-size: 14.5px; color: #334155; margin-bottom: 8px; margin-top: 24px;">
-            Atentamente.
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 4px; margin-top: 24px;">
+            Atentamente;
         </p>
-        <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 12px;">--</p>
 
         <!-- Firma -->
         {% include "emails/components/firma_innovex.html" %}

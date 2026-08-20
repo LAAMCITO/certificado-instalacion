@@ -6,10 +6,13 @@ import datetime
 import base64
 import re
 import uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from email.mime.application import MIMEApplication
 from pathlib import Path
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
@@ -47,6 +50,24 @@ DESTINATARIOS_DEFAULT = [
     {"empresa": "COOKE AQUACULTURE", "correo": "soporte.cooke@innovex.cl", "activo": True},
     {"empresa": "INVERMAR", "correo": "soporte.invermar@innovex.cl", "activo": True},
 ]
+
+
+class CustomEmailMessage(EmailMessage):
+    """Wrapper para despachar estructuras MIME personalizadas (related/mixed) vía Django."""
+    def __init__(self, mime_obj, to_list, cc_list=None, from_email=None, reply_to=None):
+        super().__init__(
+            subject=mime_obj.get("Subject", ""),
+            from_email=from_email or mime_obj.get("From", ""),
+            to=to_list,
+            cc=cc_list or [],
+            reply_to=reply_to or []
+        )
+        self._mime_obj = mime_obj
+
+    def message(self, policy=None):
+        if policy is not None:
+            self._mime_obj.policy = policy
+        return self._mime_obj
 
 
 class PortalService:
@@ -647,8 +668,10 @@ class PortalService:
         adjuntar_guia: bool = True
     ) -> dict:
         personal = cls._obtener_datos_personal(personal_id)
-        asunto, html_content = cls.generar_html_ticket(tipo_ticket, datos, personal)
-        text_content = strip_tags(html_content)
+
+        # Si es ticket de conexión, nunca se adjunta guía de mantención PDF
+        if tipo_ticket == "conexion":
+            adjuntar_guia = False
 
         # Parsear correos destinatarios
         def _parse_emails(raw):
@@ -678,50 +701,113 @@ class PortalService:
         else:
             correo_remitente = "soporte@innovex.cl"
 
-        msg = EmailMultiAlternatives(
-            subject=asunto,
-            body=text_content,
-            from_email=correo_remitente,
-            to=to_list,
-            cc=cc_list,
-            reply_to=[correo_remitente, "soporte@innovex.cl"],
+        # Pre-procesar imágenes base64 a CIDs antes de renderizar para evitar líneas largas en el HTML
+        inline_images = []
+        datos_render = dict(datos)
+
+        for img_key in ["imagen_evidencia", "imagen_grafica", "imagen_defectuoso", "imagen_repuesto"]:
+            val = datos.get(img_key)
+            if val and isinstance(val, str) and "base64," in val:
+                try:
+                    header, b64_str = val.split("base64,", 1)
+                    sub_match = re.search(r"image/([a-zA-Z0-9+.-]+)", header, re.IGNORECASE)
+                    img_type = sub_match.group(1).lower() if sub_match else "png"
+                    if img_type == "jpg":
+                        img_type = "jpeg"
+                    clean_b64 = re.sub(r"[\s\r\n]+", "", b64_str)
+                    img_bytes = base64.b64decode(clean_b64)
+                    cid = f"img_{uuid.uuid4().hex[:10]}"
+                    inline_images.append((img_bytes, img_type, cid))
+                    datos_render[img_key] = f"cid:{cid}"
+                except Exception:
+                    datos_render[img_key] = ""
+
+        asunto, html_content = cls.generar_html_ticket(tipo_ticket, datos_render, personal)
+        text_content = strip_tags(html_content)
+
+        # Respaldo de seguridad por si algún campo libre contenía data URIs adicionales
+        def _sub_remaining(match):
+            try:
+                sub_type = match.group(1).lower()
+                if sub_type == "jpg":
+                    sub_type = "jpeg"
+                clean_b64 = re.sub(r"[\s\r\n]+", "", match.group(2))
+                img_bytes = base64.b64decode(clean_b64)
+                cid = f"img_{uuid.uuid4().hex[:10]}"
+                inline_images.append((img_bytes, sub_type, cid))
+                return f'src="cid:{cid}"'
+            except Exception:
+                return 'src=""'
+
+        html_final = re.sub(
+            r'src=["\']data:image/([a-zA-Z0-9+.-]+);base64,([^"\']+)["\']',
+            _sub_remaining,
+            html_content,
+            flags=re.IGNORECASE
         )
 
-        # Procesar imágenes base64 embebidas para convertirlas en MIME CIDs
-        html_final = html_content
-        data_uri_pattern = re.compile(r'src=["\']data:image/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=]+)["\']', re.IGNORECASE)
+        # Construir estructura MIME estándar RFC 2387
+        guias_dir = getattr(settings, "STORAGE_DIR", Path("storage")) / "guias"
+        guia_path = guias_dir / "guia_mantenimiento_correctivo_innovex.pdf"
+        tiene_adjunto_pdf = bool(adjuntar_guia and guia_path.exists() and guia_path.is_file())
 
-        def _sub_img_cid(match):
-            img_type = match.group(1).lower()
-            if img_type == "jpg":
-                img_type = "jpeg"
-            b64_data = match.group(2)
-            try:
-                img_bytes = base64.b64decode(b64_data)
-                cid = f"img_{uuid.uuid4().hex[:10]}"
+        if tiene_adjunto_pdf:
+            # Estructura: multipart/mixed -> [multipart/related (HTML + Inline Images), application/pdf]
+            root_msg = MIMEMultipart("mixed")
+            root_msg["Subject"] = asunto
+            root_msg["From"] = correo_remitente
+            root_msg["To"] = ", ".join(to_list)
+            if cc_list:
+                root_msg["Cc"] = ", ".join(cc_list)
+            root_msg["Reply-To"] = f"{correo_remitente}, soporte@innovex.cl"
+
+            related_part = MIMEMultipart("related")
+            alt_part = MIMEMultipart("alternative")
+            alt_part.attach(MIMEText(text_content, "plain", "utf-8"))
+            alt_part.attach(MIMEText(html_final, "html", "utf-8"))
+            related_part.attach(alt_part)
+
+            for img_bytes, img_type, cid in inline_images:
                 mime_img = MIMEImage(img_bytes, _subtype=img_type)
                 mime_img.add_header("Content-ID", f"<{cid}>")
                 mime_img.add_header("Content-Disposition", "inline", filename=f"{cid}.{img_type}")
-                msg.attach(mime_img)
-                return f'src="cid:{cid}"'
-            except Exception:
-                return match.group(0)
+                related_part.attach(mime_img)
 
-        html_final = data_uri_pattern.sub(_sub_img_cid, html_final)
-        msg.attach_alternative(html_final, "text/html")
+            root_msg.attach(related_part)
 
-        # Adjuntar Guía PDF oficial si se solicita
-        if adjuntar_guia:
-            guias_dir = getattr(settings, "STORAGE_DIR", Path("storage")) / "guias"
-            guia_path = guias_dir / "guia_mantenimiento_correctivo_innovex.pdf"
-            if guia_path.exists() and guia_path.is_file():
-                msg.attach(
-                    filename="Guia_Mantencion_Correctiva_Innovex.pdf",
-                    content=guia_path.read_bytes(),
-                    mimetype="application/pdf"
-                )
+            mime_pdf = MIMEApplication(guia_path.read_bytes(), _subtype="pdf")
+            mime_pdf.add_header("Content-Disposition", "attachment", filename="Guia_Mantencion_Correctiva_Innovex.pdf")
+            root_msg.attach(mime_pdf)
 
-        # Enviar correo
+        else:
+            # Estructura: multipart/related -> [multipart/alternative (text + HTML), inline images]
+            root_msg = MIMEMultipart("related")
+            root_msg["Subject"] = asunto
+            root_msg["From"] = correo_remitente
+            root_msg["To"] = ", ".join(to_list)
+            if cc_list:
+                root_msg["Cc"] = ", ".join(cc_list)
+            root_msg["Reply-To"] = f"{correo_remitente}, soporte@innovex.cl"
+
+            alt_part = MIMEMultipart("alternative")
+            alt_part.attach(MIMEText(text_content, "plain", "utf-8"))
+            alt_part.attach(MIMEText(html_final, "html", "utf-8"))
+            root_msg.attach(alt_part)
+
+            for img_bytes, img_type, cid in inline_images:
+                mime_img = MIMEImage(img_bytes, _subtype=img_type)
+                mime_img.add_header("Content-ID", f"<{cid}>")
+                mime_img.add_header("Content-Disposition", "inline", filename=f"{cid}.{img_type}")
+                root_msg.attach(mime_img)
+
+        # Enviar correo con CustomEmailMessage para que Django maneje el backend configurado
+        msg = CustomEmailMessage(
+            root_msg,
+            to_list=to_list,
+            cc_list=cc_list,
+            from_email=correo_remitente,
+            reply_to=[correo_remitente, "soporte@innovex.cl"]
+        )
         msg.send()
 
         # Guardar en Historial

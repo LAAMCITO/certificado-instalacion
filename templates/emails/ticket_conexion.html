@@ -12,50 +12,48 @@
             Ticket - {{ centro_nombre|default:'Centro' }} / CONEXIÓN.
         </div>
 
-        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
-            Estimados (as):
+        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
+            Estimados/as:
         </p>
 
-        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
-            Junto con saludar, Informamos que se ha generado un ticket de falla, con la siguiente referencia:
+        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 18px;">
+            Junto con saludar, Informamos se ha generado un ticket de falla con la siguiente referencia:
         </p>
 
-        <!-- Status Banner -->
-        <div style="background-color: #0d1e24; border-radius: 6px; padding: 14px 20px; margin: 20px 0 24px 0; display: flex; align-items: center; justify-content: space-between; color: #ffffff;">
-            <div style="font-size: 16px; font-weight: 700; letter-spacing: 0.3px; color: #ffffff;">
-                {{ centro_nombre|default:'Centro' }} {% if empresa %}<span style="color: #94a3b8; font-weight: 400; font-size: 13px;">[{{ empresa }}]</span>{% endif %}
-            </div>
-            <div style="font-size: 14px; color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; margin-right: 6px;"></span>
-                <span>SIN CONEXIÓN</span>
-                <span style="font-size: 18px; margin-left: 10px;">☁️</span>
-            </div>
-        </div>
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 18px;">
+            Actualmente no es posible visualizar los parámetros de los equipos Innovex a través de la web. Esto podría deberse a que el computador se encuentra apagado o a un problema en la conexión a internet.
+        </p>
 
         {% if imagen_evidencia %}
-        <!-- Imagen de evidencia o gráfica si se adjunta -->
-        <div style="margin: 20px 0; text-align: center;">
-            <img src="{{ imagen_evidencia }}" alt="Evidencia de Conexión" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1;" />
+        <!-- Imagen visual de desconexión aportada por el usuario -->
+        <div style="margin: 18px 0 22px 0; text-align: left;">
+            <img src="{{ imagen_evidencia }}" alt="Visual de Desconexión" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;" />
         </div>
         {% endif %}
 
-        <!-- Detalle de la falla -->
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
-            No es posible visualizar parámetros de sensores Innovex a través de la web, esto puede deberse a un problema en la conexión a internet, por lo que solicito por favor revisar que el computador esté encendido y efectivamente conectado a la red. Si después de este paso aún no hay conexión, <strong>favor reiniciar el computador</strong>.
+        <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 10px;">
+            Solicitamos de su apoyo para realizar lo siguiente:
         </p>
 
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
-            Se solicita su apoyo para poder restablecer los datos en línea, favor de ser posible comunicarse con el departamento de Soporte Innovex o responder a este correo.
+        <!-- Caja de alerta para las indicaciones numeradas -->
+        <div style="background-color: #f0f9ff; border: 1px solid #e0f2fe; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px 20px; margin: 12px 0 20px 0;">
+            <ol style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; color: #0f172a;">
+                <li style="margin-bottom: 8px;">
+                    Verificar que el computador esté <strong>encendido</strong> y correctamente <strong>conectado a la red</strong>. Para comprobar la conexión, abran un navegador e intenten acceder a cualquier página web.
+                </li>
+                <li>
+                    Si el computador está encendido y el inconveniente persiste, proceder a <strong>reiniciar el equipo</strong>.
+                </li>
+            </ol>
+        </div>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-top: 18px; margin-bottom: 24px;">
+            Si luego de realizar estas acciones el inconveniente continúa, agradecemos contactar al Departamento de Soporte Innovex o responder a este correo para continuar con la asistencia.
         </p>
 
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 24px;">
-            Gracias por utilizar nuestro servicio.
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 4px;">
+            Atentamente;
         </p>
-
-        <p style="font-size: 14.5px; color: #334155; margin-bottom: 8px;">
-            Atte.
-        </p>
-        <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 12px;">--</p>
 
         <!-- Firma -->
         {% include "emails/components/firma_innovex.html" %}

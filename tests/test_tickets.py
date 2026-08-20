@@ -3,6 +3,7 @@ Pruebas unitarias para el módulo de Tickets de Falla (Conexión, Equipo y Senso
 """
 
 import os
+import base64
 import django
 from django.test import TestCase, Client
 from django.core import mail
@@ -38,12 +39,14 @@ class TicketsTestCase(TestCase):
             "empresa": "CERMAQ",
             "nombre_centro": "Chidhuapi 1",
             "personal_id": self.asistente.id,
+            "imagen_evidencia": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
         }
         asunto, html = PortalService.generar_html_ticket("conexion", datos)
         self.assertIn("Ticket - Chidhuapi 1 / CONEXIÓN.", asunto)
-        self.assertIn("SIN CONEXIÓN", html)
+        self.assertIn("Actualmente no es posible visualizar", html)
         self.assertIn("Leonardo Araneda", html)
         self.assertIn("Asistente de Soporte Intermedio", html)
+        self.assertIn("data:image/png;base64,", html)
 
     def test_generar_html_ticket_falla_equipo(self):
         datos = {
@@ -73,12 +76,14 @@ class TicketsTestCase(TestCase):
         self.assertIn("Retirar la tapa amarilla", html)
         self.assertIn("Mantención correctiva del sensor", html)
 
-    def test_enviar_ticket_modo_prueba(self):
+    def test_enviar_ticket_conexion_sin_guia_mime_related(self):
         mail.outbox = []
+        b64_dummy = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
         datos = {
             "empresa": "CERMAQ",
             "nombre_centro": "Chidhuapi 1",
             "personal_id": self.asistente.id,
+            "imagen_evidencia": b64_dummy,
         }
         res = PortalService.enviar_correo_ticket(
             tipo_ticket="conexion",
@@ -86,21 +91,59 @@ class TicketsTestCase(TestCase):
             personal_id=self.asistente.id,
             destinatarios_to="cliente@empresa.com",
             correo_prueba="prueba@innovex.cl",
-            adjuntar_guia=True
+            adjuntar_guia=True  # Debe forzarse a False internamente por ser conexion
         )
         self.assertEqual(res["status"], "ok")
         self.assertTrue(res["es_prueba"])
         self.assertEqual(len(mail.outbox), 1)
+
         sent = mail.outbox[0]
         self.assertEqual(sent.to, ["prueba@innovex.cl"])
-        self.assertEqual(len(sent.attachments), 1)  # Manual PDF attached
-        self.assertIn("Guia_Mantencion_Correctiva_Innovex.pdf", sent.attachments[0][0])
 
-        # Verificar historial
+        # Verificar estructura MIME
+        mime_msg = sent.message()
+        content_types = [p.get_content_type() for p in mime_msg.walk()]
+        self.assertIn("multipart/related", content_types)
+        self.assertIn("text/html", content_types)
+        self.assertIn("image/png", content_types)
+        # Asegurarse que NO se adjuntó el PDF en conexión
+        self.assertNotIn("application/pdf", content_types)
+
+        # Historial
         h = HistorialTicketEnviado.objects.first()
         self.assertIsNotNone(h)
         self.assertEqual(h.centro, "Chidhuapi 1")
-        self.assertTrue(h.es_prueba)
+        self.assertFalse(h.manual_adjunto)
+
+    def test_enviar_ticket_equipo_con_pdf_y_imagenes(self):
+        mail.outbox = []
+        b64_dummy = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        datos = {
+            "empresa": "CERMAQ",
+            "nombre_centro": "Chidhuapi 1",
+            "numero_equipo": "5",
+            "numero_jaula": "101",
+            "identificador_repuesto": "Name A1",
+            "imagen_grafica": b64_dummy,
+            "imagen_defectuoso": b64_dummy,
+            "imagen_repuesto": b64_dummy,
+        }
+        res = PortalService.enviar_correo_ticket(
+            tipo_ticket="falla_equipo",
+            datos=datos,
+            personal_id=self.asistente.id,
+            destinatarios_to="cliente@empresa.com",
+            correo_prueba="tester@innovex.cl",
+            adjuntar_guia=True
+        )
+        self.assertEqual(res["status"], "ok")
+        sent = mail.outbox[0]
+        mime_msg = sent.message()
+        content_types = [p.get_content_type() for p in mime_msg.walk()]
+        self.assertIn("multipart/mixed", content_types)
+        self.assertIn("multipart/related", content_types)
+        self.assertIn("application/pdf", content_types)
+        self.assertIn("image/png", content_types)
 
     def test_api_tickets_endpoints(self):
         # 1. GET Centros

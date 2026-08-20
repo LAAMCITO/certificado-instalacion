@@ -4873,6 +4873,11 @@ window.cambiarTipoTicket = function(tipo) {
   if (cEquipo) cEquipo.style.display = tipo === "falla_equipo" ? "block" : "none";
   if (cSensor) cSensor.style.display = tipo === "falla_sensor" ? "block" : "none";
 
+  const opcionGuia = document.getElementById("ticketOpcionAdjuntarGuia");
+  if (opcionGuia) {
+    opcionGuia.style.display = tipo === "conexion" ? "none" : "flex";
+  }
+
   if (badge) {
     const titulos = {
       conexion: "Conexión",
