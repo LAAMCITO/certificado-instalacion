@@ -3,7 +3,10 @@ Django Admin configuration for Portal app.
 """
 
 from django.contrib import admin
-from .models import Asistente, Destinatario, Bitacora, EncargadoArea, ZonaGeografica, Tecnico
+from .models import (
+    Asistente, Destinatario, Bitacora, EncargadoArea,
+    ZonaGeografica, Tecnico, CentroContactoTicket, HistorialTicketEnviado
+)
 
 
 @admin.register(Asistente)
@@ -71,3 +74,20 @@ class TecnicoAdmin(admin.ModelAdmin):
     list_editable = ("encargado_principal", "activo", "orden")
     search_fields = ("nombre", "encargado_principal__nombre", "telefono", "correo")
     list_filter = ("activo", "encargado_principal")
+
+
+@admin.register(CentroContactoTicket)
+class CentroContactoTicketAdmin(admin.ModelAdmin):
+    list_display = ("id", "empresa", "nombre_centro", "codigo_location", "zona_geografica", "activo")
+    list_editable = ("activo",)
+    search_fields = ("empresa", "nombre_centro", "codigo_location", "destinatarios_to", "destinatarios_cc")
+    list_filter = ("activo", "empresa", "zona_geografica")
+
+
+@admin.register(HistorialTicketEnviado)
+class HistorialTicketEnviadoAdmin(admin.ModelAdmin):
+    list_display = ("id", "tipo_ticket", "empresa", "centro", "asistente_nombre", "es_prueba", "fecha_envio")
+    search_fields = ("empresa", "centro", "asunto", "asistente_nombre", "destinatarios_to")
+    list_filter = ("tipo_ticket", "es_prueba", "empresa", "fecha_envio")
+    readonly_fields = ("fecha_envio",)
+

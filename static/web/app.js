@@ -4072,6 +4072,7 @@ window.navegarSeccionPortal = function(vista, submodulo) {
     "dashboard": "Dashboard General",
     "bitacora": "Pizarra de Turno",
     "certificado-suite": "Suite de Certificados",
+    "tickets-soporte": "Generador de Tickets de Falla",
     "correos-masivos": "Correos Masivos Fin de Semana",
     "gestionar-correos": "Gestor de Destinatarios",
     "poseidon": "Poseidón (Dual Monitor)",
@@ -4101,6 +4102,8 @@ window.navegarSeccionPortal = function(vista, submodulo) {
   // Recargar datos relevantes al entrar en ciertas vistas
   if (vista === "bitacora" || vista === "dashboard") {
     cargarBitacora();
+  } else if (vista === "tickets-soporte") {
+    inicializarModuloTicketsSoporte();
   } else if (vista === "correos-masivos") {
     cargarDatosCorreosMasivos();
   } else if (vista === "gestionar-correos") {
@@ -4684,4 +4687,626 @@ function setupTracSearch() {
 function setupMusicPlayer() {
   // Deshabilitado temporalmente: no realiza llamadas fetch ni intervalos GET
 }
+
+// =========================================================
+// --- 8. MÓDULO DE GENERACIÓN DE TICKETS DE FALLA ---
+// =========================================================
+
+const estadoTickets = {
+  tipo: "conexion",
+  centros: [],
+  asistentes: [],
+  zonas: [],
+  imagenes: {
+    conexion_evidencia: "",
+    equipo_grafica: "",
+    equipo_defectuoso: "",
+    equipo_repuesto: "",
+    sensor_repuesto: "",
+    sensor_defectuoso: "",
+    sensor_grafica: ""
+  },
+  previewTimer: null,
+  pasteListenerAttached: false
+};
+
+window.inicializarModuloTicketsSoporte = async function() {
+  await Promise.all([
+    cargarCentrosTickets(),
+    cargarAsistentesTickets(),
+    cargarZonasTickets()
+  ]);
+
+  if (!estadoTickets.pasteListenerAttached) {
+    setupPasteListenersTickets();
+    estadoTickets.pasteListenerAttached = true;
+  }
+
+  actualizarPrevisualizacionTicketLive(true);
+};
+
+async function cargarCentrosTickets() {
+  try {
+    const res = await fetch("/api/tickets/centros");
+    const data = await res.json();
+    if (data.status === "ok" && data.centros) {
+      estadoTickets.centros = data.centros;
+      poblarSelectoresEmpresaYCentro();
+    }
+  } catch (err) {
+    console.error("Error cargando centros de tickets:", err);
+  }
+}
+
+async function cargarAsistentesTickets() {
+  try {
+    const res = await fetch("/api/asistentes");
+    const data = await res.json();
+    if (data.asistentes) {
+      estadoTickets.asistentes = data.asistentes;
+      const select = document.getElementById("ticketAsistenteSelect");
+      if (select) {
+        select.innerHTML = '<option value="">Seleccione Asistente de Soporte...</option>';
+        data.asistentes.forEach(a => {
+          const opt = document.createElement("option");
+          opt.value = a.id;
+          opt.textContent = `${a.nombre} (${a.cargo})`;
+          select.appendChild(opt);
+        });
+        if (data.asistentes.length > 0) {
+          select.selectedIndex = 1;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error cargando asistentes para tickets:", err);
+  }
+}
+
+async function cargarZonasTickets() {
+  try {
+    const res = await fetch("/api/personal/estructura");
+    const data = await res.json();
+    if (data.status === "ok" && data.todas_las_zonas) {
+      estadoTickets.zonas = data.todas_las_zonas;
+      const select = document.getElementById("ticketZonaSelect");
+      const modalSelect = document.getElementById("editCentroZonaSelect");
+      
+      const renderOptions = (sel) => {
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Seleccione Zona...</option>';
+        data.todas_las_zonas.forEach(z => {
+          const opt = document.createElement("option");
+          opt.value = z;
+          opt.textContent = z;
+          sel.appendChild(opt);
+        });
+      };
+      
+      renderOptions(select);
+      renderOptions(modalSelect);
+    }
+  } catch (err) {
+    console.error("Error cargando zonas para tickets:", err);
+  }
+}
+
+function poblarSelectoresEmpresaYCentro() {
+  const empSelect = document.getElementById("ticketEmpresaSelect");
+  if (!empSelect) return;
+
+  const empresasUnicas = [...new Set(estadoTickets.centros.map(c => c.empresa).filter(Boolean))].sort();
+  empSelect.innerHTML = '<option value="">Seleccione Empresa...</option>';
+  empresasUnicas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    empSelect.appendChild(opt);
+  });
+
+  if (empresasUnicas.length > 0) {
+    empSelect.value = empresasUnicas[0];
+    alCambiarEmpresaTicket();
+  }
+}
+
+window.alCambiarEmpresaTicket = function() {
+  const emp = document.getElementById("ticketEmpresaSelect").value;
+  const centroSelect = document.getElementById("ticketCentroSelect");
+  if (!centroSelect) return;
+
+  centroSelect.innerHTML = '<option value="">Seleccione Centro...</option>';
+  const centrosFiltrados = estadoTickets.centros.filter(c => c.empresa === emp);
+  centrosFiltrados.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.nombre_centro;
+    opt.textContent = c.nombre_centro + (c.codigo_location ? ` (${c.codigo_location})` : "");
+    opt.dataset.id = c.id;
+    centroSelect.appendChild(opt);
+  });
+
+  if (centrosFiltrados.length > 0) {
+    centroSelect.selectedIndex = 1;
+    alCambiarCentroTicket();
+  } else {
+    actualizarPrevisualizacionTicketLive();
+  }
+};
+
+window.alCambiarCentroTicket = function() {
+  const emp = document.getElementById("ticketEmpresaSelect").value;
+  const centroNombre = document.getElementById("ticketCentroSelect").value;
+  const centroObj = estadoTickets.centros.find(c => c.empresa === emp && c.nombre_centro === centroNombre);
+
+  if (centroObj) {
+    const inputTo = document.getElementById("ticketDestinatariosTo");
+    const inputCc = document.getElementById("ticketDestinatariosCc");
+    const selectZona = document.getElementById("ticketZonaSelect");
+
+    if (inputTo) inputTo.value = centroObj.destinatarios_to || "";
+    if (inputCc) inputCc.value = centroObj.destinatarios_cc || "";
+    if (selectZona && centroObj.zona) selectZona.value = centroObj.zona;
+  }
+
+  actualizarPrevisualizacionTicketLive();
+};
+
+window.cambiarTipoTicket = function(tipo) {
+  estadoTickets.tipo = tipo;
+
+  // Actualizar botones pills
+  document.querySelectorAll("#ticketTypePills .ticket-pill").forEach(pill => {
+    if (pill.getAttribute("data-type") === tipo) {
+      pill.classList.add("active");
+    } else {
+      pill.classList.remove("active");
+    }
+  });
+
+  // Alternar formularios
+  const cConexion = document.getElementById("ticketCamposConexion");
+  const cEquipo = document.getElementById("ticketCamposEquipo");
+  const cSensor = document.getElementById("ticketCamposSensor");
+  const badge = document.getElementById("ticketPreviewBadge");
+
+  if (cConexion) cConexion.style.display = tipo === "conexion" ? "block" : "none";
+  if (cEquipo) cEquipo.style.display = tipo === "falla_equipo" ? "block" : "none";
+  if (cSensor) cSensor.style.display = tipo === "falla_sensor" ? "block" : "none";
+
+  if (badge) {
+    const titulos = {
+      conexion: "Conexión",
+      falla_equipo: "Falla de Equipo",
+      falla_sensor: "Falla de Sensor"
+    };
+    badge.textContent = titulos[tipo] || tipo;
+  }
+
+  actualizarPrevisualizacionTicketLive(true);
+};
+
+window.triggerFileInput = function(inputId) {
+  const elem = document.getElementById(inputId);
+  if (elem) elem.click();
+};
+
+window.alSeleccionarImagenTicket = function(event, key) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    estadoTickets.imagenes[key] = e.target.result;
+    mostrarPreviewDropzone(key, e.target.result);
+    actualizarPrevisualizacionTicketLive(true);
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removerImagenTicket = function(event, key) {
+  if (event) event.stopPropagation();
+  estadoTickets.imagenes[key] = "";
+  ocultarPreviewDropzone(key);
+  actualizarPrevisualizacionTicketLive(true);
+};
+
+function mostrarPreviewDropzone(key, dataUrl) {
+  const kHyphen = key.replace(/_/g, "-");
+  const prompt = document.getElementById(`dz-prompt-${kHyphen}`);
+  const preview = document.getElementById(`dz-preview-${kHyphen}`);
+  const img = document.getElementById(`img-preview-${kHyphen}`);
+
+  if (prompt) prompt.style.display = "none";
+  if (preview) preview.style.display = "flex";
+  if (img) img.src = dataUrl;
+}
+
+function ocultarPreviewDropzone(key) {
+  const kHyphen = key.replace(/_/g, "-");
+  const prompt = document.getElementById(`dz-prompt-${kHyphen}`);
+  const preview = document.getElementById(`dz-preview-${kHyphen}`);
+  const img = document.getElementById(`img-preview-${kHyphen}`);
+  const fileInput = document.getElementById(`file-${kHyphen}`);
+
+  if (prompt) prompt.style.display = "block";
+  if (preview) preview.style.display = "none";
+  if (img) img.src = "";
+  if (fileInput) fileInput.value = "";
+}
+
+function setupPasteListenersTickets() {
+  document.addEventListener("paste", function(e) {
+    // Solo interceptar si estamos en la vista de tickets
+    const viewTickets = document.getElementById("view-tickets-soporte");
+    if (!viewTickets || viewTickets.style.display === "none") return;
+
+    // Si el usuario está escribiendo en un input o textarea normal, no bloquear texto
+    const target = e.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA") && target.type !== "file") {
+      // Permitir pegar texto en inputs
+      if (!e.clipboardData.files.length) return;
+    }
+
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const blob = items[i].getAsFile();
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const b64 = event.target.result;
+          asignarImagenPegadaSegunTipo(b64);
+        };
+        reader.readAsDataURL(blob);
+        e.preventDefault();
+        break;
+      }
+    }
+  });
+
+  // Drag & drop highlight
+  document.querySelectorAll(".ticket-dropzone").forEach(dz => {
+    dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+    dz.addEventListener("dragleave", e => { e.preventDefault(); dz.classList.remove("dragover"); });
+    dz.addEventListener("drop", e => {
+      e.preventDefault();
+      dz.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith("image/")) {
+          const dzId = dz.id.replace("dz-", "").replace(/-/g, "_");
+          const reader = new FileReader();
+          reader.onload = ev => {
+            estadoTickets.imagenes[dzId] = ev.target.result;
+            mostrarPreviewDropzone(dzId, ev.target.result);
+            actualizarPrevisualizacionTicketLive(true);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  });
+}
+
+function asignarImagenPegadaSegunTipo(b64) {
+  const tipo = estadoTickets.tipo;
+  let targetKey = "";
+
+  if (tipo === "conexion") {
+    targetKey = "conexion_evidencia";
+  } else if (tipo === "falla_equipo") {
+    if (!estadoTickets.imagenes.equipo_grafica) targetKey = "equipo_grafica";
+    else if (!estadoTickets.imagenes.equipo_defectuoso) targetKey = "equipo_defectuoso";
+    else targetKey = "equipo_repuesto";
+  } else if (tipo === "falla_sensor") {
+    if (!estadoTickets.imagenes.sensor_repuesto) targetKey = "sensor_repuesto";
+    else if (!estadoTickets.imagenes.sensor_defectuoso) targetKey = "sensor_defectuoso";
+    else targetKey = "sensor_grafica";
+  }
+
+  if (targetKey) {
+    estadoTickets.imagenes[targetKey] = b64;
+    mostrarPreviewDropzone(targetKey, b64);
+    actualizarPrevisualizacionTicketLive(true);
+  }
+}
+
+window.actualizarPrevisualizacionTicketLive = function(forzar = false) {
+  clearTimeout(estadoTickets.previewTimer);
+
+  const delay = forzar ? 0 : 300;
+  estadoTickets.previewTimer = setTimeout(async () => {
+    const payload = recolectarDatosTicket();
+
+    try {
+      const res = await fetch("/api/tickets/previsualizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo_ticket: estadoTickets.tipo,
+          datos: payload
+        })
+      });
+      const data = await res.json();
+      if (data.status === "ok") {
+        const subjectElem = document.getElementById("ticketPreviewSubjectText");
+        const htmlContainer = document.getElementById("ticketPreviewHtmlContainer");
+        if (subjectElem) subjectElem.textContent = data.asunto;
+        if (htmlContainer) htmlContainer.innerHTML = data.html;
+      }
+    } catch (err) {
+      console.error("Error en previsualización de ticket:", err);
+    }
+  }, delay);
+};
+
+function recolectarDatosTicket() {
+  const emp = document.getElementById("ticketEmpresaSelect")?.value || "";
+  const centro = document.getElementById("ticketCentroSelect")?.value || "Centro";
+  const personalId = document.getElementById("ticketAsistenteSelect")?.value || "";
+  const tipo = estadoTickets.tipo;
+
+  const payload = {
+    empresa: emp,
+    nombre_centro: centro,
+    personal_id: personalId,
+    imagen_evidencia: estadoTickets.imagenes.conexion_evidencia,
+    imagen_grafica: estadoTickets.imagenes.equipo_grafica || estadoTickets.imagenes.sensor_grafica,
+    imagen_defectuoso: estadoTickets.imagenes.equipo_defectuoso || estadoTickets.imagenes.sensor_defectuoso,
+    imagen_repuesto: estadoTickets.imagenes.equipo_repuesto || estadoTickets.imagenes.sensor_repuesto,
+  };
+
+  if (tipo === "falla_equipo") {
+    payload.numero_equipo = document.getElementById("ticketEquipoNumero")?.value || "10";
+    payload.numero_jaula = document.getElementById("ticketEquipoJaula")?.value || "204";
+    payload.identificador_repuesto = document.getElementById("ticketEquipoRepuestoId")?.value || "Name A1";
+    payload.texto_referencia = document.getElementById("ticketEquipoReferencia")?.value || "";
+  } else if (tipo === "falla_sensor") {
+    payload.tipo_sensor = document.getElementById("ticketSensorTipo")?.value || "oxígeno";
+    payload.profundidad = document.getElementById("ticketSensorProfundidad")?.value || "10";
+    payload.numero_jaula = document.getElementById("ticketSensorJaula")?.value || "105";
+  }
+
+  return payload;
+}
+
+window.ejecutarEnvioTicket = async function() {
+  const btn = document.getElementById("btnEnviarTicket");
+  const destTo = document.getElementById("ticketDestinatariosTo")?.value || "";
+  const destCc = document.getElementById("ticketDestinatariosCc")?.value || "";
+  const correoPrueba = document.getElementById("ticketCorreoPrueba")?.value || "";
+  const adjuntarGuia = document.getElementById("ticketAdjuntarGuia")?.checked ?? true;
+  const personalId = document.getElementById("ticketAsistenteSelect")?.value || "";
+
+  if (!correoPrueba && !destTo) {
+    alert("Por favor ingrese los correos destinatarios o un correo de prueba.");
+    return;
+  }
+
+  const payload = recolectarDatosTicket();
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Enviando ticket...';
+  }
+
+  try {
+    const res = await fetch("/api/tickets/enviar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo_ticket: estadoTickets.tipo,
+        datos: payload,
+        personal_id: personalId,
+        destinatarios_to: destTo,
+        destinatarios_cc: destCc,
+        correo_prueba: correoPrueba,
+        adjuntar_guia: adjuntarGuia
+      })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      alert("✅ " + data.mensaje);
+      cargarHistorialTickets();
+    } else {
+      alert("❌ Error: " + (data.mensaje || "No se pudo enviar el ticket"));
+    }
+  } catch (err) {
+    alert("❌ Error de red al enviar el ticket: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        Enviar Ticket de Falla
+      `;
+    }
+  }
+};
+
+window.toggleVistaHistorialTickets = function() {
+  const panelPv = document.getElementById("panelVistaPreviaTicket");
+  const panelHist = document.getElementById("panelHistorialTickets");
+  const btn = document.getElementById("btnToggleHistorialTickets");
+
+  if (!panelHist || !panelPv) return;
+
+  if (panelHist.style.display === "none") {
+    panelHist.style.display = "block";
+    panelPv.style.display = "none";
+    if (btn) btn.innerHTML = '<span>👁️</span> Ver Vista Previa';
+    cargarHistorialTickets();
+  } else {
+    panelHist.style.display = "none";
+    panelPv.style.display = "block";
+    if (btn) btn.innerHTML = '<span>📜</span> Historial de Envíos';
+  }
+};
+
+window.cargarHistorialTickets = async function() {
+  const container = document.getElementById("ticketHistorialListContainer");
+  if (!container) return;
+
+  container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 1rem;">Cargando...</div>';
+
+  try {
+    const res = await fetch("/api/tickets/historial");
+    const data = await res.json();
+    if (data.status === "ok" && data.historial && data.historial.length > 0) {
+      let html = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+          <thead>
+            <tr style="background: var(--bg-surface-elevated, #f1f5f9); text-align: left;">
+              <th style="padding: 6px 8px;">Fecha</th>
+              <th style="padding: 6px 8px;">Tipo</th>
+              <th style="padding: 6px 8px;">Centro</th>
+              <th style="padding: 6px 8px;">Destinatarios</th>
+              <th style="padding: 6px 8px;">Emisor</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      data.historial.forEach(h => {
+        const modoTag = h.es_prueba ? '<span style="color: #f59e0b; font-weight: bold;">[PRUEBA]</span> ' : '';
+        html += `
+          <tr style="border-bottom: 1px solid var(--border-color, #e2e8f0);">
+            <td style="padding: 6px 8px; color: var(--text-muted);">${h.fecha_envio}</td>
+            <td style="padding: 6px 8px; font-weight: 600;">${h.tipo_display}</td>
+            <td style="padding: 6px 8px;">${h.empresa} - ${h.centro}</td>
+            <td style="padding: 6px 8px;">${modoTag}${h.destinatarios_to}</td>
+            <td style="padding: 6px 8px;">${h.asistente}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No hay tickets registrados en el historial todavía.</div>';
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 1rem;">Error cargando historial.</div>';
+  }
+};
+
+// Modal Directorio de Centros
+window.abrirModalGestionCentrosTickets = function() {
+  const modal = document.getElementById("modalGestionCentrosTickets");
+  if (modal) {
+    modal.style.display = "flex";
+    cargarTablaCentrosContactos();
+  }
+};
+
+window.cerrarModalGestionCentrosTickets = function() {
+  const modal = document.getElementById("modalGestionCentrosTickets");
+  if (modal) modal.style.display = "none";
+};
+
+window.cargarTablaCentrosContactos = function() {
+  const tbody = document.getElementById("tbodyCentrosContactos");
+  if (!tbody) return;
+
+  if (estadoTickets.centros.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-muted);">No hay centros registrados.</td></tr>';
+    return;
+  }
+
+  let html = "";
+  estadoTickets.centros.forEach(c => {
+    html += `
+      <tr style="border-bottom: 1px solid var(--border-color, #e2e8f0);">
+        <td style="padding: 8px 12px; font-weight: 600;">${c.empresa}</td>
+        <td style="padding: 8px 12px;">${c.nombre_centro}</td>
+        <td style="padding: 8px 12px; color: var(--text-muted);">${c.zona || "-"}</td>
+        <td style="padding: 8px 12px; font-size: 0.78rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.destinatarios_to || "-"}</td>
+        <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="editarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem;">✏️</button>
+          <button class="btn btn-secondary btn-sm" onclick="eliminarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem; color: #ef4444;">🗑️</button>
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+};
+
+window.limpiarFormCentroContacto = function() {
+  document.getElementById("editCentroId").value = "";
+  document.getElementById("editCentroEmpresa").value = "";
+  document.getElementById("editCentroNombre").value = "";
+  document.getElementById("editCentroLocation").value = "";
+  document.getElementById("editCentroZonaSelect").value = "";
+  document.getElementById("editCentroDestinatariosTo").value = "";
+  document.getElementById("editCentroDestinatariosCc").value = "";
+  document.getElementById("btnGuardarCentroContacto").textContent = "Guardar Centro";
+};
+
+window.editarCentroContacto = function(id) {
+  const c = estadoTickets.centros.find(item => item.id === id);
+  if (!c) return;
+
+  document.getElementById("editCentroId").value = c.id;
+  document.getElementById("editCentroEmpresa").value = c.empresa;
+  document.getElementById("editCentroNombre").value = c.nombre_centro;
+  document.getElementById("editCentroLocation").value = c.codigo_location || "";
+  document.getElementById("editCentroZonaSelect").value = c.zona || "";
+  document.getElementById("editCentroDestinatariosTo").value = c.destinatarios_to || "";
+  document.getElementById("editCentroDestinatariosCc").value = c.destinatarios_cc || "";
+  document.getElementById("btnGuardarCentroContacto").textContent = "Actualizar Centro";
+};
+
+window.guardarCentroContactoDesdeModal = async function() {
+  const cid = document.getElementById("editCentroId").value;
+  const empresa = document.getElementById("editCentroEmpresa").value;
+  const nombreCentro = document.getElementById("editCentroNombre").value;
+  const codigoLocation = document.getElementById("editCentroLocation").value;
+  const zonaNombre = document.getElementById("editCentroZonaSelect").value;
+  const destTo = document.getElementById("editCentroDestinatariosTo").value;
+  const destCc = document.getElementById("editCentroDestinatariosCc").value;
+
+  try {
+    const res = await fetch("/api/tickets/centros", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: cid ? parseInt(cid) : undefined,
+        empresa: empresa,
+        nombre_centro: nombreCentro,
+        codigo_location: codigoLocation,
+        destinatarios_to: destTo,
+        destinatarios_cc: destCc,
+      })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      limpiarFormCentroContacto();
+      await cargarCentrosTickets();
+      cargarTablaCentrosContactos();
+    } else {
+      alert("Error: " + (data.mensaje || "No se pudo guardar"));
+    }
+  } catch (err) {
+    alert("Error al guardar centro: " + err.message);
+  }
+};
+
+window.eliminarCentroContacto = async function(id) {
+  if (!confirm("¿Está seguro de eliminar este centro del directorio?")) return;
+
+  try {
+    const res = await fetch("/api/tickets/centros", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", id: id })
+    });
+    const data = await res.json();
+    if (data.status === "ok") {
+      await cargarCentrosTickets();
+      cargarTablaCentrosContactos();
+    }
+  } catch (err) {
+    alert("Error al eliminar centro: " + err.message);
+  }
+};
+
 

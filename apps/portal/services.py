@@ -3,11 +3,20 @@ Service centralizado para el Portal de Soporte Innovex (Django ORM + SQLite).
 """
 
 import datetime
+import base64
+import re
+import uuid
+from email.mime.image import MIMEImage
+from pathlib import Path
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
-from .models import Asistente, Destinatario, Bitacora, EncargadoArea, ZonaGeografica, Tecnico
+from .models import (
+    Asistente, Destinatario, Bitacora, EncargadoArea,
+    ZonaGeografica, Tecnico, CentroContactoTicket, HistorialTicketEnviado
+)
 
 
 # Asistentes de soporte por defecto basados en la dotación de Innovex
@@ -447,3 +456,319 @@ class PortalService:
                 "todos_los_tecnicos": TODOS_LOS_TECNICOS,
                 "mapa_completo": ESTRUCTURA_ENCARGADOS,
             }
+
+    # -------------------------------------------------------------
+    # MÓDULOS DE COMUNICACIONES: TICKETS DE FALLA
+    # -------------------------------------------------------------
+    @classmethod
+    def _asegurar_centros_tickets(cls):
+        """Asegura centros iniciales de prueba/referencia para tickets si la tabla está vacía."""
+        if not CentroContactoTicket.objects.exists():
+            centros_seed = [
+                {"empresa": "CERMAQ", "nombre_centro": "Chidhuapi 1", "codigo_location": "ch-chidhuapi1", "destinatarios_to": "jefe.centro.chidhuapi@cermaq.com", "destinatarios_cc": "soporte.cermaq@innovex.cl"},
+                {"empresa": "CERMAQ", "nombre_centro": "Tranqui 1", "codigo_location": "ce-tranqui1", "destinatarios_to": "jefe.centro.tranqui@cermaq.com", "destinatarios_cc": "soporte.cermaq@innovex.cl"},
+                {"empresa": "MOWI", "nombre_centro": "Isla Sánchez", "codigo_location": "mw-islasanchez", "destinatarios_to": "jefe.centro.islasanchez@mowi.com", "destinatarios_cc": "soporte.mowi@innovex.cl"},
+                {"empresa": "CAMANCHACA", "nombre_centro": "Pollollo", "codigo_location": "ce-pollollo", "destinatarios_to": "jefe.centro.pollollo@camanchaca.cl", "destinatarios_cc": "soporte.camanchaca@innovex.cl"},
+                {"empresa": "AQUACHILE", "nombre_centro": "Sa-Lleuna", "codigo_location": "sa-lleuna", "destinatarios_to": "jefe.centro.salleuna@aquachile.com", "destinatarios_cc": "soporte.aquachile@innovex.cl"},
+                {"empresa": "BLUMAR", "nombre_centro": "Ahoni", "codigo_location": "ca-ahoni", "destinatarios_to": "jefe.centro.ahoni@blumar.com", "destinatarios_cc": "soporte.blumar@innovex.cl"},
+            ]
+            for item in centros_seed:
+                CentroContactoTicket.objects.get_or_create(
+                    empresa=item["empresa"],
+                    nombre_centro=item["nombre_centro"],
+                    defaults={
+                        "codigo_location": item["codigo_location"],
+                        "destinatarios_to": item["destinatarios_to"],
+                        "destinatarios_cc": item["destinatarios_cc"],
+                        "activo": True
+                    }
+                )
+
+    @classmethod
+    def obtener_centros_tickets(cls) -> list[dict]:
+        cls._asegurar_centros_tickets()
+        qs = CentroContactoTicket.objects.filter(activo=True).select_related("zona_geografica").order_by("empresa", "nombre_centro")
+        return [c.to_dict() for c in qs]
+
+    @classmethod
+    def guardar_centro_ticket(cls, datos: dict) -> dict:
+        cid = datos.get("id")
+        empresa = (datos.get("empresa") or "").strip().upper()
+        nombre_centro = (datos.get("nombre_centro") or "").strip()
+        codigo_location = (datos.get("codigo_location") or "").strip()
+        zona_id = datos.get("zona_id")
+        dest_to = (datos.get("destinatarios_to") or "").strip()
+        dest_cc = (datos.get("destinatarios_cc") or "").strip()
+
+        if not empresa or not nombre_centro:
+            raise ValueError("Empresa y Nombre del Centro son obligatorios.")
+
+        zona_obj = ZonaGeografica.objects.filter(id=zona_id).first() if zona_id else None
+
+        if cid:
+            obj = CentroContactoTicket.objects.filter(id=cid).first()
+            if not obj:
+                raise ValueError(f"Centro con id {cid} no encontrado.")
+            obj.empresa = empresa
+            obj.nombre_centro = nombre_centro
+            obj.codigo_location = codigo_location
+            obj.zona_geografica = zona_obj
+            obj.destinatarios_to = dest_to
+            obj.destinatarios_cc = dest_cc
+            obj.save()
+        else:
+            obj = CentroContactoTicket.objects.create(
+                empresa=empresa,
+                nombre_centro=nombre_centro,
+                codigo_location=codigo_location,
+                zona_geografica=zona_obj,
+                destinatarios_to=dest_to,
+                destinatarios_cc=dest_cc,
+                activo=True
+            )
+
+        return {"status": "ok", "centro": obj.to_dict()}
+
+    @classmethod
+    def eliminar_centro_ticket(cls, centro_id: int) -> dict:
+        obj = CentroContactoTicket.objects.filter(id=centro_id).first()
+        if obj:
+            obj.delete()
+            return {"status": "ok", "mensaje": "Centro eliminado correctamente"}
+        return {"status": "error", "mensaje": "Centro no encontrado"}
+
+    @classmethod
+    def _obtener_datos_personal(cls, personal_id: int | str | None = None) -> dict:
+        asistente_obj = None
+        if personal_id:
+            try:
+                asistente_obj = Asistente.objects.filter(id=personal_id).first()
+            except Exception:
+                pass
+
+        if asistente_obj:
+            nombre = asistente_obj.nombre
+            cargo_base = asistente_obj.cargo
+            telefono = asistente_obj.telefono
+            correo = asistente_obj.correo
+        else:
+            asistentes = cls.obtener_asistentes()
+            if asistentes:
+                a0 = asistentes[0]
+                nombre = a0.get("nombre", "Asistente de Soporte")
+                cargo_base = a0.get("cargo", "ASISTENTE DE SOPORTE")
+                telefono = a0.get("telefono", "(+56) 9 841 948 43")
+                correo = a0.get("correo", "soporte@innovex.cl")
+            else:
+                nombre = "Asistente de Soporte"
+                cargo_base = "ASISTENTE DE SOPORTE"
+                telefono = "(+56) 9 841 948 43"
+                correo = "soporte@innovex.cl"
+
+        cargo_calc = cls.obtener_cargo_calculado(nombre, cargo_base)
+        return {
+            "nombre": nombre,
+            "cargo": cargo_base,
+            "cargo_calculado": cargo_calc,
+            "telefono": telefono,
+            "correo": correo,
+        }
+
+    @classmethod
+    def generar_html_ticket(cls, tipo_ticket: str, datos: dict, personal: dict | None = None) -> tuple[str, str]:
+        """
+        Genera el asunto y el HTML del correo para el tipo de ticket especificado.
+        Retorna (asunto, html_content).
+        """
+        if not personal:
+            personal = cls._obtener_datos_personal(datos.get("personal_id"))
+
+        centro_nombre = datos.get("nombre_centro") or datos.get("centro") or "Centro"
+        empresa = datos.get("empresa") or ""
+
+        ctx = {
+            "centro_nombre": centro_nombre,
+            "empresa": empresa,
+            "personal": personal,
+            "imagen_evidencia": datos.get("imagen_evidencia", ""),
+            "imagen_grafica": datos.get("imagen_grafica", ""),
+            "imagen_defectuoso": datos.get("imagen_defectuoso", ""),
+            "imagen_repuesto": datos.get("imagen_repuesto", ""),
+        }
+
+        if tipo_ticket == "conexion":
+            asunto = f"Ticket - {centro_nombre} / CONEXIÓN."
+            template_name = "emails/ticket_conexion.html"
+
+        elif tipo_ticket == "falla_equipo":
+            numero_equipo = datos.get("numero_equipo", "")
+            numero_jaula = datos.get("numero_jaula", "")
+            identificador_repuesto = datos.get("identificador_repuesto", "Name A1")
+            texto_referencia = datos.get(
+                "texto_referencia",
+                f"Equipo {numero_equipo} jaula {numero_jaula} con corte de datos por posible falla en su funcionamiento."
+            )
+            asunto = f"Ticket centro {centro_nombre} / Falla equipo {numero_equipo} jaula {numero_jaula}".strip()
+            ctx.update({
+                "numero_equipo": numero_equipo,
+                "numero_jaula": numero_jaula,
+                "identificador_repuesto": identificador_repuesto,
+                "texto_referencia": texto_referencia,
+            })
+            template_name = "emails/ticket_falla_equipo.html"
+
+        elif tipo_ticket == "falla_sensor":
+            tipo_sensor = datos.get("tipo_sensor", "oxígeno")
+            profundidad = datos.get("profundidad", "10")
+            numero_jaula = datos.get("numero_jaula", "105")
+            asunto = f"Ticket - {centro_nombre} - Falla sensor {tipo_sensor} - Prof. {profundidad} mts – Jaula {numero_jaula}"
+            ctx.update({
+                "tipo_sensor": tipo_sensor,
+                "profundidad": profundidad,
+                "numero_jaula": numero_jaula,
+            })
+            template_name = "emails/ticket_falla_sensor.html"
+
+        else:
+            raise ValueError(f"Tipo de ticket desconocido: {tipo_ticket}")
+
+        html_content = render_to_string(template_name, ctx)
+        return asunto, html_content
+
+    @classmethod
+    def enviar_correo_ticket(
+        cls,
+        tipo_ticket: str,
+        datos: dict,
+        personal_id: int | str | None = None,
+        destinatarios_to: str | list[str] = "",
+        destinatarios_cc: str | list[str] = "",
+        correo_prueba: str = "",
+        adjuntar_guia: bool = True
+    ) -> dict:
+        personal = cls._obtener_datos_personal(personal_id)
+        asunto, html_content = cls.generar_html_ticket(tipo_ticket, datos, personal)
+        text_content = strip_tags(html_content)
+
+        # Parsear correos destinatarios
+        def _parse_emails(raw):
+            if isinstance(raw, list):
+                return [c.strip() for c in raw if c and c.strip()]
+            if not raw:
+                return []
+            return [c.strip() for c in re.split(r"[,;\n\r]+", str(raw)) if c and c.strip()]
+
+        to_list = _parse_emails(destinatarios_to)
+        cc_list = _parse_emails(destinatarios_cc)
+
+        es_prueba = bool(correo_prueba and correo_prueba.strip())
+        if es_prueba:
+            to_list = _parse_emails(correo_prueba)
+            cc_list = []
+
+        if not to_list:
+            raise ValueError("No se especificaron destinatarios válidos para el envío.")
+
+        # Remitente
+        nombre_parts = personal["nombre"].lower().split()
+        if len(nombre_parts) >= 2:
+            correo_remitente = f"{nombre_parts[0]}.{nombre_parts[1]}@innovex.cl"
+        elif len(nombre_parts) == 1:
+            correo_remitente = f"{nombre_parts[0]}@innovex.cl"
+        else:
+            correo_remitente = "soporte@innovex.cl"
+
+        msg = EmailMultiAlternatives(
+            subject=asunto,
+            body=text_content,
+            from_email=correo_remitente,
+            to=to_list,
+            cc=cc_list,
+            reply_to=[correo_remitente, "soporte@innovex.cl"],
+        )
+
+        # Procesar imágenes base64 embebidas para convertirlas en MIME CIDs
+        html_final = html_content
+        data_uri_pattern = re.compile(r'src=["\']data:image/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=]+)["\']', re.IGNORECASE)
+
+        def _sub_img_cid(match):
+            img_type = match.group(1).lower()
+            if img_type == "jpg":
+                img_type = "jpeg"
+            b64_data = match.group(2)
+            try:
+                img_bytes = base64.b64decode(b64_data)
+                cid = f"img_{uuid.uuid4().hex[:10]}"
+                mime_img = MIMEImage(img_bytes, _subtype=img_type)
+                mime_img.add_header("Content-ID", f"<{cid}>")
+                mime_img.add_header("Content-Disposition", "inline", filename=f"{cid}.{img_type}")
+                msg.attach(mime_img)
+                return f'src="cid:{cid}"'
+            except Exception:
+                return match.group(0)
+
+        html_final = data_uri_pattern.sub(_sub_img_cid, html_final)
+        msg.attach_alternative(html_final, "text/html")
+
+        # Adjuntar Guía PDF oficial si se solicita
+        if adjuntar_guia:
+            guias_dir = getattr(settings, "STORAGE_DIR", Path("storage")) / "guias"
+            guia_path = guias_dir / "guia_mantenimiento_correctivo_innovex.pdf"
+            if guia_path.exists() and guia_path.is_file():
+                msg.attach(
+                    filename="Guia_Mantencion_Correctiva_Innovex.pdf",
+                    content=guia_path.read_bytes(),
+                    mimetype="application/pdf"
+                )
+
+        # Enviar correo
+        msg.send()
+
+        # Guardar en Historial
+        try:
+            HistorialTicketEnviado.objects.create(
+                tipo_ticket=tipo_ticket,
+                empresa=datos.get("empresa", ""),
+                centro=datos.get("nombre_centro") or datos.get("centro", ""),
+                asunto=asunto,
+                asistente_nombre=personal["nombre"],
+                destinatarios_to=", ".join(to_list),
+                destinatarios_cc=", ".join(cc_list),
+                es_prueba=es_prueba,
+                manual_adjunto=adjuntar_guia,
+                datos_ticket=datos,
+            )
+        except Exception:
+            pass
+
+        modo_msg = " en MODO PRUEBA" if es_prueba else ""
+        return {
+            "status": "ok",
+            "mensaje": f"Ticket enviado exitosamente{modo_msg} a {', '.join(to_list)}.",
+            "asunto": asunto,
+            "destinatarios": to_list,
+            "cc": cc_list,
+            "es_prueba": es_prueba,
+        }
+
+    @classmethod
+    def obtener_historial_tickets(cls, limite: int = 30) -> list[dict]:
+        qs = HistorialTicketEnviado.objects.all().order_by("-fecha_envio")[:limite]
+        resultado = []
+        for h in qs:
+            resultado.append({
+                "id": h.id,
+                "tipo_ticket": h.tipo_ticket,
+                "tipo_display": h.get_tipo_ticket_display(),
+                "empresa": h.empresa,
+                "centro": h.centro,
+                "asunto": h.asunto,
+                "asistente": h.asistente_nombre,
+                "destinatarios_to": h.destinatarios_to,
+                "destinatarios_cc": h.destinatarios_cc,
+                "es_prueba": h.es_prueba,
+                "manual_adjunto": h.manual_adjunto,
+                "fecha_envio": h.fecha_envio.strftime("%d/%m/%Y %H:%M"),
+            })
+        return resultado
+

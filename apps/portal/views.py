@@ -198,3 +198,90 @@ def enviar_correos_masivos(request):
     )
     return JsonResponse(res)
 
+
+# ──────────────────────────────────────────────
+# Vistas para Módulo de Tickets de Falla
+# ──────────────────────────────────────────────
+
+@csrf_exempt
+def tickets_centros(request):
+    """GET/POST /api/tickets/centros"""
+    if request.method == "GET":
+        centros = PortalService.obtener_centros_tickets()
+        return JsonResponse({"status": "ok", "centros": centros})
+
+    elif request.method == "POST":
+        body = _parse_json_body(request)
+        action = body.get("action", "save")
+        if action == "delete":
+            cid = body.get("id")
+            res = PortalService.eliminar_centro_ticket(cid)
+            return JsonResponse(res)
+        else:
+            try:
+                res = PortalService.guardar_centro_ticket(body)
+                return JsonResponse(res)
+            except ValueError as ve:
+                return JsonResponse({"status": "error", "mensaje": str(ve)}, status=400)
+            except Exception as exc:
+                return JsonResponse({"status": "error", "mensaje": str(exc)}, status=500)
+
+    return JsonResponse({"status": "error", "mensaje": "Método no permitido"}, status=405)
+
+
+@csrf_exempt
+@require_POST
+def tickets_previsualizar(request):
+    """POST /api/tickets/previsualizar"""
+    body = _parse_json_body(request)
+    tipo_ticket = body.get("tipo_ticket", "conexion")
+    datos = body.get("datos", {})
+
+    try:
+        personal = PortalService._obtener_datos_personal(datos.get("personal_id"))
+        asunto, html = PortalService.generar_html_ticket(tipo_ticket, datos, personal)
+        return JsonResponse({
+            "status": "ok",
+            "asunto": asunto,
+            "html": html,
+            "personal": personal,
+        })
+    except Exception as exc:
+        return JsonResponse({"status": "error", "mensaje": str(exc)}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def tickets_enviar(request):
+    """POST /api/tickets/enviar"""
+    body = _parse_json_body(request)
+    tipo_ticket = body.get("tipo_ticket", "conexion")
+    datos = body.get("datos", {})
+    personal_id = body.get("personal_id") or datos.get("personal_id")
+    destinatarios_to = body.get("destinatarios_to", "")
+    destinatarios_cc = body.get("destinatarios_cc", "")
+    correo_prueba = body.get("correo_prueba", "").strip()
+    adjuntar_guia = body.get("adjuntar_guia", True)
+
+    try:
+        res = PortalService.enviar_correo_ticket(
+            tipo_ticket=tipo_ticket,
+            datos=datos,
+            personal_id=personal_id,
+            destinatarios_to=destinatarios_to,
+            destinatarios_cc=destinatarios_cc,
+            correo_prueba=correo_prueba,
+            adjuntar_guia=adjuntar_guia,
+        )
+        return JsonResponse(res)
+    except Exception as exc:
+        return JsonResponse({"status": "error", "mensaje": str(exc)}, status=400)
+
+
+@require_GET
+def tickets_historial(request):
+    """GET /api/tickets/historial"""
+    historial = PortalService.obtener_historial_tickets()
+    return JsonResponse({"status": "ok", "historial": historial})
+
+

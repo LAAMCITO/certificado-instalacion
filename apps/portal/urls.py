@@ -31,4 +31,10 @@ urlpatterns = [
 
     # Correos masivos
     path("enviar_correos_masivos", views.enviar_correos_masivos, name="portal_correos"),
+
+    # Tickets de Falla
+    path("tickets/centros", views.tickets_centros, name="portal_tickets_centros"),
+    path("tickets/previsualizar", views.tickets_previsualizar, name="portal_tickets_previsualizar"),
+    path("tickets/enviar", views.tickets_enviar, name="portal_tickets_enviar"),
+    path("tickets/historial", views.tickets_historial, name="portal_tickets_historial"),
 ]

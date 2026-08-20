@@ -173,3 +173,81 @@ class Tecnico(models.Model):
             "correo": self.correo,
             "activo": self.activo,
         }
+
+
+class CentroContactoTicket(models.Model):
+    empresa = models.CharField(max_length=150, help_text="Empresa o cliente (ej: Cermaq, Mowi, AquaChile)")
+    nombre_centro = models.CharField(max_length=150, help_text="Nombre del centro de cultivo")
+    codigo_location = models.CharField(max_length=100, blank=True, default="", help_text="Código o location (ej: ch-chidhuapi1, ce-pollollo)")
+    zona_geografica = models.ForeignKey(
+        ZonaGeografica,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="centros_contacto",
+        help_text="Zona geográfica a la que pertenece el centro"
+    )
+    destinatarios_to = models.TextField(
+        blank=True,
+        default="",
+        help_text="Correos principales (Para / TO) separados por coma, punto y coma o saltos de línea"
+    )
+    destinatarios_cc = models.TextField(
+        blank=True,
+        default="",
+        help_text="Correos en copia (CC) separados por coma, punto y coma o saltos de línea"
+    )
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Centro de Cultivo & Contactos para Tickets"
+        verbose_name_plural = "Centros de Cultivo & Contactos para Tickets"
+        ordering = ["empresa", "nombre_centro"]
+
+    def __str__(self):
+        return f"{self.empresa} - {self.nombre_centro}"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "empresa": self.empresa,
+            "nombre_centro": self.nombre_centro,
+            "codigo_location": self.codigo_location,
+            "zona": self.zona_geografica.nombre if self.zona_geografica else "",
+            "zona_id": self.zona_geografica.id if self.zona_geografica else None,
+            "destinatarios_to": self.destinatarios_to,
+            "destinatarios_cc": self.destinatarios_cc,
+            "activo": self.activo,
+        }
+
+
+class HistorialTicketEnviado(models.Model):
+    TIPO_CHOICES = [
+        ("conexion", "Ticket de Conexión"),
+        ("falla_equipo", "Ticket de Falla de Equipo"),
+        ("falla_sensor", "Ticket de Falla de Sensor"),
+    ]
+
+    tipo_ticket = models.CharField(max_length=50, choices=TIPO_CHOICES)
+    empresa = models.CharField(max_length=150)
+    centro = models.CharField(max_length=150)
+    asunto = models.CharField(max_length=255)
+    asistente_nombre = models.CharField(max_length=150)
+    destinatarios_to = models.TextField()
+    destinatarios_cc = models.TextField(blank=True, default="")
+    es_prueba = models.BooleanField(default=False)
+    manual_adjunto = models.BooleanField(default=True)
+    datos_ticket = models.JSONField(default=dict, blank=True)
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Historial de Ticket Enviado"
+        verbose_name_plural = "Historial de Tickets Enviados"
+        ordering = ["-fecha_envio"]
+
+    def __str__(self):
+        modo = " [MODO PRUEBA]" if self.es_prueba else ""
+        return f"[{self.get_tipo_ticket_display()}] {self.centro} - {self.asistente_nombre}{modo} ({self.fecha_envio.strftime('%d/%m/%Y %H:%M')})"
+

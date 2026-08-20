@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es-cl">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket - {{ centro_nombre|default:'Centro' }} / CONEXIÓN.</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
+    <div style="max-width: 720px; margin: 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+
+        <!-- Header / Asunto visual -->
+        <div style="font-size: 18px; font-weight: 700; color: #0f172a; padding-bottom: 12px; border-bottom: 2px solid #ef4444; margin-bottom: 24px; letter-spacing: -0.2px;">
+            Ticket - {{ centro_nombre|default:'Centro' }} / CONEXIÓN.
+        </div>
+
+        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
+            Estimados (as):
+        </p>
+
+        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
+            Junto con saludar, Informamos que se ha generado un ticket de falla, con la siguiente referencia:
+        </p>
+
+        <!-- Status Banner -->
+        <div style="background-color: #0d1e24; border-radius: 6px; padding: 14px 20px; margin: 20px 0 24px 0; display: flex; align-items: center; justify-content: space-between; color: #ffffff;">
+            <div style="font-size: 16px; font-weight: 700; letter-spacing: 0.3px; color: #ffffff;">
+                {{ centro_nombre|default:'Centro' }} {% if empresa %}<span style="color: #94a3b8; font-weight: 400; font-size: 13px;">[{{ empresa }}]</span>{% endif %}
+            </div>
+            <div style="font-size: 14px; color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; margin-right: 6px;"></span>
+                <span>SIN CONEXIÓN</span>
+                <span style="font-size: 18px; margin-left: 10px;">☁️</span>
+            </div>
+        </div>
+
+        {% if imagen_evidencia %}
+        <!-- Imagen de evidencia o gráfica si se adjunta -->
+        <div style="margin: 20px 0; text-align: center;">
+            <img src="{{ imagen_evidencia }}" alt="Evidencia de Conexión" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1;" />
+        </div>
+        {% endif %}
+
+        <!-- Detalle de la falla -->
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            No es posible visualizar parámetros de sensores Innovex a través de la web, esto puede deberse a un problema en la conexión a internet, por lo que solicito por favor revisar que el computador esté encendido y efectivamente conectado a la red. Si después de este paso aún no hay conexión, <strong>favor reiniciar el computador</strong>.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            Se solicita su apoyo para poder restablecer los datos en línea, favor de ser posible comunicarse con el departamento de Soporte Innovex o responder a este correo.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 24px;">
+            Gracias por utilizar nuestro servicio.
+        </p>
+
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 8px;">
+            Atte.
+        </p>
+        <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 12px;">--</p>
+
+        <!-- Firma -->
+        {% include "emails/components/firma_innovex.html" %}
+
+    </div>
+</body>
+</html>

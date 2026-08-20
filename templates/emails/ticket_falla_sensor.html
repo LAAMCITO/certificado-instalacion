@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es-cl">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket - {{ centro_nombre }} - Falla sensor {{ tipo_sensor|default:'oxígeno' }} - Prof. {{ profundidad|default:'10' }} mts – Jaula {{ numero_jaula|default:'105' }}</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
+    <div style="max-width: 720px; margin: 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+
+        <!-- Header / Asunto visual -->
+        <div style="font-size: 18px; font-weight: 700; color: #0f172a; padding-bottom: 12px; border-bottom: 2px solid #0284c7; margin-bottom: 24px; letter-spacing: -0.2px;">
+            Ticket - {{ centro_nombre }} - Falla sensor {{ tipo_sensor|default:'oxígeno' }} - Prof. {{ profundidad|default:'10' }} mts – Jaula {{ numero_jaula|default:'105' }}
+        </div>
+
+        <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 16px;">
+            Estimados(as):
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            Junto con saludar, informamos que el <strong>sensor de {{ tipo_sensor|default:'oxígeno' }} ubicado en la Jaula {{ numero_jaula|default:'105' }}, a {{ profundidad|default:'10' }} metros de profundidad</strong>, presenta una falla en su funcionamiento.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 20px;">
+            Agradeceríamos su apoyo para reemplazar el sensor afectado por el sensor de repuesto disponible en el centro.
+        </p>
+
+        <p style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+            El procedimiento es el siguiente:
+        </p>
+
+        <ol style="font-size: 14px; line-height: 1.7; color: #334155; margin-top: 4px; margin-bottom: 22px; padding-left: 24px;">
+            <li><strong>Desconectar</strong> sensor instalado.</li>
+            <li><strong>Conectar</strong> el sensor de repuesto.</li>
+            <li><strong>Retirar la tapa amarilla</strong> antes de sumergirlo.</li>
+        </ol>
+
+        {% if imagen_defectuoso or imagen_repuesto %}
+        <!-- Grilla de Imágenes Comparativas -->
+        <table style="width: 100%; margin: 24px 0; border-collapse: collapse;">
+            <tr>
+                {% if imagen_repuesto %}
+                <td style="width: 50%; vertical-align: top; padding-right: 8px; text-align: center;">
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">(Repuesto)</div>
+                    <img src="{{ imagen_repuesto }}" alt="Sensor de repuesto" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                </td>
+                {% endif %}
+                {% if imagen_defectuoso %}
+                <td style="width: 50%; vertical-align: top; padding-left: 8px; text-align: center;">
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">(Reemplazar)</div>
+                    <img src="{{ imagen_defectuoso }}" alt="Sensor a reemplazar" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                </td>
+                {% endif %}
+            </tr>
+        </table>
+        {% endif %}
+
+        {% if imagen_grafica %}
+        <!-- Gráfica de datos si se adjunta -->
+        <div style="margin: 18px 0 24px 0; text-align: center;">
+            <img src="{{ imagen_grafica }}" alt="Gráfico de mediciones" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1;" />
+        </div>
+        {% endif %}
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            También se adjunta el manual con las instrucciones correspondientes (<strong>página 2, apartado 2.1: “Mantención correctiva del sensor”</strong>).
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            Si requieren asistencia durante el cambio, pueden responder este correo o comunicarse al número indicado en mi firma.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 14px;">
+            Desde ya, muchas gracias por su colaboración.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 6px;">
+            Quedamos atentos.
+        </p>
+
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 8px;">
+            Saludos cordiales.
+        </p>
+        <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 12px;">--</p>
+
+        <!-- Firma -->
+        {% include "emails/components/firma_innovex.html" %}
+
+    </div>
+</body>
+</html>
