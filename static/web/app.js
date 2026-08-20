@@ -4057,6 +4057,7 @@ window.navegarSeccionPortal = function(vista, submodulo) {
     "poseidon": "Poseidón (Dual Monitor)",
     "calendario": "Calendario de Turnos",
     "trac-wiki": "Buscador Trac Wiki",
+    "listado-comandos": "Listado de Comandos",
     "music": "Control Multimedia"
   };
 
@@ -4087,6 +4088,45 @@ window.navegarSeccionPortal = function(vista, submodulo) {
   } else if (vista === "trac-wiki") {
     cargarIndiceTracWiki();
   }
+};
+
+window.copiarComandoTexto = function(btn) {
+  const codeBox = btn.closest('.cmd-box')?.querySelector('code');
+  if (!codeBox) return;
+  const text = codeBox.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = "✅ ¡Copiado!";
+    btn.style.background = "#10b981";
+    btn.style.color = "#ffffff";
+    if (typeof mostrarToast === "function") {
+      mostrarToast("Comando copiado al portapapeles", "success");
+    }
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = "";
+      btn.style.color = "";
+    }, 2000);
+  });
+};
+
+window.scrollAComando = function(secId) {
+  const el = document.getElementById(secId);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
+window.filtrarComandos = function(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll(".cmd-card-item").forEach(card => {
+    const text = card.textContent.toLowerCase();
+    if (!q || text.includes(q)) {
+      card.style.display = "block";
+    } else {
+      card.style.display = "none";
+    }
+  });
 };
 
 function setupSidebarNavigation() {

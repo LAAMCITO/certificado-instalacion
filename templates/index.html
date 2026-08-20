@@ -17,7 +17,7 @@
       if (localStorage.getItem("portal_theme") === "dark") {
         document.documentElement.classList.add("dark-theme");
       }
-    } catch(e) {}
+    } catch (e) { }
   </script>
 </head>
 
@@ -28,7 +28,7 @@
         document.body.classList.add("dark-theme");
         document.body.classList.remove("light-theme");
       }
-    } catch(e) {}
+    } catch (e) { }
   </script>
 
   <div class="portal-layout">
@@ -100,6 +100,10 @@
         <button class="nav-item" data-view="trac-wiki" onclick="navegarSeccionPortal('trac-wiki')">
           <span class="nav-icon">📚</span>
           <span class="nav-label">Buscador Trac Wiki</span>
+        </button>
+        <button class="nav-item" data-view="listado-comandos" onclick="navegarSeccionPortal('listado-comandos')">
+          <span class="nav-icon">💻</span>
+          <span class="nav-label">Listado de Comandos</span>
         </button>
 
         <div class="nav-category">ENLACES RÁPIDOS</div>
@@ -1511,6 +1515,331 @@
               <iframe
                 src="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs/htmlembed?gid=567077492"
                 width="100%" height="100%" frameborder="0" style="display: block;"></iframe>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- VISTA: LISTADO DE COMANDOS (NOTION)                   -->
+        <!-- ===================================================== -->
+        <!-- ===================================================== -->
+        <!-- VISTA: LISTADO DE COMANDOS & PROCEDIMIENTOS           -->
+        <!-- ===================================================== -->
+        <section class="portal-view" id="view-listado-comandos">
+          <div class="portal-card glass-panel" style="max-width: 1100px; margin: 0 auto;">
+            <div class="card-header-flex" style="align-items: center;">
+              <div>
+                <h2>💻 Apuntes de Comandos y Procedimientos</h2>
+                <p class="subtitle">Guía rápida de comandos de soporte técnico con copia a un solo clic.</p>
+              </div>
+              <div style="min-width: 280px;">
+                <input type="text" id="searchComandosInput" placeholder="🔍 Buscar comando o log..."
+                  oninput="window.filtrarComandos(this.value)" style="padding: 10px 14px; font-size: 14px;">
+              </div>
+            </div>
+
+            <!-- Layout de 2 Columnas: Lista de Comandos + Índice Lateral Sticky -->
+            <div class="cmd-layout-grid" style="margin-top: 25px; display: grid; grid-template-columns: 1fr 240px; gap: 24px; align-items: start;">
+
+              <!-- Columna Izquierda: Lista de Comandos -->
+              <div class="comandos-list-wrap" style="display: flex; flex-direction: column; gap: 20px;">
+
+                <!-- SECCIÓN 1 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-1" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>📦</span> 1) Comando paqueterías
+                  </h3>
+
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>for repo in cacheton python3_cacheton pcinnovex; do hg -R /opt/software/${repo}/ parents --template "${repo}: \033[92m{rev}:{node|short}\033[0m {desc|firstline}\n" 2>/dev/null; done</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Batería de nodos:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -300 /var/log/cacheton/jenreceiver_07_2026.log | grep -a ':NODE'</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Voltajes y paquetería:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>tail -300 /var/log/cacheton/jenreceiver_08_2026.log | grep -a ':NODE' && for repo in cacheton python3_cacheton pcinnovex; do hg -R /opt/software/${repo}/ parents --template "${repo}: \033[92m{rev}:{node|short}\033[0m {desc|firstline}\n" 2>/dev/null; done</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 2 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-2" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>🔍</span> 2) Revisar y filtrar logs
+                  </h3>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -91000 /var/log/cacheton/jenreceiver_08_2026.log | grep -a -E ':3:0:(OXY|NODE)'</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 3 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-3" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>🔄</span> 3) Revisar sincronización de cacheton
+                  </h3>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ejecutar sincronización:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo /usr/bin/tcp_sync_cacheton -fv</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ver log en tiempo real:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -f /var/log/cacheton/tcp_sync_cacheton.log</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 4 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-4" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>📷</span> 4) Comandos cámara
+                  </h3>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Editar configuración:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo nano /etc/visibility-cam/camconf.conf</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ver log (Servicio local):</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -f /var/log/visibility-cam-photo.log</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ver log (Sincronización):</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -f /var/log/visibility-cam-sync.log</code></pre>
+                  </div>
+
+                  <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin: 16px 0 10px;">🎥 Ver imagen de la cámara</h4>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Opción 1 (GStreamer):</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>gst-launch-1.0 rtspsrc location=rtsp://admin:1234webcam@IP-CAM:554/Streaming/Channels/1 latency=300 ! decodebin ! autovideosink</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Opción 2 (FFplay):</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>ffplay rtsp://admin:1234webcam@IP-CAM:554/Streaming/Channels/1</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 5 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-5" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>⏱️</span> 5) Tiempo encendido pc
+                  </h3>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>uptime -s</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 6 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-6" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>🌐</span> 6) Dataweb
+                  </h3>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reload:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar URL"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>http://dataweb.innovex.cl:8888/prueba_membrana/reload/</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Parámetro:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar URL"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>http://dataweb.innovex.cl:8888/mef-taraba8-inyeccion/node/</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 7 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-7" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>🌤️</span> 7) Estación meteorológica
+                  </h3>
+                  
+                  <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin: 10px 0;">Davis</h4>
+                  
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Configuración 1.1.1:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>cat /var/lib/weather_station/weather_station.toml</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Configuración 1.1.2:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo nano /var/lib/weather_station/config.toml</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reiniciar servicio:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo systemctl restart weather_station_davis.service</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ver log de Davis:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -f /var/log/cacheton/weather_station_davis.log</code></pre>
+                  </div>
+
+                  <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin: 16px 0 10px;">Airmar</h4>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Ver log de Airmar:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #89b4fa; padding-right: 80px;"><code>tail -f /var/log/cacheton/weather.log</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 8 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-8" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>⚡</span> 8) Comando para saber cuándo se apagó y encendió el PC
+                  </h3>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; padding-right: 80px;"><code>journalctl --since "48 hours ago" | grep -E "systemd-shutdown|Linux version" | awk '
+/systemd-shutdown/ {print "🟥 Apagado:", $1, $2, $3, $4}
+/Linux version/    {print "🟩 Encendido:", $1, $2, $3, $4}
+'</code></pre>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN 9 -->
+                <div class="cmd-card-item portal-card" id="cmd-sec-9" style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️</span> 9) Allowed host. Agregar.
+                  </h3>
+                  
+                  <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin: 10px 0;">Pc innovex</h4>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo sed -i '/ALLOWED_HOSTS/s/.$/, "10.9.31.221"]/' /var/lib/pcinnovex/pcinnovex/settings.py</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reiniciar Apache2:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo systemctl restart apache2.service</code></pre>
+                  </div>
+
+                  <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin: 16px 0 10px;">Pc innovex 2</h4>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo sed -i '/ALLOWED_HOSTS/s/.$/, "10.5.24.35"]/' /var/lib/pcinnovex2/pcinnovex2/settings.py</code></pre>
+                  </div>
+
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reiniciar Gunicorn:</div>
+                  <div class="cmd-box" style="position: relative; background: #1e1e2e; border-radius: 8px; padding: 14px 16px; border: 1px solid #313244;">
+                    <button class="btn-copy-cmd" onclick="window.copiarComandoTexto(this)" title="Copiar comando"
+                      style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      📋 Copiar
+                    </button>
+                    <pre style="margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f9e2af; padding-right: 80px;"><code>sudo systemctl restart pcinnovex2-gunicorn</code></pre>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Columna Derecha: Índice Sticky tipo Notion -->
+              <div class="cmd-toc-panel" style="position: sticky; top: 20px; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; font-size: 13px;">
+                <div style="font-weight: 700; color: var(--text-main); margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px;">
+                  <span>📑</span> Índice de Puntos
+                </div>
+                <nav style="display: flex; flex-direction: column; gap: 4px;">
+                  <a href="#cmd-sec-1" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-1');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">1. Paqueterías</a>
+                  <a href="#cmd-sec-2" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-2');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">2. Filtrar logs</a>
+                  <a href="#cmd-sec-3" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-3');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">3. Sincronización</a>
+                  <a href="#cmd-sec-4" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-4');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">4. Comandos cámara</a>
+                  <a href="#cmd-sec-5" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-5');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">5. Uptime PC</a>
+                  <a href="#cmd-sec-6" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-6');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">6. Dataweb</a>
+                  <a href="#cmd-sec-7" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-7');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">7. Estación Meteo</a>
+                  <a href="#cmd-sec-8" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-8');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">8. Apagado / Encendido</a>
+                  <a href="#cmd-sec-9" onclick="event.preventDefault(); window.scrollAComando('cmd-sec-9');" class="cmd-toc-link" style="color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: all 0.2s; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">9. Allowed hosts</a>
+                </nav>
+              </div>
+
             </div>
           </div>
         </section>
