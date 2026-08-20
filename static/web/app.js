@@ -4416,7 +4416,17 @@ async function procesarEnvioPrevisualizacionCorreos(esEnvioReal) {
   }
 
   const btn = document.getElementById("btnEnviarCorreosMasivos");
-  if (btn) btn.disabled = true;
+  const alertBox = document.getElementById("statusAlertCorreosMasivos");
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `⏳ Enviando correos masivos...`;
+  }
+
+  if (alertBox) {
+    alertBox.className = "status-alert-banner info";
+    alertBox.innerHTML = `<span>⏳ <strong>Procesando envío...</strong> Por favor espere mientras se despachan los correos masivos.</span>`;
+  }
 
   try {
     const res = await fetch("/api/enviar_correos_masivos", {
@@ -4433,13 +4443,28 @@ async function procesarEnvioPrevisualizacionCorreos(esEnvioReal) {
     const data = await res.json();
     if (data.status === "ok") {
       mostrarToast(data.mensaje, "success");
+      if (alertBox) {
+        alertBox.className = "status-alert-banner success";
+        alertBox.innerHTML = `<span>✅ <strong>¡Envío completado con éxito!</strong> ${data.mensaje}</span>`;
+      }
     } else {
       mostrarToast(data.mensaje || "Error al enviar correo masivo", "error");
+      if (alertBox) {
+        alertBox.className = "status-alert-banner error";
+        alertBox.innerHTML = `<span>❌ <strong>Error en el envío:</strong> ${data.mensaje || "Ocurrió una falla durante el envío."}</span>`;
+      }
     }
   } catch (err) {
     mostrarToast("Error de conexión al procesar correo masivo", "error");
+    if (alertBox) {
+      alertBox.className = "status-alert-banner error";
+      alertBox.innerHTML = `<span>❌ <strong>Error de conexión:</strong> No se pudo comunicar con el servidor para enviar los correos.</span>`;
+    }
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `✉️ Enviar Correos Masivos`;
+    }
   }
 }
 
