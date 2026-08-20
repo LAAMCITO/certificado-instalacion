@@ -114,16 +114,18 @@ body {
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 100;
   box-shadow: var(--shadow-sm);
   transition: transform 0.3s ease, background-color 0.25s ease, border-color 0.25s ease;
 }
 
-.portal-sidebar::-webkit-scrollbar {
+.portal-sidebar::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar {
   width: 5px;
 }
-.portal-sidebar::-webkit-scrollbar-thumb {
+.portal-sidebar::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb {
   background: var(--border-color-strong);
   border-radius: 4px;
 }
@@ -132,6 +134,7 @@ body {
 .sidebar-brand {
   padding: 20px 18px 16px;
   border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
 }
 
 .brand-logo-wrap {
@@ -230,6 +233,7 @@ body.dark-theme .brand-img-logo.logo-dark-theme {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  overflow-y: auto;
 }
 
 .nav-category {
@@ -314,6 +318,7 @@ body.dark-theme .nav-item:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .clock-display {
