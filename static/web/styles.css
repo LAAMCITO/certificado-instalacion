@@ -147,6 +147,22 @@ body {
   margin-bottom: 4px;
 }
 
+.brand-img-logo.logo-light-theme {
+  display: block;
+}
+
+.brand-img-logo.logo-dark-theme {
+  display: none;
+}
+
+body.dark-theme .brand-img-logo.logo-light-theme {
+  display: none;
+}
+
+body.dark-theme .brand-img-logo.logo-dark-theme {
+  display: block;
+}
+
 .brand-symbol {
   font-size: 24px;
   font-weight: 900;

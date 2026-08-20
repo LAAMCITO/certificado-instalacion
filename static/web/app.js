@@ -1899,7 +1899,7 @@ function renderLiveHtmlSheet() {
       <!-- Encabezado Oficial ReportLab 3 Cajas -->
       <div class="reportlab-header-box">
         <div class="reportlab-header-left">
-          <img src="logo.png" alt="Innovex">
+          <img src="/static/assets/innovex-logo.png" alt="Innovex">
         </div>
         <div class="reportlab-header-center">
           VALIDACIÓN DE INSTALACIÓN
@@ -3955,7 +3955,7 @@ function iniciarPortalUnificado() {
   setupGestorDestinatariosHandlers();
   setupPoseidon();
   setupTracSearch();
-  setupMusicPlayer();
+  // setupMusicPlayer(); // Deshabilitado temporalmente a petición del usuario
 
   // Carga inicial de datos de fondo
   cargarBitacora();
@@ -4558,34 +4558,8 @@ function setupTracSearch() {
   });
 }
 
-// --- 7. Control Multimedia Host ---
+// --- 7. Control Multimedia Host (Deshabilitado temporalmente) ---
 function setupMusicPlayer() {
-  const updateMusicStatus = async () => {
-    try {
-      const res = await fetch("/api/music/status");
-      const data = await res.json();
-      const t = document.getElementById("musicTrackTitle");
-      const a = document.getElementById("musicTrackArtist");
-      if (t) t.textContent = data.title || "No hay reproducción activa";
-      if (a) a.textContent = data.artist || "Innovex Support Host";
-    } catch (err) {}
-  };
-
-  const sendMusicCmd = async (action) => {
-    try {
-      await fetch(`/api/music/control?action=${action}`);
-      setTimeout(updateMusicStatus, 300);
-    } catch (err) {}
-  };
-
-  document.getElementById("btnMusicPlay")?.addEventListener("click", () => sendMusicCmd("play"));
-  document.getElementById("btnMusicNext")?.addEventListener("click", () => sendMusicCmd("next"));
-  document.getElementById("btnMusicPrev")?.addEventListener("click", () => sendMusicCmd("prev"));
-  document.getElementById("btnMusicVolUp")?.addEventListener("click", () => sendMusicCmd("volup"));
-  document.getElementById("btnMusicVolDown")?.addEventListener("click", () => sendMusicCmd("voldn"));
-  document.getElementById("btnMusicMute")?.addEventListener("click", () => sendMusicCmd("mute"));
-
-  setInterval(updateMusicStatus, 4000);
-  updateMusicStatus();
+  // Deshabilitado temporalmente: no realiza llamadas fetch ni intervalos GET
 }
 

@@ -65,40 +65,46 @@ def main():
         elif arg == "--local" or arg == "--localhost":
             host_solicitado = "127.0.0.1"
 
-    # Verificar disponibilidad de puerto
-    while puerto_solicitado < 8910:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind((host_solicitado if host_solicitado != "0.0.0.0" else "", puerto_solicitado))
-                break
-            except OSError:
-                puerto_solicitado += 1
+    is_reloader_child = os.environ.get("RUN_MAIN") == "true"
+    is_no_reload = "--noreload" in args
+
+    # Verificar disponibilidad de puerto solo en el proceso padre inicial
+    if not is_reloader_child:
+        while puerto_solicitado < 8910:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.bind((host_solicitado if host_solicitado != "0.0.0.0" else "", puerto_solicitado))
+                    break
+                except OSError:
+                    puerto_solicitado += 1
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
     ips = obtener_ips_locales()
     url_local = f"http://localhost:{puerto_solicitado}/"
 
-    print("=" * 65)
-    print("  SUITE DE SOPORTE INNOVEX — PORTAL UNIFICADO (DJANGO)")
-    print("=" * 65)
-    print(f"🚀 Servidor Django activo en el puerto {puerto_solicitado}:")
-    print(f"   • Local (este equipo):  {url_local}")
-    if host_solicitado in ("0.0.0.0", ""):
-        if ips:
-            for ip in ips:
-                print(f"   • Red Local (colegas):  http://{ip}:{puerto_solicitado}/")
+    # Mostrar banner y abrir navegador una sola vez (en el worker activo)
+    if is_reloader_child or is_no_reload:
+        print("=" * 65)
+        print("  SUITE DE SOPORTE INNOVEX — PORTAL UNIFICADO (DJANGO)")
+        print("=" * 65)
+        print(f"🚀 Servidor Django activo en el puerto {puerto_solicitado}:")
+        print(f"   • Local (este equipo):  {url_local}")
+        if host_solicitado in ("0.0.0.0", ""):
+            if ips:
+                for ip in ips:
+                    print(f"   • Red Local (colegas):  http://{ip}:{puerto_solicitado}/")
+            else:
+                print(f"   • Red Local (colegas):  http://<IP-de-tu-equipo>:{puerto_solicitado}/")
         else:
-            print(f"   • Red Local (colegas):  http://<IP-de-tu-equipo>:{puerto_solicitado}/")
-    else:
-        print(f"   • Host específico:      http://{host_solicitado}:{puerto_solicitado}/")
-    print(f"   • Panel de Administración: {url_local}admin/")
-    print("  💡 Presione Ctrl+C en esta terminal para detener el servidor.")
-    print("=" * 65)
+            print(f"   • Host específico:      http://{host_solicitado}:{puerto_solicitado}/")
+        print(f"   • Panel de Administración: {url_local}admin/")
+        print("  💡 Presione Ctrl+C en esta terminal para detener el servidor.")
+        print("=" * 65)
 
-    # Abrir navegador si no se pasa --no-browser
-    if "--no-browser" not in args:
-        abrir_navegador_delayed(url_local, delay=1.2)
+        # Abrir navegador si no se pasa --no-browser
+        if "--no-browser" not in args:
+            abrir_navegador_delayed(url_local, delay=1.0)
 
     # Ejecutar Django runserver
     from django.core.management import execute_from_command_line
@@ -107,7 +113,7 @@ def main():
         "runserver",
         f"{host_solicitado}:{puerto_solicitado}",
     ]
-    if "--noreload" in args:
+    if is_no_reload:
         django_args.append("--noreload")
     execute_from_command_line(django_args)
 

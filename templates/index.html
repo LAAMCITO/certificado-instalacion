@@ -25,7 +25,9 @@
       <!-- Brand Header -->
       <div class="sidebar-brand">
         <div class="brand-logo-wrap">
-          <img src="{% static 'assets/logo_innovex_fondo transparente.png' %}" alt="Innovex" class="brand-img-logo"
+          <img src="{% static 'assets/innovex-logo.png' %}" alt="Innovex" class="brand-img-logo logo-light-theme"
+            onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
+          <img src="{% static 'assets/logo_innovex_fondo transparente.png' %}" alt="Innovex" class="brand-img-logo logo-dark-theme"
             onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
           <div class="brand-symbol" id="brandFallbackSymbol" style="display: none;">
             <span class="symbol-in">in</span><span class="symbol-novex">novex</span><span
@@ -122,10 +124,6 @@
           <span class="nav-label">Odoo ERP</span>
           <span class="ext-icon">↗</span>
         </a>
-        <button class="nav-item" data-view="music" onclick="navegarSeccionPortal('music')">
-          <span class="nav-icon">🎵</span>
-          <span class="nav-label">Control Multimedia</span>
-        </button>
       </nav>
 
       <!-- Sidebar Footer -->
@@ -1533,10 +1531,9 @@
           </div>
         </section>
 
-        <!-- ===================================================== -->
-        <!-- VISTA 9: REPRODUCTOR MULTIMEDIA HOST                  -->
-        <!-- ===================================================== -->
-        <section class="portal-view" id="view-music">
+        <!-- Vista 9: Control Multimedia (Deshabilitado temporalmente) -->
+        <!--
+        <section class="portal-view" id="view-music" style="display: none;">
           <div class="portal-card glass-panel" style="max-width: 500px; margin: 30px auto; text-align: center;">
             <div style="font-size: 40px; margin-bottom: 10px;">🎵</div>
             <h2>Control Multimedia del Host</h2>
@@ -1563,6 +1560,7 @@
             </div>
           </div>
         </section>
+        -->
 
       </main>
     </div>
