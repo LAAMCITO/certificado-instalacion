@@ -85,6 +85,8 @@ class TestPortalService(TestCase):
         self.assertIn("+56 9 8419 4843", html)
         self.assertIn("hector.portillo@innovex.cl", html)
         self.assertIn("innovex", html)
+        self.assertNotIn("{{", html)
+        self.assertNotIn("}}", html)
 
     def test_trac_wiki_busqueda_e_indice(self):
         res_search = PortalService.buscar_trac_wiki("oxigeno")
