@@ -4191,9 +4191,8 @@ function updatePreviewCorreoLive() {
   if (opt && opt.value) {
     const nombre = opt.getAttribute('data-nombre') || opt.text;
     const telefono = opt.getAttribute('data-telefono') || '';
-    const correo = opt.getAttribute('data-correo') || '';
-    const cargoAttr = opt.getAttribute('data-cargo');
-    const cargo = (cargoAttr && cargoAttr.trim() !== "") ? cargoAttr.toUpperCase() : getCargoCalculadoCorreos(nombre);
+    const correo = 'soporte@innovex.cl';
+    const cargo = getCargoCalculadoCorreos(nombre);
 
     const elNombre = document.getElementById('pv-nombre');
     const elTel = document.getElementById('pv-telefono');

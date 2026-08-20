@@ -223,7 +223,7 @@ class PortalService:
         if asistente_obj:
             nombre_asistente = asistente_obj.nombre
             telefono_asistente = asistente_obj.telefono
-            correo_asistente = asistente_obj.correo
+            correo_asistente = "soporte@innovex.cl"
             cargo_base = asistente_obj.cargo
         else:
             asistentes = cls.obtener_asistentes()

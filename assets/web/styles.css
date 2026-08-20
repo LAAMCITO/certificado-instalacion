@@ -1609,6 +1609,30 @@ input:checked + .slider:before {
   to { transform: translateX(0); opacity: 1; }
 }
 
+.toast.success {
+  background-color: #10b981;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+.toast.error {
+  background-color: #ef4444;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.toast.warning {
+  background-color: #f59e0b;
+  border-color: #d97706;
+  color: #ffffff;
+}
+
+.toast.info {
+  background-color: #3b82f6;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
 /* Responsividad */
 @media (max-width: 1024px) {
   .app-container {

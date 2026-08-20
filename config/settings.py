@@ -118,6 +118,6 @@ EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH", BASE_DIR / "correos_prueba")
 EMAIL_HOST = "smtp.1und1.de"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "felipe.godoy@innovex.cl")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "Pipe0705!")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
