@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,11 @@
   <link rel="stylesheet" href="{% static 'web/styles.css' %}?v=3.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
 </head>
+
 <body class="light-theme">
 
   <div class="portal-layout">
@@ -21,9 +25,11 @@
       <!-- Brand Header -->
       <div class="sidebar-brand">
         <div class="brand-logo-wrap">
-          <img src="{% static 'assets/logo_innovex_fondo transparente.png' %}" alt="Innovex" class="brand-img-logo" onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
+          <img src="{% static 'assets/logo_innovex_fondo transparente.png' %}" alt="Innovex" class="brand-img-logo"
+            onerror="this.style.display='none'; document.getElementById('brandFallbackSymbol').style.display='flex';">
           <div class="brand-symbol" id="brandFallbackSymbol" style="display: none;">
-            <span class="symbol-in">in</span><span class="symbol-novex">novex</span><span class="symbol-reg">&reg;</span>
+            <span class="symbol-in">in</span><span class="symbol-novex">novex</span><span
+              class="symbol-reg">&reg;</span>
           </div>
           <div class="brand-portal-badge">PORTAL DE SOPORTE</div>
         </div>
@@ -47,15 +53,18 @@
         </button>
 
         <div class="nav-category">OPERACIONES & CERTIFICADOS</div>
-        <button class="nav-item" data-view="certificado-suite" data-submodule="certificado" onclick="navegarSeccionPortal('certificado-suite', 'certificado')">
+        <button class="nav-item" data-view="certificado-suite" data-submodule="certificado"
+          onclick="navegarSeccionPortal('certificado-suite', 'certificado')">
           <span class="nav-icon">📄</span>
           <span class="nav-label">Certificado Instalación</span>
         </button>
-        <button class="nav-item" data-view="certificado-suite" data-submodule="revisor" onclick="navegarSeccionPortal('certificado-suite', 'revisor')">
+        <button class="nav-item" data-view="certificado-suite" data-submodule="revisor"
+          onclick="navegarSeccionPortal('certificado-suite', 'revisor')">
           <span class="nav-icon">🔍</span>
           <span class="nav-label">Revisor & Verificación</span>
         </button>
-        <button class="nav-item" data-view="certificado-suite" data-submodule="ingreso_tecnico" onclick="navegarSeccionPortal('certificado-suite', 'ingreso_tecnico')">
+        <button class="nav-item" data-view="certificado-suite" data-submodule="ingreso_tecnico"
+          onclick="navegarSeccionPortal('certificado-suite', 'ingreso_tecnico')">
           <span class="nav-icon">📋</span>
           <span class="nav-label">Ingreso de Técnico</span>
         </button>
@@ -85,12 +94,14 @@
         </button>
 
         <div class="nav-category">ENLACES RÁPIDOS</div>
-        <a href="https://docs.google.com/spreadsheets/d/1HAMmFlPS8s4N8sIgcZLLryEVQzIsWRxoU5ST3oBZDQM/edit?gid=1731426176" target="_blank" class="nav-item external">
+        <a href="https://docs.google.com/spreadsheets/d/1HAMmFlPS8s4N8sIgcZLLryEVQzIsWRxoU5ST3oBZDQM/edit?gid=1731426176"
+          target="_blank" class="nav-item external">
           <span class="nav-icon">📊</span>
           <span class="nav-label">IP Fijas (Sheets)</span>
           <span class="ext-icon">↗</span>
         </a>
-        <a href="https://docs.google.com/spreadsheets/d/1bwpqpb3B0EtWXZdNWAPQNYis9KRtD2NNehN9fIfwvWY/edit?gid=398395734" target="_blank" class="nav-item external">
+        <a href="https://docs.google.com/spreadsheets/d/1bwpqpb3B0EtWXZdNWAPQNYis9KRtD2NNehN9fIfwvWY/edit?gid=398395734"
+          target="_blank" class="nav-item external">
           <span class="nav-icon">⚠️</span>
           <span class="nav-label">Fallas MAM (Sheets)</span>
           <span class="ext-icon">↗</span>
@@ -105,7 +116,8 @@
           <span class="nav-label">Nextcore Monitor</span>
           <span class="ext-icon">↗</span>
         </a>
-        <a href="https://erp.innovex.cl/web" target="_blank" class="nav-item external">
+        <a href="https://erp.innovex.cl/web#action=106&model=calendar.event&view_type=calendar&menu_id=81"
+          target="_blank" class="nav-item external">
           <span class="nav-icon">⚙️</span>
           <span class="nav-label">Odoo ERP</span>
           <span class="ext-icon">↗</span>
@@ -147,12 +159,14 @@
               <option value="">Cargar Certificado...</option>
             </select>
             <button class="btn btn-secondary btn-small" id="btnHeaderCargar">Cargar</button>
-            <button class="btn btn-danger btn-small" id="btnHeaderEliminar" title="Eliminar certificado">Eliminar</button>
+            <button class="btn btn-danger btn-small" id="btnHeaderEliminar"
+              title="Eliminar certificado">Eliminar</button>
             <button class="btn btn-secondary btn-small" id="btnGuardar">Guardar</button>
           </div>
 
           <!-- Selector de Tema Claro / Oscuro -->
-          <button class="btn-theme-toggle" id="btnToggleTheme" title="Alternar Modo Claro / Oscuro">🌓 Modo Oscuro</button>
+          <button class="btn-theme-toggle" id="btnToggleTheme" title="Alternar Modo Claro / Oscuro">🌓 Modo
+            Oscuro</button>
         </div>
       </header>
 
@@ -163,14 +177,15 @@
         <!-- VISTA 1: DASHBOARD / HOMEPAGE                         -->
         <!-- ===================================================== -->
         <section class="portal-view active" id="view-dashboard">
-          
+
           <!-- Hero Banner Renovado Minimalista Innovex -->
           <div class="hero-card-modern">
             <div class="hero-content">
               <div class="hero-badge">INNOVEX TECH SUPPORT SYSTEM</div>
               <h1 class="hero-title">Portal unificado de Soporte</h1>
               <p class="hero-desc">
-                Centro de control operativo para gestión integral de certificados técnicos, monitoreo abiótico, handover de turno, comunicaciones a clientes y utilidades técnicas.
+                Centro de control operativo para gestión integral de certificados técnicos, monitoreo abiótico, handover
+                de turno, comunicaciones a clientes y utilidades técnicas.
               </p>
               <div class="hero-actions">
                 <button class="btn btn-primary" onclick="navegarSeccionPortal('certificado-suite', 'certificado')">
@@ -203,7 +218,8 @@
                 <span class="card-title-icon">📝</span>
                 <div>
                   <h2 class="card-heading">Pizarra de Turno / Bitácora Rápida</h2>
-                  <span class="card-subheading">Novedades y notas de handover entre asistentes de soporte (guardado automático).</span>
+                  <span class="card-subheading">Novedades y notas de handover entre asistentes de soporte (guardado
+                    automático).</span>
                 </div>
               </div>
               <div class="bitacora-status-tag" id="dashBitacoraStatus">
@@ -211,7 +227,8 @@
               </div>
             </div>
             <div class="bitacora-body">
-              <textarea id="dashBitacoraTexto" class="bitacora-textarea" placeholder="Escriba aquí las novedades del turno..."></textarea>
+              <textarea id="dashBitacoraTexto" class="bitacora-textarea"
+                placeholder="Escriba aquí las novedades del turno..."></textarea>
             </div>
           </div>
 
@@ -234,7 +251,8 @@
               <div class="dash-card-icon">🔍</div>
               <div class="dash-card-info">
                 <h3>Revisor & Verificación</h3>
-                <p>Inspección remota de equipos Jennic, voltajes individuales y tramas de sensores (OXY, COND, FLOW).</p>
+                <p>Inspección remota de equipos Jennic, voltajes individuales y tramas de sensores (OXY, COND, FLOW).
+                </p>
               </div>
               <span class="dash-card-arrow">→</span>
             </div>
@@ -303,7 +321,8 @@
             <div class="card-header-flex">
               <div>
                 <h2>Pizarra de Turno — Handover Continuo</h2>
-                <p class="subtitle">Espacio para registrar pendientes, novedades críticas, equipos en revisión y handover entre turnos de soporte.</p>
+                <p class="subtitle">Espacio para registrar pendientes, novedades críticas, equipos en revisión y
+                  handover entre turnos de soporte.</p>
               </div>
               <div style="display: flex; gap: 10px; align-items: center;">
                 <span class="bitacora-status-tag" id="fullBitacoraStatus">Sincronizado</span>
@@ -311,7 +330,8 @@
               </div>
             </div>
             <div style="margin-top: 15px;">
-              <textarea id="fullBitacoraTexto" class="bitacora-textarea-full" rows="18" placeholder="Escriba aquí los detalles del turno..."></textarea>
+              <textarea id="fullBitacoraTexto" class="bitacora-textarea-full" rows="18"
+                placeholder="Escriba aquí los detalles del turno..."></textarea>
             </div>
           </div>
         </section>
@@ -326,7 +346,7 @@
 
             <!-- Columna Izquierda: Formulario Editor -->
             <main class="editor-pane">
-              
+
               <!-- Navegación por Secciones del Certificado (Abarca toda la pantalla) -->
               <nav class="nav-tabs">
                 <button class="tab-btn active" data-tab="autofill">⚡ Auto-relleno Rápido</button>
@@ -346,7 +366,8 @@
                     <h2>Auto-rellenado Inteligente del Documento</h2>
                     <p class="subtitle">
                       <strong>Opción A:</strong> Conéctate directamente por red ingresando la IP/DNS de la máquina.<br>
-                      <strong>Opción B:</strong> Copia la información desde la consola de la máquina remota y pégala abajo.
+                      <strong>Opción B:</strong> Copia la información desde la consola de la máquina remota y pégala
+                      abajo.
                     </p>
 
                     <!-- Opción A: Conexión Directa SSH -->
@@ -355,7 +376,8 @@
                       <div class="form-grid">
                         <div class="form-group">
                           <label>IP / DNS del Equipo</label>
-                          <input type="text" id="ssh_autofill_host" placeholder="ej. ce-tranqui1.acuimatic.com o 10.9.18.37">
+                          <input type="text" id="ssh_autofill_host"
+                            placeholder="ej. ce-tranqui1.acuimatic.com o 10.9.18.37">
                         </div>
                         <div class="form-group">
                           <label>Usuario SSH</label>
@@ -375,14 +397,17 @@
                         </div>
                       </div>
                       <div style="margin-top: 12px;">
-                        <button class="btn btn-primary" id="btnEjecutarSSHAutofill">Conectar & Autorellenar Ficha</button>
+                        <button class="btn btn-primary" id="btnEjecutarSSHAutofill">Conectar & Autorellenar
+                          Ficha</button>
                       </div>
                     </div>
 
                     <!-- Opción B: Pegado de Texto -->
                     <div class="subcard">
-                      <h3 style="margin-top: 0; font-size: 14px;">Opción B: Pegar Salida de Terminal o Mensaje Técnico</h3>
-                      <textarea id="txtRawConsola" class="code-input" rows="8" placeholder="Pega aquí la salida de la terminal..."></textarea>
+                      <h3 style="margin-top: 0; font-size: 14px;">Opción B: Pegar Salida de Terminal o Mensaje Técnico
+                      </h3>
+                      <textarea id="txtRawConsola" class="code-input" rows="8"
+                        placeholder="Pega aquí la salida de la terminal..."></textarea>
                       <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-secondary" id="btnProcesarAutofill">Procesar Texto Pegado</button>
                         <button class="btn btn-secondary" id="btnCopiarComandoAutofill">Copiar Comando SSH</button>
@@ -407,7 +432,8 @@
                       <div class="form-group">
                         <label>Empresa Cliente</label>
                         <select id="gen_empresa_select"></select>
-                        <input type="text" id="gen_empresa_custom" placeholder="Especificar empresa..." class="input-sub" style="display: none;">
+                        <input type="text" id="gen_empresa_custom" placeholder="Especificar empresa..."
+                          class="input-sub" style="display: none;">
                       </div>
                       <div class="form-group">
                         <label>Encargado de Área</label>
@@ -416,12 +442,14 @@
                       <div class="form-group">
                         <label>Área (Zona Geográfica)</label>
                         <select id="gen_area_select"></select>
-                        <input type="text" id="gen_area_custom" placeholder="Especificar otra zona / área..." class="input-sub" style="display: none;">
+                        <input type="text" id="gen_area_custom" placeholder="Especificar otra zona / área..."
+                          class="input-sub" style="display: none;">
                       </div>
                       <div class="form-group">
                         <label>Técnico de Visita</label>
                         <select id="gen_tecnico_select"></select>
-                        <input type="text" id="gen_tecnico_custom" placeholder="Nombre técnico..." class="input-sub" style="display: none;">
+                        <input type="text" id="gen_tecnico_custom" placeholder="Nombre técnico..." class="input-sub"
+                          style="display: none;">
                       </div>
                       <div class="form-group">
                         <label>N° Ficha / Registro (DP-xxxx)</label>
@@ -457,9 +485,12 @@
                       * Campos obligatorios para la compilación del certificado oficial.
                     </p>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="autofill">← Volver a Auto-relleno</button>
-                      <button class="btn btn-primary nav-next-btn" data-next="infraestructura">Ir a 2. Infraestructura & Acceso →</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="autofill">← Volver a
+                        Auto-relleno</button>
+                      <button class="btn btn-primary nav-next-btn" data-next="infraestructura">Ir a 2. Infraestructura &
+                        Acceso →</button>
                     </div>
                   </div>
                 </section>
@@ -556,9 +587,12 @@
                       </div>
                     </div>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="generales">← Volver a Datos Generales</button>
-                      <button class="btn btn-primary nav-next-btn" data-next="camara">Ir a 3. Cámara & Estación →</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="generales">← Volver a Datos
+                        Generales</button>
+                      <button class="btn btn-primary nav-next-btn" data-next="camara">Ir a 3. Cámara & Estación
+                        →</button>
                     </div>
                   </div>
                 </section>
@@ -567,7 +601,7 @@
                 <section class="tab-content" id="tab-camara">
                   <div class="card">
                     <h2>3. Estación Meteorológica, Cámara & Switch PoE</h2>
-                    
+
                     <h3 style="margin-top: 15px; margin-bottom: 10px; font-size: 14px;">Estación Meteorológica</h3>
                     <div class="form-grid">
                       <div class="form-group">
@@ -659,9 +693,12 @@
                       </div>
                     </div>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="infraestructura">← Volver a Infraestructura</button>
-                      <button class="btn btn-primary nav-next-btn" data-next="abiotico_ubicaciones">Ir a 4. Monitoreo Abiótico →</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="infraestructura">← Volver a
+                        Infraestructura</button>
+                      <button class="btn btn-primary nav-next-btn" data-next="abiotico_ubicaciones">Ir a 4. Monitoreo
+                        Abiótico →</button>
                     </div>
                   </div>
                 </section>
@@ -717,7 +754,9 @@
                       <h2>Equipos Jennic Detectados (cmd motes)</h2>
                     </div>
                     <p class="subtitle">
-                      Equipos y MACs importados desde la consola (<code>cmd motes</code> / <code>cmd status</code>). Puede usar el selector o presionar <strong>Copiar</strong> para asignarlas fácilmente en una ubicación o repuesto.
+                      Equipos y MACs importados desde la consola (<code>cmd motes</code> / <code>cmd status</code>).
+                      Puede usar el selector o presionar <strong>Copiar</strong> para asignarlas fácilmente en una
+                      ubicación o repuesto.
                     </p>
                     <div id="contenedorMotesList"></div>
                   </div>
@@ -727,7 +766,7 @@
                       <h2>Ubicaciones y Equipos Instalados</h2>
                       <button class="btn btn-secondary btn-small" id="btnToggleFormUbicacion">Agregar Ubicación</button>
                     </div>
-                    
+
                     <div id="formNuevaUbicacion" class="inline-form-card" style="display: none;">
                       <h3>Nueva Ubicación</h3>
                       <div class="form-grid">
@@ -751,7 +790,7 @@
 
                   <div class="card margin-top">
                     <h2>Equipos de Repuesto</h2>
-                    
+
                     <div class="form-group margin-bottom">
                       <label>Ubicación Repuestos (Bodega / Almacenamiento)</label>
                       <input type="text" id="ub_repuestos_general" placeholder="ej. Bodega Pontón Principal">
@@ -777,7 +816,8 @@
                           </div>
                           <div class="form-group" id="group_rep_mac">
                             <label>MAC Address</label>
-                            <select id="rep_mac_select" style="margin-bottom: 6px;" onchange="if(this.value){ document.getElementById('rep_mac_input').value = this.value; }">
+                            <select id="rep_mac_select" style="margin-bottom: 6px;"
+                              onchange="if(this.value){ document.getElementById('rep_mac_input').value = this.value; }">
                               <option value="">-- Seleccionar de motes detectados --</option>
                             </select>
                             <input type="text" id="rep_mac_input" placeholder="00:15:8D:00:09:82:2A:A5">
@@ -800,9 +840,12 @@
                       <div id="listaRepuestos" class="items-list"></div>
                     </div>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="camara">← Volver a Cámara & Estación</button>
-                      <button class="btn btn-primary nav-next-btn" data-next="activacion_obs">Ir a 5. Activación & Observaciones →</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="camara">← Volver a Cámara &
+                        Estación</button>
+                      <button class="btn btn-primary nav-next-btn" data-next="activacion_obs">Ir a 5. Activación &
+                        Observaciones →</button>
                     </div>
                   </div>
                 </section>
@@ -823,7 +866,8 @@
                       <div class="form-group">
                         <label>Responsable Activación</label>
                         <select id="act_responsable_select"></select>
-                        <input type="text" id="act_responsable_custom" placeholder="Especificar nombre..." class="input-sub" style="display: none;">
+                        <input type="text" id="act_responsable_custom" placeholder="Especificar nombre..."
+                          class="input-sub" style="display: none;">
                       </div>
                       <div class="form-group">
                         <label>Estado Final</label>
@@ -924,12 +968,17 @@
 
                   <div class="card margin-top">
                     <h2>Observaciones y Notas Libres</h2>
-                    <p class="subtitle">Deje este campo vacío para que en el PDF generado aparezca un recuadro limpio en blanco listo para escritura a mano y firma del cliente.</p>
-                    <textarea id="obs_texto" class="text-input" placeholder="Comentarios u observaciones opcionales..."></textarea>
+                    <p class="subtitle">Deje este campo vacío para que en el PDF generado aparezca un recuadro limpio en
+                      blanco listo para escritura a mano y firma del cliente.</p>
+                    <textarea id="obs_texto" class="text-input"
+                      placeholder="Comentarios u observaciones opcionales..."></textarea>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="abiotico_ubicaciones">← Volver a Monitoreo Abiótico</button>
-                      <button class="btn btn-primary nav-next-btn" data-next="evidencias_alarmas">Ir a 6. Evidencias & Alarmas →</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="abiotico_ubicaciones">← Volver a
+                        Monitoreo Abiótico</button>
+                      <button class="btn btn-primary nav-next-btn" data-next="evidencias_alarmas">Ir a 6. Evidencias &
+                        Alarmas →</button>
                     </div>
                   </div>
                 </section>
@@ -938,8 +987,9 @@
                 <section class="tab-content" id="tab-evidencias_alarmas">
                   <div class="card">
                     <h2>6. Registro Fotográfico (Evidencias)</h2>
-                    <p class="subtitle">Arrastre y suelte imágenes de evidencia (.jpg, .png) o haga clic para buscarlas en su equipo.</p>
-                    
+                    <p class="subtitle">Arrastre y suelte imágenes de evidencia (.jpg, .png) o haga clic para buscarlas
+                      en su equipo.</p>
+
                     <div id="dropzoneEvidencias" class="dropzone">
                       <p>Arrastre imágenes aquí o <strong>Haga Clic para Buscar</strong></p>
                       <input type="file" id="fileEvidencias" multiple accept="image/*" style="display: none;">
@@ -951,7 +1001,7 @@
                   <div class="card margin-top">
                     <h2>Configuración de Alarmas</h2>
                     <p class="subtitle">Cargue una planilla Excel (.xlsx / .ods) o agregue filas manualmente.</p>
-                    
+
                     <div id="dropzoneAlarmas" class="dropzone small-dropzone">
                       <p>Arrastre Planilla de Alarmas Excel (.xlsx / .ods) aquí</p>
                       <input type="file" id="fileAlarmas" accept=".xlsx,.ods" style="display: none;">
@@ -960,10 +1010,14 @@
                     <div class="inline-form-card margin-top">
                       <h3>Pegar Alarmas desde Portapapeles (Copiar y Pegar)</h3>
                       <p class="subtitle" style="margin-bottom: 8px;">
-                        Copie las filas de la tabla de alarmas (con columnas: <em>Estado, Usuario, Mínima, Máxima, Equipo, Sensor</em>) y péguelas directamente aquí.
+                        Copie las filas de la tabla de alarmas (con columnas: <em>Estado, Usuario, Mínima, Máxima,
+                          Equipo, Sensor</em>) y péguelas directamente aquí.
                       </p>
-                      <textarea id="txtPegarAlarmas" rows="4" style="width: 100%; font-family: monospace; font-size: 12px; margin-bottom: 8px;" placeholder="Pegue la tabla copiada aquí..."></textarea>
-                      <button class="btn btn-primary btn-small" id="btnProcesarPegadoAlarmas">Cargar Alarmas Pegadas</button>
+                      <textarea id="txtPegarAlarmas" rows="4"
+                        style="width: 100%; font-family: monospace; font-size: 12px; margin-bottom: 8px;"
+                        placeholder="Pegue la tabla copiada aquí..."></textarea>
+                      <button class="btn btn-primary btn-small" id="btnProcesarPegadoAlarmas">Cargar Alarmas
+                        Pegadas</button>
                     </div>
 
                     <div class="subcard margin-top">
@@ -991,9 +1045,12 @@
                       </div>
                     </div>
 
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                      <button class="btn btn-secondary nav-prev-btn" data-prev="activacion_obs">← Volver a Activación & Observaciones</button>
-                      <button class="btn btn-primary" onclick="document.getElementById('btnGenerarPDF').click()">📄 Compilar PDF Oficial</button>
+                    <div class="card-footer"
+                      style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                      <button class="btn btn-secondary nav-prev-btn" data-prev="activacion_obs">← Volver a Activación &
+                        Observaciones</button>
+                      <button class="btn btn-primary" onclick="document.getElementById('btnGenerarPDF').click()">📄
+                        Compilar PDF Oficial</button>
                     </div>
                   </div>
                 </section>
@@ -1002,7 +1059,8 @@
                 <section class="tab-content" id="tab-revisor">
                   <div class="card">
                     <h2>Revisor Remoto de Equipos & Verificación de Ingreso</h2>
-                    <p class="subtitle">Consulte automáticamente vía SSH/Telnet o complete/modifique manualmente cualquier campo para generar el informe de Verificación de Ingreso.</p>
+                    <p class="subtitle">Consulte automáticamente vía SSH/Telnet o complete/modifique manualmente
+                      cualquier campo para generar el informe de Verificación de Ingreso.</p>
 
                     <div class="form-grid">
                       <div class="form-group">
@@ -1034,7 +1092,8 @@
                     <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                       <button class="btn btn-primary" id="btnEjecutarRevisor">🔍 Consultar Remotamente</button>
                       <button class="btn btn-secondary" id="btnCopiarPlantillaRevisor">📋 Copiar Texto Plano</button>
-                      <button class="btn btn-secondary" id="btnAutoRellenarDesdeRevisor">📄 Auto-rellenar Certificado</button>
+                      <button class="btn btn-secondary" id="btnAutoRellenarDesdeRevisor">📄 Auto-rellenar
+                        Certificado</button>
                     </div>
 
                     <h3 class="margin-top">1. Datos del Computador</h3>
@@ -1157,8 +1216,9 @@
                     </div>
 
                     <h3 class="margin-top">Observaciones</h3>
-                    <textarea id="rev_observaciones" rows="4" class="text-input" placeholder="Observaciones de terreno..."></textarea>
-                    
+                    <textarea id="rev_observaciones" rows="4" class="text-input"
+                      placeholder="Observaciones de terreno..."></textarea>
+
                     <textarea id="txtPlantillaRevisor" style="display: none;"></textarea>
                   </div>
                 </section>
@@ -1197,8 +1257,9 @@
                     </div>
 
                     <h3 class="margin-top">Observaciones y Notas Libres</h3>
-                    <textarea id="ingreso_observaciones" class="text-input" rows="5" placeholder="Comentarios u observaciones..."></textarea>
-                    
+                    <textarea id="ingreso_observaciones" class="text-input" rows="5"
+                      placeholder="Comentarios u observaciones..."></textarea>
+
                     <textarea id="ingreso_antena_status" style="display: none;"></textarea>
                     <textarea id="ingreso_equipos_conectados" style="display: none;"></textarea>
                     <textarea id="ingreso_voltaje_pilas" style="display: none;"></textarea>
@@ -1219,8 +1280,10 @@
                 <div class="preview-controls">
                   <button class="btn btn-small btn-secondary active" id="btnToggleVistaHTML">Live HTML</button>
                   <button class="btn btn-small btn-secondary" id="btnToggleVistaTexto">Texto Plano</button>
-                  <button class="btn btn-small btn-primary" id="btnToggleVistaPDF" title="Compilar y previsualizar PDF Oficial">📄 PDF Oficial</button>
-                  <button class="btn btn-small btn-primary" id="btnCopiarDesdePreview" title="Copiar texto plano al portapapeles">📋 Copiar</button>
+                  <button class="btn btn-small btn-primary" id="btnToggleVistaPDF"
+                    title="Compilar y previsualizar PDF Oficial">📄 PDF Oficial</button>
+                  <button class="btn btn-small btn-primary" id="btnCopiarDesdePreview"
+                    title="Copiar texto plano al portapapeles">📋 Copiar</button>
                 </div>
               </div>
 
@@ -1245,8 +1308,14 @@
                 <h2>✉️ Correos Masivos Fin de Semana</h2>
                 <p class="subtitle">Programa o envía correos a clientes para notificaciones de fin de semana.</p>
               </div>
-              <button class="btn btn-secondary" onclick="navegarSeccionPortal('gestionar-correos')" style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+              <button class="btn btn-secondary" onclick="navegarSeccionPortal('gestionar-correos')"
+                style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
                 Gestor de Base de Datos
               </button>
             </div>
@@ -1255,7 +1324,8 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="correoSemana">Número de Semana</label>
-                  <input type="number" id="correoSemana" readonly style="background: rgba(0,0,0,0.05); color: var(--text-muted); cursor: not-allowed;">
+                  <input type="number" id="correoSemana" readonly
+                    style="background: rgba(0,0,0,0.05); color: var(--text-muted); cursor: not-allowed;">
                 </div>
                 <div class="form-group">
                   <label for="correoPersonalSelect">Personal de Turno</label>
@@ -1278,20 +1348,24 @@
 
               <div class="form-group margin-top">
                 <label for="correoPrueba" style="color: #f59e0b; font-weight: 600;">Correo de Prueba (Opcional)</label>
-                <input type="email" id="correoPrueba" placeholder="Si escribes un correo aquí, SOLO se enviará a esta dirección (ignora a los clientes)">
+                <input type="email" id="correoPrueba"
+                  placeholder="Si escribes un correo aquí, SOLO se enviará a esta dirección (ignora a los clientes)">
               </div>
 
               <p style="margin-top: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
-                Se enviará el correo automáticamente a todos los clientes y centros activos en el sistema, firmados a nombre del personal seleccionado.
+                Se enviará el correo automáticamente a todos los clientes y centros activos en el sistema, firmados a
+                nombre del personal seleccionado.
               </p>
 
               <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center;">
-                <button type="button" class="btn btn-primary" id="btnEnviarCorreosMasivos">Enviar Correos Masivos</button>
+                <button type="button" class="btn btn-primary" id="btnEnviarCorreosMasivos">Enviar Correos
+                  Masivos</button>
               </div>
             </form>
 
             <!-- Live HTML Embedded Preview -->
-            <h3 style="font-size: 1.15rem; font-weight: 700; color: #f59e0b; margin: 2rem 0 1rem 0;">Vista Previa del Correo Generado:</h3>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #f59e0b; margin: 2rem 0 1rem 0;">Vista Previa del
+              Correo Generado:</h3>
             <div class="live-preview-card" id="livePreviewMailCard">
               <div class="mail-header">
                 COMUNICADO DE SOPORTE — TURNO FIN DE SEMANA
@@ -1299,33 +1373,46 @@
 
               <p class="mail-p">Estimados (as):</p>
               <p class="mail-p">
-                Junto con saludar, informamos que para cualquier requerimiento o solicitud de validación de datos o asistencia técnica remota, se encontrará disponible el siguiente personal de turno este sábado <strong id="pv-sabado">--/--/----</strong> y domingo <strong id="pv-domingo">--/--/----</strong>:
+                Junto con saludar, informamos que para cualquier requerimiento o solicitud de validación de datos o
+                asistencia técnica remota, se encontrará disponible el siguiente personal de turno este sábado <strong
+                  id="pv-sabado">--/--/----</strong> y domingo <strong id="pv-domingo">--/--/----</strong>:
               </p>
 
               <div class="mail-box-personal">
-                <div><strong>Asistente de Soporte:</strong> <span id="pv-nombre" style="color: #0284c7; font-weight: 700;">Seleccione personal...</span></div>
-                <div><strong>Contacto telefónico:</strong> <span id="pv-telefono" style="color: #0284c7; font-weight: 600;">+56 9 ...</span></div>
-                <div><strong>Correo electrónico:</strong> <span id="pv-correo" style="color: #0284c7;">correo@innovex.cl</span></div>
+                <div><strong>Asistente de Soporte:</strong> <span id="pv-nombre"
+                    style="color: #0284c7; font-weight: 700;">Seleccione personal...</span></div>
+                <div><strong>Contacto telefónico:</strong> <span id="pv-telefono"
+                    style="color: #0284c7; font-weight: 600;">+56 9 ...</span></div>
+                <div><strong>Correo electrónico:</strong> <span id="pv-correo"
+                    style="color: #0284c7;">correo@innovex.cl</span></div>
               </div>
 
               <div class="mail-box-alert">
-                Favor de ser posible a los centros: Indicar disponibilidad de stock de repuestos y uso de los mismos para el apoyo y/o gestión correspondiente.
+                Favor de ser posible a los centros: Indicar disponibilidad de stock de repuestos y uso de los mismos
+                para el apoyo y/o gestión correspondiente.
               </div>
 
               <div class="mail-footer-note">
-                Para coordinaciones de ingresos técnicos, favor dirigir solicitudes al correo: <a href="mailto:jefe.area@innovex.cl" style="color: #0284c7;">jefe.area@innovex.cl</a>.<br>
+                Para coordinaciones de ingresos técnicos, favor dirigir solicitudes al correo: <a
+                  href="mailto:jefe.area@innovex.cl" style="color: #0284c7;">jefe.area@innovex.cl</a>.<br>
                 Quedamos atentos a sus comentarios y requerimientos.
               </div>
 
               <div class="mail-signature">
                 <div class="sig-logo">
-                  <div class="sig-title">in<span style="color: #0f172a;">novex</span><sup style="font-size: 10px; color: #0284c7;">®</sup></div>
+                  <div class="sig-title">in<span style="color: #0f172a;">novex</span><sup
+                      style="font-size: 10px; color: #0284c7;">®</sup></div>
                   <div class="sig-sub">SOLUCIONES TECNOLÓGICAS</div>
                 </div>
                 <div class="sig-info">
-                  <strong id="pv-sig-nombre" style="font-size: 0.95rem; text-transform: uppercase; color: #0f172a;">NOMBRE DEL ASISTENTE</strong><br>
-                  <span id="pv-sig-cargo" style="font-size: 0.8rem; color: #64748b; text-transform: uppercase;">ASISTENTE DE SOPORTE</span><br>
-                  <span id="pv-sig-contacto" style="font-size: 0.82rem; color: #334155;">📞 +56 9 ... | correo@innovex.cl</span>
+                  <strong id="pv-sig-nombre"
+                    style="font-size: 0.95rem; text-transform: uppercase; color: #0f172a;">NOMBRE DEL
+                    ASISTENTE</strong><br>
+                  <span id="pv-sig-cargo"
+                    style="font-size: 0.8rem; color: #64748b; text-transform: uppercase;">ASISTENTE DE
+                    SOPORTE</span><br>
+                  <span id="pv-sig-contacto" style="font-size: 0.82rem; color: #334155;">📞 +56 9 ... |
+                    correo@innovex.cl</span>
                 </div>
               </div>
             </div>
@@ -1348,7 +1435,8 @@
             <!-- Filtros y Búsqueda -->
             <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
               <div style="flex: 2; min-width: 200px;">
-                <input type="text" id="searchDestinatario" placeholder="Buscar por correo electrónico..." style="padding: 10px 14px;">
+                <input type="text" id="searchDestinatario" placeholder="Buscar por correo electrónico..."
+                  style="padding: 10px 14px;">
               </div>
               <div style="flex: 1; min-width: 180px;">
                 <select id="filterEmpresaDestinatario" style="padding: 10px 14px;">
@@ -1383,12 +1471,16 @@
           <div class="portal-card glass-panel" style="max-width: 700px; margin: 30px auto; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 10px;">🔱</div>
             <h2>Poseidón — Monitor de Inyección Dual</h2>
-            <p class="subtitle">Lanzador multipantalla optimizado para monitoreo simultáneo de tableros de inyección.</p>
+            <p class="subtitle">Lanzador multipantalla optimizado para monitoreo simultáneo de tableros de inyección.
+            </p>
             <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 25px;">
-              Al pulsar el botón, el sistema abrirá automáticamente dos ventanas independientes sincronizadas en su pantalla: una ventana a la izquierda para <strong>Centro Llancacheo</strong> y otra a la derecha para <strong>Centro Aulen</strong>.
+              Al pulsar el botón, el sistema abrirá automáticamente dos ventanas independientes sincronizadas en su
+              pantalla: una ventana a la izquierda para <strong>Centro Llancacheo</strong> y otra a la derecha para
+              <strong>Centro Aulen</strong>.
             </p>
 
-            <button class="btn btn-primary btn-large" id="btnLaunchPoseidon" style="padding: 14px 28px; font-size: 16px; font-weight: 700;">
+            <button class="btn btn-primary btn-large" id="btnLaunchPoseidon"
+              style="padding: 14px 28px; font-size: 16px; font-weight: 700;">
               🖥️ Iniciar Monitoreo Dual en Pantalla
             </button>
           </div>
@@ -1404,12 +1496,16 @@
                 <h2>📅 Calendario de Turnos y Planificación</h2>
                 <p class="subtitle">Planificación mensual de turnos y actividades del equipo de soporte.</p>
               </div>
-              <a href="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs" target="_blank" class="btn btn-secondary btn-small">
+              <a href="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs"
+                target="_blank" class="btn btn-secondary btn-small">
                 Abrir en Google Sheets ↗
               </a>
             </div>
-            <div style="margin-top: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); aspect-ratio: 16/9; background: #000000;">
-              <iframe src="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs/htmlembed?gid=567077492" width="100%" height="100%" frameborder="0" style="display: block;"></iframe>
+            <div
+              style="margin-top: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); aspect-ratio: 16/9; background: #000000;">
+              <iframe
+                src="https://docs.google.com/spreadsheets/d/1Qt4UWxIGL04N9z2cVY3dm5hPQuigHMh-3arxlH21pCs/htmlembed?gid=567077492"
+                width="100%" height="100%" frameborder="0" style="display: block;"></iframe>
             </div>
           </div>
         </section>
@@ -1423,7 +1519,9 @@
             <p class="subtitle">Consulte guías, manuales de equipos y procedimientos operativos de soporte técnico.</p>
 
             <div style="margin: 20px 0;">
-              <input type="text" id="inputTracSearch" placeholder="Buscar manuales, antenas, sensores, IP fija, protocolos..." style="padding: 12px 16px; font-size: 15px;">
+              <input type="text" id="inputTracSearch"
+                placeholder="Buscar manuales, antenas, sensores, IP fija, protocolos..."
+                style="padding: 12px 16px; font-size: 15px;">
             </div>
 
             <div id="tracSearchResults" style="display: none; margin-bottom: 30px;"></div>
@@ -1444,9 +1542,12 @@
             <h2>Control Multimedia del Host</h2>
             <p class="subtitle">Control de reproducción de audio en la máquina de soporte.</p>
 
-            <div style="background: rgba(0,0,0,0.06); padding: 20px; border-radius: 12px; margin: 25px 0; border: 1px solid var(--border-color);">
-              <div id="musicTrackTitle" style="font-size: 16px; font-weight: 700; color: var(--text-main);">No hay reproducción activa</div>
-              <div id="musicTrackArtist" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Innovex Support Host</div>
+            <div
+              style="background: rgba(0,0,0,0.06); padding: 20px; border-radius: 12px; margin: 25px 0; border: 1px solid var(--border-color);">
+              <div id="musicTrackTitle" style="font-size: 16px; font-weight: 700; color: var(--text-main);">No hay
+                reproducción activa</div>
+              <div id="musicTrackArtist" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Innovex
+                Support Host</div>
             </div>
 
             <div style="display: flex; justify-content: center; gap: 15px; align-items: center; margin-bottom: 20px;">
@@ -1486,30 +1587,34 @@
         <button class="btn btn-primary" id="btnGuardarNuevoDestinatario">Guardar Contacto</button>
       </div>
     </div>
-  <!-- Modal Confirmar Cambio de Centro / Datos Previos -->
-  <div id="modalConfirmarCambioCentro" class="modal-overlay" style="display: none;">
-    <div class="modal-card glass-panel" style="max-width: 540px;">
-      <h3 style="display: flex; align-items: center; gap: 8px;">
-        <span>⚠️</span> Información Previa Detectada
-      </h3>
-      <p class="subtitle" id="modalConfirmarTexto" style="margin-top: 8px; line-height: 1.5;">
-        Ya existe información cargada en la ficha para un centro previo. ¿Desea iniciar una ficha limpia para el nuevo centro o combinar los datos?
-      </p>
-      <div style="background: var(--innovex-yellow-subtle); border-left: 3px solid var(--innovex-yellow); padding: 10px 14px; border-radius: 6px; margin-top: 14px; font-size: 12px; color: var(--text-main); line-height: 1.4;">
-        💡 <strong>Recomendación:</strong> Para evitar solapar equipos, MACs, ubicaciones y alarmas entre distintos centros, seleccione <em>"Limpiar y Cargar Nuevo"</em>.
-      </div>
-      <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
-        <button class="btn btn-secondary" id="btnModalCambioCancelar">Cancelar</button>
-        <button class="btn btn-secondary" id="btnModalCambioGuardarPrimero">💾 Guardar Avance y Limpiar</button>
-        <button class="btn btn-secondary" id="btnModalCambioCombinar">🔄 Combinar Datos</button>
-        <button class="btn btn-primary" id="btnModalCambioLimpiar">🗑️ Limpiar y Cargar Nuevo</button>
+    <!-- Modal Confirmar Cambio de Centro / Datos Previos -->
+    <div id="modalConfirmarCambioCentro" class="modal-overlay" style="display: none;">
+      <div class="modal-card glass-panel" style="max-width: 540px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span>⚠️</span> Información Previa Detectada
+        </h3>
+        <p class="subtitle" id="modalConfirmarTexto" style="margin-top: 8px; line-height: 1.5;">
+          Ya existe información cargada en la ficha para un centro previo. ¿Desea iniciar una ficha limpia para el nuevo
+          centro o combinar los datos?
+        </p>
+        <div
+          style="background: var(--innovex-yellow-subtle); border-left: 3px solid var(--innovex-yellow); padding: 10px 14px; border-radius: 6px; margin-top: 14px; font-size: 12px; color: var(--text-main); line-height: 1.4;">
+          💡 <strong>Recomendación:</strong> Para evitar solapar equipos, MACs, ubicaciones y alarmas entre distintos
+          centros, seleccione <em>"Limpiar y Cargar Nuevo"</em>.
+        </div>
+        <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-secondary" id="btnModalCambioCancelar">Cancelar</button>
+          <button class="btn btn-secondary" id="btnModalCambioGuardarPrimero">💾 Guardar Avance y Limpiar</button>
+          <button class="btn btn-secondary" id="btnModalCambioCombinar">🔄 Combinar Datos</button>
+          <button class="btn btn-primary" id="btnModalCambioLimpiar">🗑️ Limpiar y Cargar Nuevo</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="toast-container"></div>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
-  <script src="{% static 'web/app.js' %}?v=3.1"></script>
+    <script src="{% static 'web/app.js' %}?v=3.1"></script>
 </body>
+
 </html>
