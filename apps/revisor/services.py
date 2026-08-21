@@ -1073,7 +1073,7 @@ class RevisorService:
                     "for repo in cacheton python3_cacheton pcinnovex pcinnovex2; do "
                     "hg -R /opt/software/${repo}/ parents --template \"${repo}: {rev}:{node|short} {desc|firstline}\\n\" 2>/dev/null; done; "
                     "printf '\\n__INNOVEX_NODOS__\\n'; "
-                    "LOG=$(ls -1t /var/log/cacheton/jenreceiver_*.log 2>/dev/null | head -1); "
+                    "LOG=$(ls -1t /var/log/cacheton/jenreceiver_$(date +%m_%Y).log /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -1); "
                     "test -n \"$LOG\" && tail -5000 \"$LOG\" || true; "
                     "printf '\\n__INNOVEX_WEATHER__\\n'; "
                     "find /var/lib/cacheton/data -type f -name '*_weather.dat' -printf '%T@|%p\\n' 2>/dev/null | sort -nr | head -1; "
@@ -1345,9 +1345,10 @@ class RevisorService:
                 "  echo '=== LOCAL TELNET MOTES ==='; (echo 'cmd motes'; sleep 0.5) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.5) | telnet 127.0.0.1 9999 2>/dev/null || true; "
                 "); "
                 "echo '=== VOLTAJES & LOG ==='; "
-                "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -5); do "
-                "  test -f \"$f\" && tail -n 1200 \"$f\" | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
-                "done || true; "
+                "CURR_LOG=$(ls -1t /var/log/cacheton/jenreceiver_$(date +%m_%Y).log /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -1); "
+                "if [ -n \"$CURR_LOG\" ] && [ -f \"$CURR_LOG\" ]; then "
+                "  tail -n 2500 \"$CURR_LOG\" | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
+                "fi || true; "
                 "journalctl -u cacheton -n 500 --no-pager 2>/dev/null | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW' || true"
             )
             ssh_rev = None
@@ -1755,9 +1756,10 @@ class RevisorService:
                 "echo '=== LOCAL TELNET MOTES ==='; "
                 "(echo 'cmd motes'; sleep 0.4) | nc -w 2 127.0.0.1 9999 2>/dev/null || (echo 'cmd motes'; sleep 0.4) | telnet 127.0.0.1 9999 2>/dev/null || true; "
                 "echo '=== VOLTAJES & LOG ==='; "
-                "for f in $(ls -1t /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -3); do "
-                "  test -f \"$f\" && tail -n 500 \"$f\" | grep -E ':NODE|NODE |:OXY|:COND|:FLOW'; "
-                "done | tail -30 || true"
+                "CURR_LOG=$(ls -1t /var/log/cacheton/jenreceiver_$(date +%m_%Y).log /var/log/cacheton/jenreceiver_*.log /var/log/cacheton/jenreceiver* /var/log/cacheton*.log /var/log/jenreceiver_*.log /var/log/messages 2>/dev/null | head -1); "
+                "if [ -n \"$CURR_LOG\" ] && [ -f \"$CURR_LOG\" ]; then "
+                "  tail -n 500 \"$CURR_LOG\" | grep -a -E ':NODE|NODE |:OXY|:COND|:FLOW' | tail -30; "
+                "fi || true"
             )
             ssh_client = None
             try:
