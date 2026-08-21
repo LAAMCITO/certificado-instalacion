@@ -510,16 +510,28 @@ class PortalService:
     # GESTIÓN DE CENTROS & CONTACTOS DE TICKETS
     # -------------------------------------------------------------
     EMPRESAS_CANONICAS = [
-        "AquaChile", "Australis", "Blumar", "Camanchaca", "Cermaq",
-        "Cooke Aquaculture", "Invermar", "Marine Farm", "Mowi", "Multi-X",
-        "Salmones Austral", "Ventisqueros", "Yadran"
+        "Abick", "AquaChile", "AquaGen", "Australis", "Blumar", "Caleta Bay", "Camanchaca", "Cermaq",
+        "Cooke Aquaculture", "Invermar", "Marine Farm", "Mowi", "Multi-X", "NovaAustral",
+        "Salmones Austral", "Salmones Aysen", "Salmones de Chile", "SurProceso", "Ventisqueros", "Yadran"
     ]
 
     @classmethod
     def _asegurar_empresas(cls):
-        """Asegura la creación inicial de las empresas canónicas si no existen."""
+        """Asegura la creación inicial de las empresas canónicas y vinculación de Destinatarios."""
         for nom in cls.EMPRESAS_CANONICAS:
             Empresa.objects.get_or_create(nombre=nom, defaults={"activo": True})
+
+        # Vincular Destinatarios existentes a su entidad Empresa sin eliminar jamás registros
+        for d in Destinatario.objects.filter(empresa_rel__isnull=True):
+            emp_nom = d.empresa.strip()
+            if not emp_nom:
+                continue
+            emp_match = Empresa.objects.filter(nombre__iexact=emp_nom).first()
+            if not emp_match:
+                emp_match, _ = Empresa.objects.get_or_create(nombre=emp_nom, defaults={"activo": True})
+            d.empresa = emp_match.nombre
+            d.empresa_rel = emp_match
+            d.save(update_fields=["empresa", "empresa_rel"])
 
     @classmethod
     def obtener_empresas(cls) -> list[dict]:
