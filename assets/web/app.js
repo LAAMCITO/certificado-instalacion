@@ -4477,6 +4477,7 @@ function setupGestorDestinatariosHandlers() {
   document.getElementById("filterEmpresaDestinatario")?.addEventListener("change", renderizarTablaDestinatarios);
 
   document.getElementById("btnAbrirModalNuevoDestinatario")?.addEventListener("click", () => {
+    poblarEmpresasFiltroDestinatarios();
     const modal = document.getElementById("modalNuevoDestinatario");
     if (modal) modal.style.display = "flex";
   });
@@ -4530,15 +4531,27 @@ async function cargarListaDestinatarios() {
 
 function poblarEmpresasFiltroDestinatarios() {
   const select = document.getElementById("filterEmpresaDestinatario");
-  if (!select) return;
-  const empresas = [...new Set(listaDestinatariosCache.map(d => d.empresa))].sort();
-  select.innerHTML = '<option value="">Todas las Empresas</option>';
-  empresas.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp;
-    opt.textContent = emp;
-    select.appendChild(opt);
-  });
+  const datalist = document.getElementById("listEmpresasExistentes");
+  const empresas = [...new Set(listaDestinatariosCache.map(d => d.empresa))].filter(Boolean).sort();
+
+  if (select) {
+    select.innerHTML = '<option value="">Todas las Empresas</option>';
+    empresas.forEach(emp => {
+      const opt = document.createElement("option");
+      opt.value = emp;
+      opt.textContent = emp;
+      select.appendChild(opt);
+    });
+  }
+
+  if (datalist) {
+    datalist.innerHTML = "";
+    empresas.forEach(emp => {
+      const opt = document.createElement("option");
+      opt.value = emp;
+      datalist.appendChild(opt);
+    });
+  }
 }
 
 function renderizarTablaDestinatarios() {

@@ -1438,7 +1438,13 @@
                 <h2>👥 Gestor de Base de Datos de Destinatarios</h2>
                 <p class="subtitle">Administre los correos receptores de avisos de turno por empresa.</p>
               </div>
-              <button class="btn btn-primary" id="btnAbrirModalNuevoDestinatario">+ Agregar Correo</button>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-secondary" onclick="navegarSeccionPortal('correos-masivos')"
+                  style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; font-weight: 500;">
+                  ← Volver a Correos Masivos
+                </button>
+                <button class="btn btn-primary" id="btnAbrirModalNuevoDestinatario">+ Agregar Correo</button>
+              </div>
             </div>
 
             <!-- Filtros y Búsqueda -->
@@ -1822,8 +1828,9 @@
       <h3>Agregar Nuevo Destinatario</h3>
       <p class="subtitle">Ingrese la empresa y correo electrónico para notificaciones de turno.</p>
       <div class="form-group margin-top">
-        <label>Empresa</label>
-        <input type="text" id="nuevoDestEmpresa" placeholder="ej. CERMAQ">
+        <label for="nuevoDestEmpresa">Empresa</label>
+        <input type="text" id="nuevoDestEmpresa" list="listEmpresasExistentes" placeholder="Seleccione o escriba la empresa (ej. CERMAQ)">
+        <datalist id="listEmpresasExistentes"></datalist>
       </div>
       <div class="form-group margin-top">
         <label>Correo Electrónico</label>
