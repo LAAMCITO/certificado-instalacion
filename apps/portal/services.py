@@ -517,20 +517,9 @@ class PortalService:
 
     @classmethod
     def _asegurar_empresas(cls):
-        """Asegura la creación y consistencia de las empresas canónicas."""
+        """Asegura la creación inicial de las empresas canónicas si no existen."""
         for nom in cls.EMPRESAS_CANONICAS:
             Empresa.objects.get_or_create(nombre=nom, defaults={"activo": True})
-
-        # Limpieza, normalización y vinculación de Destinatarios
-        for d in Destinatario.objects.all():
-            emp_match = Empresa.objects.filter(nombre__iexact=d.empresa.strip()).first()
-            if emp_match:
-                if d.empresa != emp_match.nombre or d.empresa_rel != emp_match:
-                    d.empresa = emp_match.nombre
-                    d.empresa_rel = emp_match
-                    d.save()
-            else:
-                d.delete()
 
     @classmethod
     def obtener_empresas(cls) -> list[dict]:
@@ -540,9 +529,13 @@ class PortalService:
 
     @classmethod
     def _asegurar_centros_tickets(cls):
-        """Asegura centros iniciales y el directorio completo de Cermaq para tickets."""
+        """Asegura centros iniciales de Cermaq únicamente si no existen en la BD."""
         cls._asegurar_estructura_personal()
         cls._asegurar_empresas()
+
+        # Si ya existen centros de Cermaq registrados en la BD, respetamos fielmente las modificaciones y eliminaciones del usuario
+        if CentroContactoTicket.objects.filter(empresa="Cermaq").exists():
+            return
 
         # Asegurar zona Puluqui en ZonaGeografica
         manuel = EncargadoArea.objects.filter(nombre__icontains="Manuel").first()
@@ -650,37 +643,14 @@ class PortalService:
             correos_area = areas_correos_cermaq.get(area, "william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com")
             correos_cc = f"{correos_area}, soporte@innovex.cl, jefe.area@innovex.cl"
 
-            CentroContactoTicket.objects.update_or_create(
+            CentroContactoTicket.objects.create(
                 empresa="Cermaq",
                 nombre_centro=monitor,
-                defaults={
-                    "empresa_rel": emp_cermaq,
-                    "zona_geografica": zona_obj,
-                    "destinatarios_to": correo_centro,
-                    "destinatarios_cc": correos_cc,
-                    "activo": activo,
-                }
-            )
-
-        # Centros semilla de otras empresas canónicas
-        otros_seed = [
-            {"empresa": "Mowi", "nombre_centro": "Isla Sánchez", "codigo_location": "mw-islasanchez", "destinatarios_to": "jefe.centro.islasanchez@mowi.com", "destinatarios_cc": "soporte.mowi@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
-            {"empresa": "Camanchaca", "nombre_centro": "Pollollo", "codigo_location": "ce-pollollo", "destinatarios_to": "jefe.centro.pollollo@camanchaca.cl", "destinatarios_cc": "soporte.camanchaca@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
-            {"empresa": "AquaChile", "nombre_centro": "Sa-Lleuna", "codigo_location": "sa-lleuna", "destinatarios_to": "jefe.centro.salleuna@aquachile.com", "destinatarios_cc": "soporte.aquachile@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
-            {"empresa": "Blumar", "nombre_centro": "Ahoni", "codigo_location": "ca-ahoni", "destinatarios_to": "jefe.centro.ahoni@blumar.com", "destinatarios_cc": "soporte.blumar@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
-        ]
-        for item in otros_seed:
-            emp_obj = Empresa.objects.filter(nombre=item["empresa"]).first()
-            CentroContactoTicket.objects.update_or_create(
-                empresa=item["empresa"],
-                nombre_centro=item["nombre_centro"],
-                defaults={
-                    "empresa_rel": emp_obj,
-                    "codigo_location": item["codigo_location"],
-                    "destinatarios_to": item["destinatarios_to"],
-                    "destinatarios_cc": item["destinatarios_cc"],
-                    "activo": True
-                }
+                empresa_rel=emp_cermaq,
+                zona_geografica=zona_obj,
+                destinatarios_to=correo_centro,
+                destinatarios_cc=correos_cc,
+                activo=activo,
             )
 
     @classmethod
