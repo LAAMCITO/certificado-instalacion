@@ -354,7 +354,7 @@ class PortalService:
                 emp = cls.normalizar_nombre_empresa(d.empresa)
                 if emp not in empresas_map:
                     empresas_map[emp] = []
-                if d.correo and d.correo.strip():
+                if d.correo and d.correo.strip() and "@" in d.correo:
                     empresas_map[emp].append(d.correo.strip())
 
             cc_list = ["soporte@innovex.cl", "jefe.area@innovex.cl"]
