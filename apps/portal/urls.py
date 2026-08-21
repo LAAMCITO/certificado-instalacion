@@ -12,6 +12,9 @@ urlpatterns = [
     # Asistentes
     path("asistentes", views.asistentes, name="portal_asistentes"),
 
+    # Empresas
+    path("empresas", views.empresas_get, name="portal_empresas"),
+
     # Destinatarios (GET + POST on same path)
     path("destinatarios", views.destinatarios, name="portal_destinatarios"),
 

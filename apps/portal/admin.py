@@ -4,9 +4,25 @@ Django Admin configuration for Portal app.
 
 from django.contrib import admin
 from .models import (
-    Asistente, Destinatario, Bitacora, EncargadoArea,
+    Empresa, Asistente, Destinatario, Bitacora, EncargadoArea,
     ZonaGeografica, Tecnico, CentroContactoTicket, HistorialTicketEnviado
 )
+
+
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):
+    list_display = ("id", "nombre", "codigo", "activo", "total_centros", "total_destinatarios")
+    list_editable = ("activo",)
+    search_fields = ("nombre", "codigo")
+    list_filter = ("activo",)
+
+    def total_centros(self, obj):
+        return obj.centros_ticket.count()
+    total_centros.short_description = "Centros Registrados"
+
+    def total_destinatarios(self, obj):
+        return obj.destinatarios.count()
+    total_destinatarios.short_description = "Destinatarios Masivos"
 
 
 @admin.register(Asistente)

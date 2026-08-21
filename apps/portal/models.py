@@ -34,8 +34,40 @@ class Asistente(models.Model):
         }
 
 
+class Empresa(models.Model):
+    nombre = models.CharField(max_length=150, unique=True, help_text="Nombre oficial de la empresa (ej: Cermaq, AquaChile, Camanchaca)")
+    codigo = models.CharField(max_length=50, blank=True, default="", help_text="Código corto opcional")
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Empresa"
+        verbose_name_plural = "Empresas"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "codigo": self.codigo,
+            "activo": self.activo,
+        }
+
+
 class Destinatario(models.Model):
     empresa = models.CharField(max_length=150)
+    empresa_rel = models.ForeignKey(
+        Empresa,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="destinatarios",
+        help_text="Vínculo opcional con la entidad Empresa canónica"
+    )
     correo = models.EmailField()
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -53,6 +85,7 @@ class Destinatario(models.Model):
         return {
             "id": self.id,
             "empresa": self.empresa,
+            "empresa_id": self.empresa_rel.id if self.empresa_rel else None,
             "correo": self.correo,
             "activo": self.activo,
         }
@@ -177,6 +210,14 @@ class Tecnico(models.Model):
 
 class CentroContactoTicket(models.Model):
     empresa = models.CharField(max_length=150, help_text="Empresa o cliente (ej: Cermaq, Mowi, AquaChile)")
+    empresa_rel = models.ForeignKey(
+        Empresa,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="centros_ticket",
+        help_text="Vínculo opcional con la entidad Empresa canónica"
+    )
     nombre_centro = models.CharField(max_length=150, help_text="Nombre del centro de cultivo")
     codigo_location = models.CharField(max_length=100, blank=True, default="", help_text="Código o location (ej: ch-chidhuapi1, ce-pollollo)")
     zona_geografica = models.ForeignKey(
@@ -213,6 +254,7 @@ class CentroContactoTicket(models.Model):
         return {
             "id": self.id,
             "empresa": self.empresa,
+            "empresa_id": self.empresa_rel.id if self.empresa_rel else None,
             "nombre_centro": self.nombre_centro,
             "codigo_location": self.codigo_location,
             "zona": self.zona_geografica.nombre if self.zona_geografica else "",

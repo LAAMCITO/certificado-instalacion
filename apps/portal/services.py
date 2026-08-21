@@ -17,7 +17,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 from .models import (
-    Asistente, Destinatario, Bitacora, EncargadoArea,
+    Empresa, Asistente, Destinatario, Bitacora, EncargadoArea,
     ZonaGeografica, Tecnico, CentroContactoTicket, HistorialTicketEnviado
 )
 
@@ -506,10 +506,43 @@ class PortalService:
     # -------------------------------------------------------------
     # GESTIÓN DE CENTROS & CONTACTOS DE TICKETS
     # -------------------------------------------------------------
+    # -------------------------------------------------------------
+    # GESTIÓN DE CENTROS & CONTACTOS DE TICKETS
+    # -------------------------------------------------------------
+    EMPRESAS_CANONICAS = [
+        "AquaChile", "Australis", "Blumar", "Camanchaca", "Cermaq",
+        "Cooke Aquaculture", "Invermar", "Marine Farm", "Mowi", "Multi-X",
+        "Salmones Austral", "Ventisqueros", "Yadran"
+    ]
+
+    @classmethod
+    def _asegurar_empresas(cls):
+        """Asegura la creación y consistencia de las empresas canónicas."""
+        for nom in cls.EMPRESAS_CANONICAS:
+            Empresa.objects.get_or_create(nombre=nom, defaults={"activo": True})
+
+        # Limpieza, normalización y vinculación de Destinatarios
+        for d in Destinatario.objects.all():
+            emp_match = Empresa.objects.filter(nombre__iexact=d.empresa.strip()).first()
+            if emp_match:
+                if d.empresa != emp_match.nombre or d.empresa_rel != emp_match:
+                    d.empresa = emp_match.nombre
+                    d.empresa_rel = emp_match
+                    d.save()
+            else:
+                d.delete()
+
+    @classmethod
+    def obtener_empresas(cls) -> list[dict]:
+        cls._asegurar_empresas()
+        qs = Empresa.objects.filter(activo=True).order_by("nombre")
+        return [e.to_dict() for e in qs]
+
     @classmethod
     def _asegurar_centros_tickets(cls):
         """Asegura centros iniciales y el directorio completo de Cermaq para tickets."""
         cls._asegurar_estructura_personal()
+        cls._asegurar_empresas()
 
         # Asegurar zona Puluqui en ZonaGeografica
         manuel = EncargadoArea.objects.filter(nombre__icontains="Manuel").first()
@@ -542,103 +575,107 @@ class PortalService:
             "Puluqui": "gonzalo.saavedra@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
         }
 
-        # Catálogo maestro de monitores Cermaq
+        # Catálogo maestro de monitores Cermaq con correo de centro y área
         cermaq_monitores = [
-            ("Acopio Chinquihue", "Puerto Montt", True),
-            ("Acopio Quemchi", "Chiloé", True),
-            ("Aguantao", "Chiloé", False),
-            ("Aldunate", "Puerto Cisnes", False),
-            ("Aulen", "Puerto Montt", True),
-            ("Bertrand", "Punta Arenas", True),
-            ("Buill", "Ayacara", True),
-            ("Cachihue", "Chiloé", True),
-            ("Calen 1", "Chiloé", True),
-            ("Calen 1 Replica", "Chiloé", False),
-            ("Calen 2", "Chiloé", True),
-            ("Chauco", "Chiloé", True),
-            ("Caleta Soledad", "Puerto Montt", False),
-            ("Chaullin Norte", "Chiloé", True),
-            ("Chaullin Weste", "Chiloé", True),
-            ("Chidhuapi 1", "Calbuco", True),
-            ("Chidhuapi 2", "Calbuco", True),
-            ("Chidhuapi 3", "Calbuco", True),
-            ("Chidhuapi 4", "Calbuco", True),
-            ("Churrecue", "Chacabuco", True),
-            ("Colaco 4", "Calbuco", False),
-            ("Colaco 4 200", "Calbuco", False),
-            ("Darsena Norte", "Punta Arenas", False),
-            ("Ducañas", "Chiloé", True),
-            ("Estero", "Punta Arenas", True),
-            ("Desembocadura", "Punta Arenas", False),
-            ("Estero Conche", "Puerto Cisnes", False),
-            ("Furia", "Punta Arenas", False),
-            ("Imelev", "Punta Arenas", False),
-            ("Isla García", "Punta Arenas", True),
-            ("Isla Guzman", "Punta Arenas", False),
-            ("Isla Juan", "Punta Arenas", False),
-            ("Isla Tac", "Chiloé", True),
-            ("Linguar", "Puerto Montt", True),
-            ("Linlinao", "Chiloé", False),
-            ("Llancacheo", "Puluqui", True),
-            ("Luchin", "Chacabuco", True),
-            ("Macetero", "Puerto Cisnes", False),
-            ("Malomacum", "Puerto Montt", True),
-            ("Manzano", "Puerto Montt", True),
-            ("Navarro", "Punta Arenas", True),
-            ("Matilde", "Chacabuco", False),
-            ("Pollollo", "Puerto Montt", True),
-            ("Punta Darsena", "Punta Arenas", False),
-            ("Punta Gruesa", "Ayacara", False),
-            ("Punta Laura", "Punta Arenas", True),
-            ("Punta Isla", "Chacabuco", False),
-            ("Punta Quintana", "Chacabuco", False),
-            ("Punta Victoria", "Chacabuco", False),
-            ("Quilen", "Chiloé", True),
-            ("Quilen Replica (base tierra)", "Chiloé", True),
-            ("Reñihue", "Ayacara", False),
-            ("Sureste", "Puluqui", True),
-            ("Tranqui 1", "Chiloé", True),
-            ("Tranqui 2", "Chiloé", True),
-            ("Transito", "Chacabuco", False),
-            ("Tubildad", "Chiloé", False),
-            ("Unicornio", "Punta Arenas", False),
-            ("Unicornio Sur", "Punta Arenas", True),
-            ("Voigue", "Chiloé", True),
-            ("Vilupulli", "Chiloé", False),
-            ("Yelcho", "Chiloé", True),
-            ("Yoye", "Chiloé", True),
-            ("Yoye 200", "Chiloé", False),
-            ("Zañartu", "Puerto Cisnes", False),
+            ("Acopio Chinquihue", "marco.almonacid@cermaq.com, supervisor.acopio.aisc@cermaq.com, antonio.miranda@cermaq.com", "Puerto Montt", True),
+            ("Acopio Quemchi", "acopioquemchi@cermaq.com", "Chiloé", True),
+            ("Aguantao", "aguantao@cermaq.com", "Chiloé", False),
+            ("Aldunate", "centro.aldunate@cermaq.com", "Puerto Cisnes", False),
+            ("Aulen", "centro.aulen@cermaq.com", "Puerto Montt", True),
+            ("Bertrand", "centro.bertrand@cermaq.com", "Punta Arenas", True),
+            ("Buill", "centro.buill@cermaq.com", "Ayacara", True),
+            ("Cachihue", "centro.cachihue@cermaq.com", "Chiloé", True),
+            ("Calen 1", "calen1@cermaq.com", "Chiloé", True),
+            ("Calen 2", "calen2@cermaq.com", "Chiloé", True),
+            ("Chauco", "centro.chauco@cermaq.com", "Chiloé", True),
+            ("Caleta Soledad", "caleta.soledad@cermaq.com", "Puerto Montt", False),
+            ("Chaullin Norte", "centro.chaullinnorte@cermaq.com", "Chiloé", True),
+            ("Chaullin Weste", "chaullinweste@cermaq.com", "Chiloé", True),
+            ("Chidhuapi 1", "centro.chidhuapi1@cermaq.com", "Calbuco", True),
+            ("Chidhuapi 2", "chidhuapi2@cermaq.com", "Calbuco", True),
+            ("Chidhuapi 3", "centro.chidhuapi3@cermaq.com", "Calbuco", True),
+            ("Chidhuapi 4", "centro.chidhuapi4@cermaq.com", "Calbuco", True),
+            ("Churrecue", "centro.churrecue@cermaq.com", "Chacabuco", True),
+            ("Colaco 4", "colaco4@cermaq.com", "Calbuco", False),
+            ("Colaco 4 200", "", "Calbuco", False),
+            ("Darsena Norte", "centro.darsenanorte@cermaq.com", "Punta Arenas", False),
+            ("Ducañas", "centro.ducanas@cermaq.com", "Chiloé", True),
+            ("Estero", "centro.estero@cermaq.com", "Punta Arenas", True),
+            ("Desembocadura", "centro.desembocadura@cermaq.com", "Punta Arenas", False),
+            ("Estero Conche", "centro.esteroconche@cermaq.com", "Puerto Cisnes", False),
+            ("Furia", "centro.furia@cermaq.com", "Punta Arenas", False),
+            ("Imelev", "imelev@cermaq.com", "Punta Arenas", False),
+            ("Isla García", "centro.islagarcia@cermaq.com", "Punta Arenas", True),
+            ("Isla Guzman", "centro.islaguzman@cermaq.com", "Punta Arenas", False),
+            ("Isla Juan", "centro.islajuan@cermaq.com", "Punta Arenas", False),
+            ("Isla Tac", "centro.islatac@cermaq.com", "Chiloé", True),
+            ("Linguar", "centro.linguar@cermaq.com", "Puerto Montt", True),
+            ("Linlinao", "linlinao@cermaq.com", "Chiloé", False),
+            ("Llancacheo", "llancacheo@cermaq.com", "Puluqui", True),
+            ("Luchin", "centro.luchin@cermaq.com", "Chacabuco", True),
+            ("Macetero", "centro.macetero@cermaq.com", "Puerto Cisnes", False),
+            ("Malomacum", "centro.malomacum@cermaq.com", "Puerto Montt", True),
+            ("Manzano", "centro.manzano@cermaq.com", "Puerto Montt", True),
+            ("Navarro", "navarro@cermaq.com", "Punta Arenas", True),
+            ("Matilde", "centro.matilde@cermaq.com", "Chacabuco", False),
+            ("Pollollo", "centro.pollollo@cermaq.com", "Puerto Montt", True),
+            ("Punta Darsena", "punta.darsena@cermaq.com", "Punta Arenas", False),
+            ("Punta Gruesa", "centro.puntagruesa@cermaq.com", "Ayacara", False),
+            ("Punta Laura", "puntalaura@cermaq.com", "Punta Arenas", True),
+            ("Punta Isla", "centro.puntaisla@cermaq.com", "Chacabuco", False),
+            ("Punta Quintana", "centro.puntaquintana@cermaq.com", "Chacabuco", False),
+            ("Punta Victoria", "centro.puntavictoria@cermac.com", "Chacabuco", False),
+            ("Quilen", "quilen@cermaq.com", "Chiloé", True),
+            ("Quilen Replica (base tierra)", "", "Chiloé", True),
+            ("Reñihue", "centro.renihue@cermaq.com", "Ayacara", True),
+            ("Sureste", "sureste@cermaq.com", "Puluqui", True),
+            ("Tranqui 1", "centro.tranqui1@cermaq.com", "Chiloé", True),
+            ("Tranqui 2", "centro.tranqui2@cermaq.com", "Chiloé", True),
+            ("Transito", "centro.transito@cermaq.com", "Chacabuco", False),
+            ("Tubildad", "centro.tubildad@cermaq.com", "Chiloé", False),
+            ("Unicornio", "unicornio@cermaq.com", "Punta Arenas", False),
+            ("Unicornio Sur", "unicorniosur@cermaq.com", "Punta Arenas", True),
+            ("Voigue", "centro.voigue@cermaq.com", "Chiloé", True),
+            ("Vilupulli", "centro.vilupulli@cermaq.com", "Chiloé", False),
+            ("Yelcho", "yelcho@cermaq.com", "Chiloé", True),
+            ("Yoye", "yoye@cermaq.com", "Chiloé", True),
+            ("Zañartu", "centro.zanartu@cermaq.com", "Puerto Cisnes", False),
         ]
 
-        for monitor, area, activo in cermaq_monitores:
+        emp_cermaq = Empresa.objects.filter(nombre="Cermaq").first()
+
+        for monitor, correo_centro, area, activo in cermaq_monitores:
             zona_db = mapeo_zonas_db.get(area, area)
             zona_obj = ZonaGeografica.objects.filter(nombre=zona_db).first() or ZonaGeografica.objects.filter(nombre__icontains=area).first()
-            correos = areas_correos_cermaq.get(area, "william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com")
+            correos_area = areas_correos_cermaq.get(area, "william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com")
+            correos_cc = f"{correos_area}, soporte@innovex.cl, jefe.area@innovex.cl"
 
             CentroContactoTicket.objects.update_or_create(
                 empresa="Cermaq",
                 nombre_centro=monitor,
                 defaults={
+                    "empresa_rel": emp_cermaq,
                     "zona_geografica": zona_obj,
-                    "destinatarios_to": correos,
-                    "destinatarios_cc": "soporte.cermaq@innovex.cl",
+                    "destinatarios_to": correo_centro,
+                    "destinatarios_cc": correos_cc,
                     "activo": activo,
                 }
             )
 
-        # Centros semilla de otras empresas
+        # Centros semilla de otras empresas canónicas
         otros_seed = [
-            {"empresa": "MOWI", "nombre_centro": "Isla Sánchez", "codigo_location": "mw-islasanchez", "destinatarios_to": "jefe.centro.islasanchez@mowi.com", "destinatarios_cc": "soporte.mowi@innovex.cl"},
-            {"empresa": "CAMANCHACA", "nombre_centro": "Pollollo", "codigo_location": "ce-pollollo", "destinatarios_to": "jefe.centro.pollollo@camanchaca.cl", "destinatarios_cc": "soporte.camanchaca@innovex.cl"},
-            {"empresa": "AQUACHILE", "nombre_centro": "Sa-Lleuna", "codigo_location": "sa-lleuna", "destinatarios_to": "jefe.centro.salleuna@aquachile.com", "destinatarios_cc": "soporte.aquachile@innovex.cl"},
-            {"empresa": "BLUMAR", "nombre_centro": "Ahoni", "codigo_location": "ca-ahoni", "destinatarios_to": "jefe.centro.ahoni@blumar.com", "destinatarios_cc": "soporte.blumar@innovex.cl"},
+            {"empresa": "Mowi", "nombre_centro": "Isla Sánchez", "codigo_location": "mw-islasanchez", "destinatarios_to": "jefe.centro.islasanchez@mowi.com", "destinatarios_cc": "soporte.mowi@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
+            {"empresa": "Camanchaca", "nombre_centro": "Pollollo", "codigo_location": "ce-pollollo", "destinatarios_to": "jefe.centro.pollollo@camanchaca.cl", "destinatarios_cc": "soporte.camanchaca@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
+            {"empresa": "AquaChile", "nombre_centro": "Sa-Lleuna", "codigo_location": "sa-lleuna", "destinatarios_to": "jefe.centro.salleuna@aquachile.com", "destinatarios_cc": "soporte.aquachile@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
+            {"empresa": "Blumar", "nombre_centro": "Ahoni", "codigo_location": "ca-ahoni", "destinatarios_to": "jefe.centro.ahoni@blumar.com", "destinatarios_cc": "soporte.blumar@innovex.cl, soporte@innovex.cl, jefe.area@innovex.cl"},
         ]
         for item in otros_seed:
-            CentroContactoTicket.objects.get_or_create(
+            emp_obj = Empresa.objects.filter(nombre=item["empresa"]).first()
+            CentroContactoTicket.objects.update_or_create(
                 empresa=item["empresa"],
                 nombre_centro=item["nombre_centro"],
                 defaults={
+                    "empresa_rel": emp_obj,
                     "codigo_location": item["codigo_location"],
                     "destinatarios_to": item["destinatarios_to"],
                     "destinatarios_cc": item["destinatarios_cc"],
@@ -650,17 +687,17 @@ class PortalService:
     def obtener_centros_tickets(cls, incluir_inactivos: bool = False) -> list[dict]:
         cls._asegurar_centros_tickets()
         if incluir_inactivos:
-            qs = CentroContactoTicket.objects.all().select_related("zona_geografica").order_by("empresa", "nombre_centro")
+            qs = CentroContactoTicket.objects.all().select_related("zona_geografica", "empresa_rel").order_by("empresa", "nombre_centro")
         else:
-            qs = CentroContactoTicket.objects.filter(activo=True).select_related("zona_geografica").order_by("empresa", "nombre_centro")
+            qs = CentroContactoTicket.objects.filter(activo=True).select_related("zona_geografica", "empresa_rel").order_by("empresa", "nombre_centro")
         return [c.to_dict() for c in qs]
 
     @classmethod
     def guardar_centro_ticket(cls, datos: dict) -> dict:
         cid = datos.get("id")
         empresa_raw = (datos.get("empresa") or "").strip()
-        existente = Destinatario.objects.filter(empresa__iexact=empresa_raw).first()
-        empresa = existente.empresa if existente else empresa_raw
+        emp_match = Empresa.objects.filter(nombre__iexact=empresa_raw).first()
+        empresa = emp_match.nombre if emp_match else empresa_raw
         nombre_centro = (datos.get("nombre_centro") or "").strip()
         codigo_location = (datos.get("codigo_location") or "").strip()
         zona_id = datos.get("zona_id")
@@ -678,6 +715,7 @@ class PortalService:
             if not obj:
                 raise ValueError(f"Centro con id {cid} no encontrado.")
             obj.empresa = empresa
+            obj.empresa_rel = emp_match
             obj.nombre_centro = nombre_centro
             obj.codigo_location = codigo_location
             obj.zona_geografica = zona_obj
@@ -688,6 +726,7 @@ class PortalService:
         else:
             obj = CentroContactoTicket.objects.create(
                 empresa=empresa,
+                empresa_rel=emp_match,
                 nombre_centro=nombre_centro,
                 codigo_location=codigo_location,
                 zona_geografica=zona_obj,

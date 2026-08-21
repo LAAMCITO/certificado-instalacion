@@ -4764,8 +4764,29 @@ window.inicializarModuloTicketsSoporte = async function () {
   actualizarPrevisualizacionTicketLive(true);
 };
 
+async function cargarEmpresasDatalist() {
+  try {
+    const res = await fetch("/api/empresas");
+    const data = await res.json();
+    if (data.status === "ok" && data.empresas) {
+      const dl = document.getElementById("listEmpresasExistentes");
+      if (dl) {
+        dl.innerHTML = "";
+        data.empresas.forEach(e => {
+          const opt = document.createElement("option");
+          opt.value = e.nombre;
+          dl.appendChild(opt);
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error cargando datalist de empresas:", err);
+  }
+}
+
 async function cargarCentrosTickets() {
   try {
+    cargarEmpresasDatalist();
     const res = await fetch("/api/tickets/centros");
     const data = await res.json();
     if (data.status === "ok" && data.centros) {
@@ -4914,14 +4935,16 @@ window.alCambiarCentroTicket = function () {
   actualizarPrevisualizacionTicketLive();
 };
 
+const CORREOS_CC_ESTATICOS_INNOVEX = "soporte@innovex.cl, jefe.area@innovex.cl";
+
 window.alCambiarZonaTicket = function () {
   const emp = (document.getElementById("ticketEmpresaSelect")?.value || "").trim().toLowerCase();
   const zona = (document.getElementById("ticketZonaSelect")?.value || "").trim().toLowerCase();
-  const inputTo = document.getElementById("ticketDestinatariosTo");
+  const inputCc = document.getElementById("ticketDestinatariosCc");
 
   if (emp === "cermaq" && zona && CORREOS_POR_AREA_CERMAQ[zona]) {
-    if (inputTo) {
-      inputTo.value = CORREOS_POR_AREA_CERMAQ[zona];
+    if (inputCc) {
+      inputCc.value = `${CORREOS_POR_AREA_CERMAQ[zona]}, ${CORREOS_CC_ESTATICOS_INNOVEX}`;
     }
   }
   actualizarPrevisualizacionTicketLive();
@@ -5533,15 +5556,11 @@ window.filtrarTablaCentrosModal = function () {
 window.alCambiarZonaModalCentro = function () {
   const emp = (document.getElementById("editCentroEmpresa")?.value || "").trim().toLowerCase();
   const zona = (document.getElementById("editCentroZonaSelect")?.value || "").trim().toLowerCase();
-  const inputTo = document.getElementById("editCentroDestinatariosTo");
   const inputCc = document.getElementById("editCentroDestinatariosCc");
 
   if (emp === "cermaq" && zona && CORREOS_POR_AREA_CERMAQ[zona]) {
-    if (inputTo && !inputTo.value.trim()) {
-      inputTo.value = CORREOS_POR_AREA_CERMAQ[zona];
-    }
     if (inputCc && !inputCc.value.trim()) {
-      inputCc.value = "soporte.cermaq@innovex.cl";
+      inputCc.value = `${CORREOS_POR_AREA_CERMAQ[zona]}, ${CORREOS_CC_ESTATICOS_INNOVEX}`;
     }
   }
 };

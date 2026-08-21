@@ -218,25 +218,30 @@ class TicketsTestCase(TestCase):
         centros_cermaq = CentroContactoTicket.objects.filter(empresa="Cermaq")
         self.assertGreaterEqual(centros_cermaq.count(), 60)
 
-        # Verificar centro activo con área Calbuco
+        # Verificar centro activo con área Calbuco: TO = correo centro, CC = área + innovex estáticos
         ch1 = centros_cermaq.filter(nombre_centro="Chidhuapi 1").first()
         self.assertIsNotNone(ch1)
         self.assertTrue(ch1.activo)
         self.assertEqual(ch1.zona_geografica.nombre, "Calbuco")
-        self.assertIn("gonzalo.saavedra@cermaq.com", ch1.destinatarios_to)
-        self.assertIn("central.monitoreo@cermaq.com", ch1.destinatarios_to)
+        self.assertEqual(ch1.destinatarios_to, "centro.chidhuapi1@cermaq.com")
+        self.assertIn("gonzalo.saavedra@cermaq.com", ch1.destinatarios_cc)
+        self.assertIn("soporte@innovex.cl", ch1.destinatarios_cc)
+        self.assertIn("jefe.area@innovex.cl", ch1.destinatarios_cc)
 
         # Verificar centro de Chiloé
         calen = centros_cermaq.filter(nombre_centro="Calen 1").first()
         self.assertIsNotNone(calen)
         self.assertTrue(calen.activo)
         self.assertEqual(calen.zona_geografica.nombre, "Chiloé")
-        self.assertIn("osvaldo.diazdiaz@cermaq.com", calen.destinatarios_to)
+        self.assertEqual(calen.destinatarios_to, "calen1@cermaq.com")
+        self.assertIn("osvaldo.diazdiaz@cermaq.com", calen.destinatarios_cc)
+        self.assertIn("soporte@innovex.cl", calen.destinatarios_cc)
 
         # Verificar centro desactivado
         aguanta = centros_cermaq.filter(nombre_centro="Aguantao").first()
         self.assertIsNotNone(aguanta)
         self.assertFalse(aguanta.activo)
+        self.assertEqual(aguanta.destinatarios_to, "aguantao@cermaq.com")
 
     def test_api_tickets_centros_filtro_activos_y_todos(self):
         """Verifica que el endpoint /api/tickets/centros filtre adecuadamente según el parámetro todos."""

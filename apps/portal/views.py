@@ -40,6 +40,13 @@ def asistentes(request):
 
 
 @require_GET
+def empresas_get(request):
+    """GET /api/empresas"""
+    empresas_data = PortalService.obtener_empresas()
+    return JsonResponse({"status": "ok", "empresas": empresas_data})
+
+
+@require_GET
 def destinatarios_get(request):
     """GET /api/destinatarios"""
     destinatarios_data = PortalService.obtener_destinatarios()
