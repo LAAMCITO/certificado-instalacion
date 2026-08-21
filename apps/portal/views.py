@@ -228,7 +228,8 @@ def enviar_correos_masivos(request):
 def tickets_centros(request):
     """GET/POST /api/tickets/centros"""
     if request.method == "GET":
-        centros = PortalService.obtener_centros_tickets()
+        incluir_inactivos = request.GET.get("todos", "0") in ("1", "true", "True")
+        centros = PortalService.obtener_centros_tickets(incluir_inactivos=incluir_inactivos)
         return JsonResponse({"status": "ok", "centros": centros})
 
     elif request.method == "POST":

@@ -4830,10 +4830,28 @@ async function cargarZonasTickets() {
   }
 }
 
+const CORREOS_POR_AREA_CERMAQ = {
+  "punta arenas": "raul.rivera@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "pta. arenas (puq)": "raul.rivera@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "puerto chacabuco": "alvaro.quintana@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "pto. chacabuco": "alvaro.quintana@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "chacabuco": "alvaro.quintana@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "puerto cisnes": "william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "pto. cisnes": "william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "ayacara": "javier.olave@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "calbuco": "gonzalo.saavedra@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "chiloé": "osvaldo.diazdiaz@cermaq.com, victor.aguilar.ojeda@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "chiloe": "osvaldo.diazdiaz@cermaq.com, victor.aguilar.ojeda@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "puerto montt": "antonio.miranda@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "pto. montt": "antonio.miranda@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+  "puluqui": "gonzalo.saavedra@cermaq.com, william.toro@cermaq.com, paulino.morales@cermaq.com, central.monitoreo@cermaq.com",
+};
+
 function poblarSelectoresEmpresaYCentro() {
   const empSelect = document.getElementById("ticketEmpresaSelect");
   if (!empSelect) return;
 
+  const prevVal = empSelect.value;
   const empresasUnicas = [...new Set(estadoTickets.centros.map(c => c.empresa).filter(Boolean))].sort();
   empSelect.innerHTML = '<option value="">Seleccione Empresa...</option>';
   empresasUnicas.forEach(emp => {
@@ -4844,18 +4862,24 @@ function poblarSelectoresEmpresaYCentro() {
   });
 
   if (empresasUnicas.length > 0) {
-    empSelect.value = empresasUnicas[0];
+    if (prevVal && empresasUnicas.includes(prevVal)) {
+      empSelect.value = prevVal;
+    } else {
+      // Priorizar Cermaq si existe
+      const cermaqOpt = empresasUnicas.find(e => e.toLowerCase() === "cermaq");
+      empSelect.value = cermaqOpt || empresasUnicas[0];
+    }
     alCambiarEmpresaTicket();
   }
 }
 
 window.alCambiarEmpresaTicket = function () {
-  const emp = document.getElementById("ticketEmpresaSelect").value;
+  const emp = (document.getElementById("ticketEmpresaSelect")?.value || "").trim();
   const centroSelect = document.getElementById("ticketCentroSelect");
   if (!centroSelect) return;
 
   centroSelect.innerHTML = '<option value="">Seleccione Centro...</option>';
-  const centrosFiltrados = estadoTickets.centros.filter(c => c.empresa === emp);
+  const centrosFiltrados = estadoTickets.centros.filter(c => c.empresa.toLowerCase() === emp.toLowerCase());
   centrosFiltrados.forEach(c => {
     const opt = document.createElement("option");
     opt.value = c.nombre_centro;
@@ -4873,9 +4897,9 @@ window.alCambiarEmpresaTicket = function () {
 };
 
 window.alCambiarCentroTicket = function () {
-  const emp = document.getElementById("ticketEmpresaSelect").value;
-  const centroNombre = document.getElementById("ticketCentroSelect").value;
-  const centroObj = estadoTickets.centros.find(c => c.empresa === emp && c.nombre_centro === centroNombre);
+  const emp = (document.getElementById("ticketEmpresaSelect")?.value || "").trim();
+  const centroNombre = document.getElementById("ticketCentroSelect")?.value || "";
+  const centroObj = estadoTickets.centros.find(c => c.empresa.toLowerCase() === emp.toLowerCase() && c.nombre_centro === centroNombre);
 
   if (centroObj) {
     const inputTo = document.getElementById("ticketDestinatariosTo");
@@ -4887,6 +4911,19 @@ window.alCambiarCentroTicket = function () {
     if (selectZona && centroObj.zona) selectZona.value = centroObj.zona;
   }
 
+  actualizarPrevisualizacionTicketLive();
+};
+
+window.alCambiarZonaTicket = function () {
+  const emp = (document.getElementById("ticketEmpresaSelect")?.value || "").trim().toLowerCase();
+  const zona = (document.getElementById("ticketZonaSelect")?.value || "").trim().toLowerCase();
+  const inputTo = document.getElementById("ticketDestinatariosTo");
+
+  if (emp === "cermaq" && zona && CORREOS_POR_AREA_CERMAQ[zona]) {
+    if (inputTo) {
+      inputTo.value = CORREOS_POR_AREA_CERMAQ[zona];
+    }
+  }
   actualizarPrevisualizacionTicketLive();
 };
 
@@ -5402,11 +5439,11 @@ window.cargarHistorialTickets = async function () {
 };
 
 // Modal Directorio de Centros
-window.abrirModalGestionCentrosTickets = function () {
+window.abrirModalGestionCentrosTickets = async function () {
   const modal = document.getElementById("modalGestionCentrosTickets");
   if (modal) {
     modal.style.display = "flex";
-    cargarTablaCentrosContactos();
+    await cargarTablaCentrosContactos();
   }
 };
 
@@ -5415,31 +5452,98 @@ window.cerrarModalGestionCentrosTickets = function () {
   if (modal) modal.style.display = "none";
 };
 
-window.cargarTablaCentrosContactos = function () {
-  const tbody = document.getElementById("tbodyCentrosContactos");
-  if (!tbody) return;
+window.cargarTablaCentrosContactos = async function () {
+  try {
+    const res = await fetch("/api/tickets/centros?todos=1");
+    const data = await res.json();
+    if (data.status === "ok" && data.centros) {
+      estadoTickets.todosCentrosModal = data.centros;
+      poblarFiltroEmpresasModal();
+      filtrarTablaCentrosModal();
+    }
+  } catch (err) {
+    console.error("Error cargando directorio de centros:", err);
+  }
+};
 
-  if (estadoTickets.centros.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-muted);">No hay centros registrados.</td></tr>';
+window.poblarFiltroEmpresasModal = function () {
+  const select = document.getElementById("filtroEmpresaCentrosModal");
+  if (!select || !estadoTickets.todosCentrosModal) return;
+  const selVal = select.value;
+  const empresas = [...new Set(estadoTickets.todosCentrosModal.map(c => c.empresa).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">Todas las empresas</option>';
+  empresas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    select.appendChild(opt);
+  });
+  select.value = selVal;
+};
+
+window.filtrarTablaCentrosModal = function () {
+  const tbody = document.getElementById("tbodyCentrosContactos");
+  if (!tbody || !estadoTickets.todosCentrosModal) return;
+
+  const textoFiltro = (document.getElementById("filtroTextoCentrosModal")?.value || "").toLowerCase().trim();
+  const empFiltro = (document.getElementById("filtroEmpresaCentrosModal")?.value || "").trim();
+  const verInactivos = document.getElementById("filtroMostrarInactivosCentrosModal")?.checked || false;
+
+  let filtrados = estadoTickets.todosCentrosModal.filter(c => {
+    if (!verInactivos && !c.activo) return false;
+    if (empFiltro && c.empresa !== empFiltro) return false;
+    if (textoFiltro) {
+      const match = (c.empresa && c.empresa.toLowerCase().includes(textoFiltro)) ||
+                    (c.nombre_centro && c.nombre_centro.toLowerCase().includes(textoFiltro)) ||
+                    (c.zona && c.zona.toLowerCase().includes(textoFiltro)) ||
+                    (c.destinatarios_to && c.destinatarios_to.toLowerCase().includes(textoFiltro));
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 16px; color: var(--text-muted);">No se encontraron centros coincidentes.</td></tr>';
     return;
   }
 
   let html = "";
-  estadoTickets.centros.forEach(c => {
+  filtrados.forEach(c => {
+    const badge = c.activo
+      ? '<span style="background: rgba(16,185,129,0.15); color: #059669; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600;">Activo</span>'
+      : '<span style="background: rgba(148,163,184,0.2); color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600;">Desactivado</span>';
+
     html += `
-      <tr style="border-bottom: 1px solid var(--border-color, #e2e8f0);">
+      <tr style="border-bottom: 1px solid var(--border-color, #e2e8f0); ${!c.activo ? 'opacity: 0.7;' : ''}">
         <td style="padding: 8px 12px; font-weight: 600;">${c.empresa}</td>
-        <td style="padding: 8px 12px;">${c.nombre_centro}</td>
+        <td style="padding: 8px 12px;">${c.nombre_centro}${c.codigo_location ? ` <span style="font-size: 0.75rem; color: var(--text-muted);">(${c.codigo_location})</span>` : ''}</td>
         <td style="padding: 8px 12px; color: var(--text-muted);">${c.zona || "-"}</td>
-        <td style="padding: 8px 12px; font-size: 0.78rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.destinatarios_to || "-"}</td>
+        <td style="padding: 8px 12px;">${badge}</td>
+        <td style="padding: 8px 12px; font-size: 0.78rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.destinatarios_to || ''}">${c.destinatarios_to || "-"}</td>
         <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
-          <button class="btn btn-secondary btn-sm" onclick="editarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem;">✏️</button>
-          <button class="btn btn-secondary btn-sm" onclick="eliminarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem; color: #ef4444;">🗑️</button>
+          <button class="btn btn-secondary btn-sm" onclick="editarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem;" title="Editar Centro">✏️</button>
+          <button class="btn btn-secondary btn-sm" onclick="eliminarCentroContacto(${c.id})" style="padding: 2px 6px; font-size: 0.75rem; color: #ef4444;" title="Eliminar Centro">🗑️</button>
         </td>
       </tr>
     `;
   });
   tbody.innerHTML = html;
+};
+
+window.alCambiarZonaModalCentro = function () {
+  const emp = (document.getElementById("editCentroEmpresa")?.value || "").trim().toLowerCase();
+  const zona = (document.getElementById("editCentroZonaSelect")?.value || "").trim().toLowerCase();
+  const inputTo = document.getElementById("editCentroDestinatariosTo");
+  const inputCc = document.getElementById("editCentroDestinatariosCc");
+
+  if (emp === "cermaq" && zona && CORREOS_POR_AREA_CERMAQ[zona]) {
+    if (inputTo && !inputTo.value.trim()) {
+      inputTo.value = CORREOS_POR_AREA_CERMAQ[zona];
+    }
+    if (inputCc && !inputCc.value.trim()) {
+      inputCc.value = "soporte.cermaq@innovex.cl";
+    }
+  }
 };
 
 window.limpiarFormCentroContacto = function () {
@@ -5450,11 +5554,14 @@ window.limpiarFormCentroContacto = function () {
   document.getElementById("editCentroZonaSelect").value = "";
   document.getElementById("editCentroDestinatariosTo").value = "";
   document.getElementById("editCentroDestinatariosCc").value = "";
+  const chkActivo = document.getElementById("editCentroActivo");
+  if (chkActivo) chkActivo.checked = true;
   document.getElementById("btnGuardarCentroContacto").textContent = "Guardar Centro";
 };
 
 window.editarCentroContacto = function (id) {
-  const c = estadoTickets.centros.find(item => item.id === id);
+  const lista = estadoTickets.todosCentrosModal || estadoTickets.centros;
+  const c = lista.find(item => item.id === id);
   if (!c) return;
 
   document.getElementById("editCentroId").value = c.id;
@@ -5464,7 +5571,12 @@ window.editarCentroContacto = function (id) {
   document.getElementById("editCentroZonaSelect").value = c.zona || "";
   document.getElementById("editCentroDestinatariosTo").value = c.destinatarios_to || "";
   document.getElementById("editCentroDestinatariosCc").value = c.destinatarios_cc || "";
+  const chkActivo = document.getElementById("editCentroActivo");
+  if (chkActivo) chkActivo.checked = (c.activo !== false);
   document.getElementById("btnGuardarCentroContacto").textContent = "Actualizar Centro";
+
+  const form = document.getElementById("formCentroContacto");
+  if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 window.guardarCentroContactoDesdeModal = async function () {
@@ -5475,6 +5587,7 @@ window.guardarCentroContactoDesdeModal = async function () {
   const zonaNombre = document.getElementById("editCentroZonaSelect").value;
   const destTo = document.getElementById("editCentroDestinatariosTo").value;
   const destCc = document.getElementById("editCentroDestinatariosCc").value;
+  const activo = document.getElementById("editCentroActivo")?.checked ?? true;
 
   try {
     const res = await fetch("/api/tickets/centros", {
@@ -5487,13 +5600,14 @@ window.guardarCentroContactoDesdeModal = async function () {
         codigo_location: codigoLocation,
         destinatarios_to: destTo,
         destinatarios_cc: destCc,
+        activo: activo,
       })
     });
     const data = await res.json();
     if (data.status === "ok") {
       limpiarFormCentroContacto();
       await cargarCentrosTickets();
-      cargarTablaCentrosContactos();
+      await cargarTablaCentrosContactos();
     } else {
       alert("Error: " + (data.mensaje || "No se pudo guardar"));
     }
@@ -5514,7 +5628,7 @@ window.eliminarCentroContacto = async function (id) {
     const data = await res.json();
     if (data.status === "ok") {
       await cargarCentrosTickets();
-      cargarTablaCentrosContactos();
+      await cargarTablaCentrosContactos();
     }
   } catch (err) {
     alert("Error al eliminar centro: " + err.message);

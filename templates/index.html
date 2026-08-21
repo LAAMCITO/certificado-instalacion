@@ -1385,7 +1385,7 @@
 
                 <div class="form-group margin-top">
                   <label for="ticketZonaSelect">Zona Geográfica / Área</label>
-                  <select id="ticketZonaSelect" onchange="actualizarPrevisualizacionTicketLive()">
+                  <select id="ticketZonaSelect" onchange="alCambiarZonaTicket()">
                     <option value="">Seleccione Zona...</option>
                   </select>
                 </div>
@@ -1690,7 +1690,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="editCentroEmpresa">Empresa / Cliente *</label>
-                  <input type="text" id="editCentroEmpresa" placeholder="ej: CERMAQ" required style="text-transform: uppercase;">
+                  <input type="text" id="editCentroEmpresa" list="listEmpresasExistentes" placeholder="ej: Cermaq" required>
                 </div>
                 <div class="form-group">
                   <label for="editCentroNombre">Nombre del Centro *</label>
@@ -1705,7 +1705,7 @@
                 </div>
                 <div class="form-group">
                   <label for="editCentroZonaSelect">Zona Geográfica</label>
-                  <select id="editCentroZonaSelect">
+                  <select id="editCentroZonaSelect" onchange="alCambiarZonaModalCentro()">
                     <option value="">Seleccione Zona...</option>
                   </select>
                 </div>
@@ -1721,27 +1721,46 @@
                 <input type="text" id="editCentroDestinatariosCc" placeholder="ej: soporte.cliente@innovex.cl, jefe.area@innovex.cl">
               </div>
 
+              <div class="form-group margin-top" style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="editCentroActivo" checked style="width: 17px; height: 17px; cursor: pointer;">
+                <label for="editCentroActivo" style="margin: 0; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Centro Activo (Disponible en emisión de tickets)</label>
+              </div>
+
               <div style="display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="limpiarFormCentroContacto()">Limpiar</button>
                 <button type="submit" class="btn btn-primary btn-sm" id="btnGuardarCentroContacto">Guardar Centro</button>
               </div>
             </form>
 
-            <!-- Tabla de centros existentes -->
-            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem;">Centros Registrados</h4>
+            <!-- Barra de búsqueda y filtros para la tabla -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">Centros Registrados</h4>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="filtroTextoCentrosModal" oninput="filtrarTablaCentrosModal()" placeholder="🔍 Buscar..." style="font-size: 0.8rem; padding: 4px 8px; width: 160px;">
+                <select id="filtroEmpresaCentrosModal" onchange="filtrarTablaCentrosModal()" style="font-size: 0.8rem; padding: 4px 8px;">
+                  <option value="">Todas las empresas</option>
+                </select>
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; color: var(--text-muted);">
+                  <input type="checkbox" id="filtroMostrarInactivosCentrosModal" onchange="filtrarTablaCentrosModal()" style="cursor: pointer;">
+                  Ver desactivados
+                </label>
+              </div>
+            </div>
+
             <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="tablaCentrosContactos">
                 <thead>
                   <tr style="background: var(--bg-surface-elevated, #f1f5f9); text-align: left;">
                     <th style="padding: 8px 12px;">Empresa</th>
                     <th style="padding: 8px 12px;">Centro</th>
-                    <th style="padding: 8px 12px;">Zona</th>
+                    <th style="padding: 8px 12px;">Zona / Área</th>
+                    <th style="padding: 8px 12px;">Estado</th>
                     <th style="padding: 8px 12px;">Destinatarios TO</th>
                     <th style="padding: 8px 12px; text-align: center;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tbodyCentrosContactos">
-                  <tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-muted);">Cargando...</td></tr>
+                  <tr><td colspan="6" style="text-align: center; padding: 12px; color: var(--text-muted);">Cargando...</td></tr>
                 </tbody>
               </table>
             </div>

@@ -211,3 +211,48 @@ class TicketsTestCase(TestCase):
         res_hist = self.client.get("/api/tickets/historial")
         self.assertEqual(res_hist.status_code, 200)
         self.assertGreaterEqual(len(res_hist.json()["historial"]), 1)
+
+    def test_cermaq_catalogo_y_contactos_area(self):
+        """Verifica que el catálogo de Cermaq contenga los centros y correos por área."""
+        PortalService._asegurar_centros_tickets()
+        centros_cermaq = CentroContactoTicket.objects.filter(empresa="Cermaq")
+        self.assertGreaterEqual(centros_cermaq.count(), 60)
+
+        # Verificar centro activo con área Calbuco
+        ch1 = centros_cermaq.filter(nombre_centro="Chidhuapi 1").first()
+        self.assertIsNotNone(ch1)
+        self.assertTrue(ch1.activo)
+        self.assertEqual(ch1.zona_geografica.nombre, "Calbuco")
+        self.assertIn("gonzalo.saavedra@cermaq.com", ch1.destinatarios_to)
+        self.assertIn("central.monitoreo@cermaq.com", ch1.destinatarios_to)
+
+        # Verificar centro de Chiloé
+        calen = centros_cermaq.filter(nombre_centro="Calen 1").first()
+        self.assertIsNotNone(calen)
+        self.assertTrue(calen.activo)
+        self.assertEqual(calen.zona_geografica.nombre, "Chiloé")
+        self.assertIn("osvaldo.diazdiaz@cermaq.com", calen.destinatarios_to)
+
+        # Verificar centro desactivado
+        aguanta = centros_cermaq.filter(nombre_centro="Aguantao").first()
+        self.assertIsNotNone(aguanta)
+        self.assertFalse(aguanta.activo)
+
+    def test_api_tickets_centros_filtro_activos_y_todos(self):
+        """Verifica que el endpoint /api/tickets/centros filtre adecuadamente según el parámetro todos."""
+        PortalService._asegurar_centros_tickets()
+        
+        # 1. Solo activos
+        res_activos = self.client.get("/api/tickets/centros")
+        self.assertEqual(res_activos.status_code, 200)
+        centros_activos = res_activos.json()["centros"]
+        self.assertTrue(all(c["activo"] for c in centros_activos))
+
+        # 2. Todos (incluyendo desactivados para modal de gestión)
+        res_todos = self.client.get("/api/tickets/centros?todos=1")
+        self.assertEqual(res_todos.status_code, 200)
+        centros_todos = res_todos.json()["centros"]
+        self.assertGreater(len(centros_todos), len(centros_activos))
+        inactivos = [c for c in centros_todos if not c["activo"]]
+        self.assertGreater(len(inactivos), 0)
+
