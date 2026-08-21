@@ -4,6 +4,7 @@ Views for Portal app – Dashboard, bitácora, destinatarios, correos, wiki, mú
 
 import json
 import subprocess
+import threading
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
