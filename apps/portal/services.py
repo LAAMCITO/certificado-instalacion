@@ -351,7 +351,7 @@ class PortalService:
             destinatarios_qs = Destinatario.objects.filter(activo=True)
             empresas_map = {}
             for d in destinatarios_qs:
-                emp = d.empresa.strip().upper()
+                emp = cls.normalizar_nombre_empresa(d.empresa)
                 if emp not in empresas_map:
                     empresas_map[emp] = []
                 if d.correo and d.correo.strip():
