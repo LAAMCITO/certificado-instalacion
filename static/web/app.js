@@ -3988,15 +3988,18 @@ function restaurarVistaActivaPortal() {
   let vista = "";
   let submodulo = "";
 
-  const hash = window.location.hash.replace("#", "").trim();
-  if (hash) {
-    const parts = hash.split("/");
-    vista = parts[0];
+  let rawHash = window.location.hash.replace(/^#+/, "").trim();
+  if (rawHash) {
+    rawHash = rawHash.split("?")[0].replace(/\/+$/, "");
+    const parts = rawHash.split("/");
+    vista = parts[0] || "";
     submodulo = parts[1] || "";
-  } else {
+  }
+
+  if (!vista || !document.getElementById(`view-${vista}`)) {
     try {
-      vista = localStorage.getItem("active_portal_view") || "";
-      submodulo = localStorage.getItem("active_portal_submodule") || "";
+      vista = (localStorage.getItem("active_portal_view") || "").split("?")[0].replace(/\/+$/, "").trim();
+      submodulo = (localStorage.getItem("active_portal_submodule") || "").split("?")[0].replace(/\/+$/, "").trim();
     } catch (e) {}
   }
 
@@ -4016,6 +4019,10 @@ function iniciarPortalUnificado() {
   setupPoseidon();
   setupTracSearch();
   // setupMusicPlayer(); // Deshabilitado temporalmente a petición del usuario
+
+  // Escuchar cambios de navegación en la URL para mantener sección sin resetear a home
+  window.addEventListener("hashchange", restaurarVistaActivaPortal);
+  window.addEventListener("popstate", restaurarVistaActivaPortal);
 
   // Restaurar sección activa previa en F5 o enlace directo
   restaurarVistaActivaPortal();

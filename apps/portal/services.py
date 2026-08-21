@@ -146,8 +146,13 @@ class PortalService:
     @classmethod
     def crear_destinatario(cls, empresa: str, correo: str) -> dict:
         try:
+            empresa_clean = empresa.strip()
+            existente = Destinatario.objects.filter(empresa__iexact=empresa_clean).first()
+            if existente:
+                empresa_clean = existente.empresa
+
             nuevo = Destinatario.objects.create(
-                empresa=empresa.strip().upper(),
+                empresa=empresa_clean,
                 correo=correo.strip().lower(),
                 activo=True,
             )
@@ -514,7 +519,9 @@ class PortalService:
     @classmethod
     def guardar_centro_ticket(cls, datos: dict) -> dict:
         cid = datos.get("id")
-        empresa = (datos.get("empresa") or "").strip().upper()
+        empresa_raw = (datos.get("empresa") or "").strip()
+        existente = Destinatario.objects.filter(empresa__iexact=empresa_raw).first()
+        empresa = existente.empresa if existente else empresa_raw
         nombre_centro = (datos.get("nombre_centro") or "").strip()
         codigo_location = (datos.get("codigo_location") or "").strip()
         zona_id = datos.get("zona_id")
