@@ -2,14 +2,14 @@
 <html lang="es-cl">
 <head>
     <meta charset="UTF-8">
-    <title>Ticket centro {{ centro_nombre }} / Falla equipo {{ numero_equipo|default:'' }} jaula {{ numero_jaula|default:'' }}</title>
+    <title>Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ numero_equipo|default:'' }}</title>
 </head>
 <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
     <div style="max-width: 720px; margin: 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
 
         <!-- Header / Asunto visual -->
         <div style="font-size: 18px; font-weight: 700; color: #0f172a; padding-bottom: 12px; border-bottom: 2px solid #f59e0b; margin-bottom: 24px; letter-spacing: -0.2px;">
-            Ticket centro {{ centro_nombre }} / Falla equipo {{ numero_equipo|default:'N/D' }}{% if numero_jaula %} jaula {{ numero_jaula }}{% endif %}
+            Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ numero_equipo|default:'' }}
         </div>
 
         <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
@@ -17,46 +17,70 @@
         </p>
 
         <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 18px;">
-            Junto con saludar, Informamos que se ha generado un ticket de falla, con la siguiente referencia:
+            Junto con saludar, Informamos se ha generado un ticket de falla con la siguiente referencia:
         </p>
 
-        <!-- Referencia destacada -->
-        <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 18px 0 16px 0; line-height: 1.5;">
-            {{ texto_referencia|default:'Equipo con corte de datos por posible falla en su funcionamiento.' }}
+        <!-- Bloque destacado con Equipo/Ubicación y Falla -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin: 16px 0 20px 0;">
+            <p style="margin: 0 0 6px 0; font-size: 14.5px; color: #0f172a;">
+                <strong>Equipo:</strong> {{ numero_equipo|default:'10m' }}{% if ubicacion %} - {{ ubicacion }}{% elif numero_jaula %} - Jaula {{ numero_jaula }}{% endif %}
+            </p>
+            <p style="margin: 0; font-size: 14.5px; color: #0f172a;">
+                <strong>Falla:</strong> {{ texto_referencia|default:'Equipo con corte de datos por posible falla en su funcionamiento.' }}
+            </p>
         </div>
 
         {% if imagen_grafica %}
-        <!-- Gráfica de corte de datos -->
-        <div style="margin: 18px 0 24px 0; text-align: center;">
-            <img src="{{ imagen_grafica }}" alt="Gráfico de corte de datos" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" />
+        <!-- Gráfica de corte de datos aportada por el usuario -->
+        <div style="margin: 18px 0 22px 0; text-align: left;">
+            <img src="{{ imagen_grafica }}" alt="Gráfico de corte de datos" style="max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;" />
         </div>
         {% endif %}
 
         <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
-            Se solicita su apoyo para poder hacer reemplazo de la caja transmisora por equipo de repuesto existente en el centro. El equipo a utilizar tiene el identificador <strong>{{ identificador_repuesto|default:'Name A1' }}</strong> en la parte inferior izquierda de su pantalla. Para este propósito se adjunta un manual con las instrucciones para cambiar este (Página 2, apartado 2.2 "Mantención correctiva Jennic"). Si necesita asistencia durante el proceso no dude en responder este correo o contactarme a través del numero telefónico adjunto en la firma de este correo . Su colaboración es muy apreciada.
+            Se solicita su apoyo para poder hacer reemplazo de la caja transmisora por el equipo de repuesto existente en el centro. El equipo a utilizar tiene el identificador <strong>{{ identificador_repuesto|default:'Name A1' }}</strong> en la parte inferior izquierda de su pantalla.
         </p>
 
         {% if imagen_defectuoso or imagen_repuesto %}
-        <!-- Grilla de Imágenes Comparativas -->
-        <table style="width: 100%; margin: 24px 0; border-collapse: collapse;">
+        <!-- Grilla de Imágenes Comparativas (Alto fijo de 400px) -->
+        <table style="width: 100%; margin: 20px 0; border-collapse: collapse;">
             <tr>
                 {% if imagen_defectuoso %}
                 <td style="width: 50%; vertical-align: top; padding-right: 8px; text-align: center;">
-                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Equipo defectuoso</div>
-                    <img src="{{ imagen_defectuoso }}" alt="Equipo defectuoso" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                    <div style="font-size: 14px; font-weight: 700; color: #b91c1c; margin-bottom: 8px;">(Reemplazar / Defectuoso)</div>
+                    <img src="{{ imagen_defectuoso }}" alt="Equipo defectuoso" style="width: 100%; max-height: 400px; height: 400px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc;" />
                 </td>
                 {% endif %}
                 {% if imagen_repuesto %}
                 <td style="width: 50%; vertical-align: top; padding-left: 8px; text-align: center;">
-                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Equipo de repuesto</div>
-                    <img src="{{ imagen_repuesto }}" alt="Equipo de repuesto" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                    <div style="font-size: 14px; font-weight: 700; color: #15803d; margin-bottom: 8px;">(Instalar / Repuesto)</div>
+                    <img src="{{ imagen_repuesto }}" alt="Equipo de repuesto" style="width: 100%; max-height: 400px; height: 400px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc;" />
                 </td>
                 {% endif %}
             </tr>
         </table>
         {% endif %}
 
-        <p style="font-size: 14.5px; color: #334155; margin-bottom: 4px; margin-top: 24px;">
+        <!-- Caja de alerta amigable con indicación importante -->
+        <div style="background-color: #f0f9ff; border: 1px solid #e0f2fe; border-left: 4px solid #0284c7; border-radius: 8px; padding: 14px 18px; margin: 16px 0 20px 0;">
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #0369a1;">
+                <strong>Importante:</strong> Solo debe reemplazar una caja por la otra. No realice configuraciones ni modificaciones adicionales en el equipo.
+            </p>
+        </div>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            Para este propósito se adjunta un manual con las instrucciones correspondientes (<strong>página 2, apartado 2.2: “Mantención correctiva Jennic”</strong>).
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
+            Si necesita asistencia durante el proceso o una vez realizado el cambio para verificar la señal, no dude en responder este correo o comunicarse al número indicado en la firma.
+        </p>
+
+        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 14px;">
+            Desde ya, muchas gracias por su colaboración.
+        </p>
+
+        <p style="font-size: 14.5px; color: #334155; margin-bottom: 4px;">
             Atentamente;
         </p>
 

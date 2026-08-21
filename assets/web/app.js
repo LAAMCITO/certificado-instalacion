@@ -4940,14 +4940,40 @@ window.triggerFileInput = function(inputId) {
   if (elem) elem.click();
 };
 
+/**
+ * Redimensiona una imagen base64 a un tamaño máximo manteniendo proporción.
+ * Comprime como JPEG al 80% para mantener el payload ligero en preview.
+ */
+function redimensionarImagenBase64(dataUrl, maxDim = 800, quality = 0.80) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function() {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 window.alSeleccionarImagenTicket = function(event, key) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
-    estadoTickets.imagenes[key] = e.target.result;
-    mostrarPreviewDropzone(key, e.target.result);
+  reader.onload = async function(e) {
+    const resized = await redimensionarImagenBase64(e.target.result);
+    estadoTickets.imagenes[key] = resized;
+    mostrarPreviewDropzone(key, resized);
     actualizarPrevisualizacionTicketLive(true);
   };
   reader.readAsDataURL(file);
@@ -5004,8 +5030,8 @@ function setupPasteListenersTickets() {
       if (items[i].type.indexOf("image") !== -1) {
         const blob = items[i].getAsFile();
         const reader = new FileReader();
-        reader.onload = function(event) {
-          const b64 = event.target.result;
+        reader.onload = async function(event) {
+          const b64 = await redimensionarImagenBase64(event.target.result);
           asignarImagenPegadaSegunTipo(b64);
         };
         reader.readAsDataURL(blob);
@@ -5027,9 +5053,10 @@ function setupPasteListenersTickets() {
         if (file.type.startsWith("image/")) {
           const dzId = dz.id.replace("dz-", "").replace(/-/g, "_");
           const reader = new FileReader();
-          reader.onload = ev => {
-            estadoTickets.imagenes[dzId] = ev.target.result;
-            mostrarPreviewDropzone(dzId, ev.target.result);
+          reader.onload = async (ev) => {
+            const resized = await redimensionarImagenBase64(ev.target.result);
+            estadoTickets.imagenes[dzId] = resized;
+            mostrarPreviewDropzone(dzId, resized);
             actualizarPrevisualizacionTicketLive(true);
           };
           reader.readAsDataURL(file);
@@ -5108,8 +5135,8 @@ function recolectarDatosTicket() {
   };
 
   if (tipo === "falla_equipo") {
-    payload.numero_equipo = document.getElementById("ticketEquipoNumero")?.value || "10";
-    payload.numero_jaula = document.getElementById("ticketEquipoJaula")?.value || "204";
+    payload.numero_equipo = document.getElementById("ticketEquipoNumero")?.value || "";
+    payload.ubicacion = document.getElementById("ticketEquipoUbicacion")?.value || "";
     payload.identificador_repuesto = document.getElementById("ticketEquipoRepuestoId")?.value || "Name A1";
     payload.texto_referencia = document.getElementById("ticketEquipoReferencia")?.value || "";
   } else if (tipo === "falla_sensor") {

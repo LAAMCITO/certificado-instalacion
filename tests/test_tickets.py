@@ -54,12 +54,14 @@ class TicketsTestCase(TestCase):
             "nombre_centro": "Chidhuapi 1",
             "numero_equipo": "10",
             "numero_jaula": "204",
+            "ubicacion": "Pontón",
             "identificador_repuesto": "Name A1",
             "personal_id": self.asistente.id,
         }
         asunto, html = PortalService.generar_html_ticket("falla_equipo", datos)
-        self.assertIn("Ticket centro Chidhuapi 1 / Falla equipo 10 jaula 204", asunto)
-        self.assertIn("Name A1", html)
+        self.assertIn("Ticket - Chidhuapi 1 - Falla de equipo 10", asunto)
+        self.assertIn("Pontón", html)
+        self.assertIn("Importante:", html)
         self.assertIn("Mantención correctiva Jennic", html)
 
     def test_generar_html_ticket_falla_sensor(self):

@@ -647,16 +647,20 @@ class PortalService:
 
         elif tipo_ticket == "falla_equipo":
             numero_equipo = datos.get("numero_equipo", "")
+            ubicacion = datos.get("ubicacion", "")
             numero_jaula = datos.get("numero_jaula", "")
             identificador_repuesto = datos.get("identificador_repuesto", "Name A1")
+
+            eq_desc = f"{numero_equipo} - {ubicacion}" if (numero_equipo and ubicacion) else (numero_equipo or ubicacion or "10m")
             texto_referencia = datos.get(
                 "texto_referencia",
-                f"Equipo {numero_equipo} jaula {numero_jaula} con corte de datos por posible falla en su funcionamiento."
+                f"Equipo {eq_desc} con corte de datos por posible falla en su funcionamiento."
             )
-            asunto = f"Ticket centro {centro_nombre} / Falla equipo {numero_equipo} jaula {numero_jaula}".strip()
+            asunto = f"Ticket - {centro_nombre} - Falla de equipo {numero_equipo}".strip() if numero_equipo else f"Ticket - {centro_nombre} - Falla de equipo"
             ctx.update({
                 "numero_equipo": numero_equipo,
                 "numero_jaula": numero_jaula,
+                "ubicacion": ubicacion,
                 "identificador_repuesto": identificador_repuesto,
                 "texto_referencia": texto_referencia,
             })
