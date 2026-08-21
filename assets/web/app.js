@@ -5219,9 +5219,10 @@ function recolectarDatosTicket() {
     payload.texto_referencia = document.getElementById("ticketEquipoReferencia")?.value || "";
     payload.es_corriente = document.getElementById("ticketEquipoEsCorriente")?.checked || false;
   } else if (tipo === "falla_sensor") {
-    payload.tipo_sensor = document.getElementById("ticketSensorTipo")?.value || "oxígeno";
+    payload.tipo_sensor = document.getElementById("ticketSensorTipo")?.value || "oxigeno";
     payload.profundidad = document.getElementById("ticketSensorProfundidad")?.value || "10";
-    payload.numero_jaula = document.getElementById("ticketSensorJaula")?.value || "105";
+    payload.numero_jaula = document.getElementById("ticketSensorJaula")?.value || "";
+    payload.texto_referencia = document.getElementById("ticketSensorReferencia")?.value || "";
   }
 
   return payload;
@@ -5257,6 +5258,9 @@ window.generarNuevoTicket = function (limpiarTodo = false) {
 
   const inputSensJaula = document.getElementById("ticketSensorJaula");
   if (inputSensJaula) inputSensJaula.value = "";
+
+  const inputSensRef = document.getElementById("ticketSensorReferencia");
+  if (inputSensRef) inputSensRef.value = "";
 
   const inputConexHoras = document.getElementById("ticketConexionHoras");
   if (inputConexHoras) inputConexHoras.value = "24";

@@ -673,14 +673,47 @@ class PortalService:
             template_name = "emails/ticket_falla_equipo.html"
 
         elif tipo_ticket == "falla_sensor":
-            tipo_sensor = datos.get("tipo_sensor", "oxígeno")
-            profundidad = datos.get("profundidad", "10")
-            numero_jaula = datos.get("numero_jaula", "105")
-            asunto = f"Ticket - {centro_nombre} - Falla sensor {tipo_sensor} - Prof. {profundidad} mts – Jaula {numero_jaula}"
+            tipo_sensor_raw = str(datos.get("tipo_sensor", "oxigeno")).strip().lower()
+            if "salin" in tipo_sensor_raw:
+                tipo_sensor_key = "salinidad"
+                tipo_sensor_display = "Salinidad"
+            elif "integ" in tipo_sensor_raw:
+                tipo_sensor_key = "integrado"
+                tipo_sensor_display = "Integrado"
+            else:
+                tipo_sensor_key = "oxigeno"
+                tipo_sensor_display = "Oxígeno"
+
+            profundidad = str(datos.get("profundidad", "10")).strip()
+            numero_jaula = str(datos.get("numero_jaula", "")).strip()
+            ubicacion = str(datos.get("ubicacion", "")).strip()
+
+            partes_sens = []
+            if profundidad:
+                partes_sens.append(f"{profundidad}m")
+            if ubicacion:
+                partes_sens.append(ubicacion)
+            elif numero_jaula:
+                partes_sens.append(f"Jaula {numero_jaula}")
+
+            sens_info = " ".join(partes_sens)
+            raw_ref = datos.get("texto_referencia")
+            texto_referencia = raw_ref.strip() if (raw_ref and str(raw_ref).strip()) else "Corte de datos por posible falla en su funcionamiento."
+
+            if sens_info:
+                asunto = f"Ticket - {centro_nombre} - Falla sensor de {tipo_sensor_display} {sens_info}".strip()
+            else:
+                asunto = f"Ticket - {centro_nombre} - Falla sensor de {tipo_sensor_display}".strip()
+
             ctx.update({
-                "tipo_sensor": tipo_sensor,
+                "tipo_sensor": tipo_sensor_display,
+                "tipo_sensor_key": tipo_sensor_key,
+                "tipo_sensor_display": tipo_sensor_display,
                 "profundidad": profundidad,
                 "numero_jaula": numero_jaula,
+                "ubicacion": ubicacion,
+                "sens_info": sens_info,
+                "texto_referencia": texto_referencia,
             })
             template_name = "emails/ticket_falla_sensor.html"
 

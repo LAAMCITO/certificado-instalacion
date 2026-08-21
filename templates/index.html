@@ -1522,10 +1522,9 @@
                     <div class="form-group">
                       <label for="ticketSensorTipo">Tipo de Sensor</label>
                       <select id="ticketSensorTipo" onchange="actualizarPrevisualizacionTicketLive()">
-                        <option value="oxígeno">Oxígeno (OXY)</option>
-                        <option value="temperatura">Temperatura</option>
+                        <option value="oxigeno">Oxígeno (OXY)</option>
                         <option value="salinidad">Salinidad (COND)</option>
-                        <option value="corrientes">Corrientes (FLOW)</option>
+                        <option value="integrado">Integrado (OXY + COND)</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -1535,32 +1534,37 @@
                   </div>
 
                   <div class="form-group margin-top">
-                    <label for="ticketSensorJaula">N° Jaula / Módulo</label>
-                    <input type="text" id="ticketSensorJaula" placeholder="ej: Jaula 105" oninput="actualizarPrevisualizacionTicketLive()">
+                    <label for="ticketSensorJaula">Ubicación / Jaula</label>
+                    <input type="text" id="ticketSensorJaula" placeholder="ej: Jaula 105 o Pontón" oninput="actualizarPrevisualizacionTicketLive()">
+                  </div>
+
+                  <div class="form-group margin-top">
+                    <label for="ticketSensorReferencia">Texto de Referencia de la Falla</label>
+                    <input type="text" id="ticketSensorReferencia" placeholder="ej: Corte de datos por posible falla en su funcionamiento." oninput="actualizarPrevisualizacionTicketLive()">
+                  </div>
+
+                  <div class="form-group margin-top">
+                    <label>Gráfica de Corte de Datos / Mediciones</label>
+                    <div class="ticket-dropzone" id="dz-sensor-grafica" tabindex="0" onclick="clickDropzoneTicket('sensor_grafica', 'file-sensor-grafica', event)">
+                      <input type="file" id="file-sensor-grafica" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_grafica')">
+                      <div class="dz-prompt" id="dz-prompt-sensor-grafica">
+                        <span>📊 Gráfico de corte de datos (Opcional)</span>
+                        <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
+                      </div>
+                      <div class="dz-preview" id="dz-preview-sensor-grafica" style="display:none;">
+                        <img id="img-preview-sensor-grafica" src="" alt="Previsualización">
+                        <button type="button" class="btn-remove-dz" onclick="removerImagenTicket(event, 'sensor_grafica')">✕</button>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="form-grid margin-top">
                     <div class="form-group">
-                      <label>Foto Sensor Repuesto</label>
-                      <div class="ticket-dropzone" id="dz-sensor-repuesto" tabindex="0" onclick="clickDropzoneTicket('sensor_repuesto', 'file-sensor-repuesto', event)">
-                        <input type="file" id="file-sensor-repuesto" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_repuesto')">
-                        <div class="dz-prompt" id="dz-prompt-sensor-repuesto">
-                          <span>📦 (Repuesto)</span>
-                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
-                        </div>
-                        <div class="dz-preview" id="dz-preview-sensor-repuesto" style="display:none;">
-                          <img id="img-preview-sensor-repuesto" src="" alt="Previsualización">
-                          <button type="button" class="btn-remove-dz" onclick="removerImagenTicket(event, 'sensor_repuesto')">✕</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Foto Sensor a Reemplazar</label>
+                      <label>Foto Sensor Defectuoso</label>
                       <div class="ticket-dropzone" id="dz-sensor-defectuoso" tabindex="0" onclick="clickDropzoneTicket('sensor_defectuoso', 'file-sensor-defectuoso', event)">
                         <input type="file" id="file-sensor-defectuoso" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_defectuoso')">
                         <div class="dz-prompt" id="dz-prompt-sensor-defectuoso">
-                          <span>📷 (Reemplazar)</span>
+                          <span>📷 Foto Defectuoso</span>
                           <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                         </div>
                         <div class="dz-preview" id="dz-preview-sensor-defectuoso" style="display:none;">
@@ -1569,19 +1573,19 @@
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="form-group margin-top">
-                    <label>Gráfica opcional de mediciones</label>
-                    <div class="ticket-dropzone" id="dz-sensor-grafica" tabindex="0" onclick="clickDropzoneTicket('sensor_grafica', 'file-sensor-grafica', event)">
-                      <input type="file" id="file-sensor-grafica" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_grafica')">
-                      <div class="dz-prompt" id="dz-prompt-sensor-grafica">
-                        <span>📊 Captura de gráfica (Opcional)</span>
-                        <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
-                      </div>
-                      <div class="dz-preview" id="dz-preview-sensor-grafica" style="display:none;">
-                        <img id="img-preview-sensor-grafica" src="" alt="Previsualización">
-                        <button type="button" class="btn-remove-dz" onclick="removerImagenTicket(event, 'sensor_grafica')">✕</button>
+                    <div class="form-group">
+                      <label>Foto Sensor de Repuesto</label>
+                      <div class="ticket-dropzone" id="dz-sensor-repuesto" tabindex="0" onclick="clickDropzoneTicket('sensor_repuesto', 'file-sensor-repuesto', event)">
+                        <input type="file" id="file-sensor-repuesto" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_repuesto')">
+                        <div class="dz-prompt" id="dz-prompt-sensor-repuesto">
+                          <span>📦 Foto Repuesto</span>
+                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
+                        </div>
+                        <div class="dz-preview" id="dz-preview-sensor-repuesto" style="display:none;">
+                          <img id="img-preview-sensor-repuesto" src="" alt="Previsualización">
+                          <button type="button" class="btn-remove-dz" onclick="removerImagenTicket(event, 'sensor_repuesto')">✕</button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -66,19 +66,34 @@ class TicketsTestCase(TestCase):
         self.assertIn("Si bien el equipo es distinto, la configuración y programación es compatible", html)
         self.assertIn("Mantención correctiva Jennic", html)
 
-    def test_generar_html_ticket_falla_sensor(self):
+    def test_generar_html_ticket_falla_sensor_oxigeno(self):
         datos = {
             "empresa": "AQUACHILE",
             "nombre_centro": "Sa-Lleuna",
-            "tipo_sensor": "oxígeno",
+            "tipo_sensor": "oxigeno",
             "profundidad": "10",
             "numero_jaula": "105",
             "personal_id": self.asistente.id,
         }
         asunto, html = PortalService.generar_html_ticket("falla_sensor", datos)
-        self.assertIn("Ticket - Sa-Lleuna - Falla sensor oxígeno - Prof. 10 mts – Jaula 105", asunto)
+        self.assertIn("Ticket - Sa-Lleuna - Falla sensor de Oxígeno 10m Jaula 105", asunto)
         self.assertIn("Retirar la tapa amarilla", html)
+        self.assertIn("Solo debe intervenir o desconectar el sensor solicitado", html)
         self.assertIn("Mantención correctiva del sensor", html)
+
+    def test_generar_html_ticket_falla_sensor_salinidad(self):
+        datos = {
+            "empresa": "AQUACHILE",
+            "nombre_centro": "Sa-Lleuna",
+            "tipo_sensor": "salinidad",
+            "profundidad": "5",
+            "numero_jaula": "201",
+            "personal_id": self.asistente.id,
+        }
+        asunto, html = PortalService.generar_html_ticket("falla_sensor", datos)
+        self.assertIn("Ticket - Sa-Lleuna - Falla sensor de Salinidad 5m Jaula 201", asunto)
+        self.assertIn("Retirar la cinta protectora", html)
+        self.assertNotIn("Retirar la tapa amarilla", html)
 
     def test_enviar_ticket_conexion_sin_guia_mime_related(self):
         mail.outbox = []
