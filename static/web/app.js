@@ -35,29 +35,23 @@ const EMPRESAS = [
 ];
 
 const MAPA_ABREVIATURAS_EMPRESAS = {
-  "st": { abbrev: "St", empresa: "St-Andrews" },
   "mw": { abbrev: "MW", empresa: "Mowi" },
   "sm": { abbrev: "SM", empresa: "Salmones Magallanes" },
-  "au": { abbrev: "Au", empresa: "Australis" },
   "ca": { abbrev: "Ca", empresa: "Camanchaca" },
   "ce": { abbrev: "Ce", empresa: "Cermaq" },
   "mef": { abbrev: "Mef", empresa: "Multiexport" },
   "ab": { abbrev: "Ab", empresa: "Abick" },
   "ac": { abbrev: "AC", empresa: "AquaChile" },
-  "as": { abbrev: "AS", empresa: "Aquasan" },
   "sc": { abbrev: "SC", empresa: "Salmones de Chile" },
+  "sp": { abbrev: "SC", empresa: "SurProceso" },
   "bl": { abbrev: "Bl", empresa: "Blumar" },
   "ve": { abbrev: "VE", empresa: "Ventisqueros" },
-  "br": { abbrev: "Br", empresa: "Blu River" },
   "sa": { abbrev: "SA", empresa: "Salmones Saysen" },
   "mf": { abbrev: "MF", empresa: "Marine Farm" },
-  "fs": { abbrev: "FS", empresa: "Friosur" },
   "ya": { abbrev: "Ya", empresa: "Yadran" },
   "in": { abbrev: "In", empresa: "Invermar" },
   "ck": { abbrev: "Ck", empresa: "Cooke" },
   "na": { abbrev: "NA", empresa: "Nova Austral" },
-  "lf": { abbrev: "LF", empresa: "Los Fiordos" },
-  "sal": { abbrev: "SAL", empresa: "Salmones Austral" },
   "cb": { abbrev: "Cb", empresa: "Salmones Caleta Bay" }
 };
 
@@ -94,7 +88,7 @@ function parseLocationInfo(loc) {
 
   // Insert space before numbers (e.g. tranqui1 -> tranqui 1)
   const restFormatted = rest.replace(/([a-zA-Z]+)(\d+)/g, "$1 $2");
-  
+
   // Format in Title Case (Capitalize each word, no company prefix code)
   const nombre_centro = restFormatted
     .split(/[\s-_]+/)
@@ -229,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("light-theme");
         themeBtn.textContent = "☀️ Modo Claro";
       }
-    } catch (e) {}
+    } catch (e) { }
 
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("dark-theme");
@@ -242,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
       themeBtn.textContent = isDark ? "☀️ Modo Claro" : "🌓 Modo Oscuro";
       try {
         localStorage.setItem("portal_theme", isDark ? "dark" : "light");
-      } catch (e) {}
+      } catch (e) { }
     });
   }
 
@@ -592,10 +586,10 @@ function crearNuevoCertificadoSinPopup() {
   };
 
   poblarFormularioDesdeState();
-  
+
   const tabBtn = document.querySelector(".tab-btn[data-tab='generales']");
   if (tabBtn) tabBtn.click();
-  
+
   const locInput = document.getElementById("gen_location");
   if (locInput) locInput.focus();
 
@@ -960,10 +954,10 @@ function activarSeccionTab(targetTab) {
 
   // Re-renderizar listas al navegar para garantizar visualización inmediata
   if (moduloActivoActual === "certificado") {
-    try { renderMotesList(); } catch(e) {}
-    try { renderUbicacionesList(); } catch(e) {}
-    try { renderRepuestosList(); } catch(e) {}
-    try { renderRepuestosMotesDropdown(); } catch(e) {}
+    try { renderMotesList(); } catch (e) { }
+    try { renderUbicacionesList(); } catch (e) { }
+    try { renderRepuestosList(); } catch (e) { }
+    try { renderRepuestosMotesDropdown(); } catch (e) { }
   }
 
   if (targetTab === "ingreso_tecnico") {
@@ -972,7 +966,7 @@ function activarSeccionTab(targetTab) {
   actualizarVistaPreviaDerechaPorModulo();
 }
 
-window.cambiarModuloActivo = function(mod) {
+window.cambiarModuloActivo = function (mod) {
   const moduleBtns = document.querySelectorAll(".module-btn");
   moduleBtns.forEach(b => {
     if (b.dataset.module === mod) {
@@ -1331,7 +1325,7 @@ function poblarFormularioDesdeState() {
   };
 
   const dg = certificadoState.datos_generales || {};
-  
+
   if (dg.location) {
     const parsed = parseLocationInfo(dg.location);
     if (parsed.nombre_centro && (!dg.nombre_centro || dg.nombre_centro === dg.location)) {
@@ -1438,14 +1432,14 @@ function poblarFormularioDesdeState() {
   setVal("ub_repuestos_general", certificadoState.ubicacion_repuestos || "");
   setVal("obs_texto", certificadoState.observaciones || "");
 
-  try { renderMotesList(); } catch(e) {}
-  try { renderRepuestosMotesDropdown(); } catch(e) {}
-  try { renderUbicacionesList(); } catch(e) {}
-  try { renderRepuestosList(); } catch(e) {}
-  try { renderEvidenciasGrid(); } catch(e) {}
-  try { renderAlarmasTabla(); } catch(e) {}
-  try { renderLiveHtmlSheet(); } catch(e) {}
-  try { actualizarVistaPreviaDerechaPorModulo(); } catch(e) {}
+  try { renderMotesList(); } catch (e) { }
+  try { renderRepuestosMotesDropdown(); } catch (e) { }
+  try { renderUbicacionesList(); } catch (e) { }
+  try { renderRepuestosList(); } catch (e) { }
+  try { renderEvidenciasGrid(); } catch (e) { }
+  try { renderAlarmasTabla(); } catch (e) { }
+  try { renderLiveHtmlSheet(); } catch (e) { }
+  try { actualizarVistaPreviaDerechaPorModulo(); } catch (e) { }
 }
 
 function setupDragAndDrop() {
@@ -2099,7 +2093,7 @@ function renderUbicacionesList() {
       const tipoEq = elem.tipo || "-";
       const labelEq = nombreEq ? `<strong>${nombreEq}</strong> (${tipoEq})` : `<strong>${tipoEq}</strong>`;
       const serieStr = elem.serie || elem.mac || "-";
-      
+
       let sensoresHtml = "";
       if (elem.sensores && elem.sensores.length > 0) {
         const sensoresOrd = [...elem.sensores].sort((a, b) => parseFloat(a.metros || 0) - parseFloat(b.metros || 0));
@@ -2507,7 +2501,7 @@ function validarCamposObligatorios() {
     mostrarToast("Location ID y Nombre del Centro son campos obligatorios.", "error");
     const tabBtn = document.querySelector(".tab-btn[data-tab='generales']");
     if (tabBtn) tabBtn.click();
-    
+
     if (!loc) {
       const inputLoc = document.getElementById("gen_location");
       if (inputLoc) inputLoc.focus();
@@ -2575,7 +2569,7 @@ function verificarYEjecutarAutofill(nuevoHost, accionEjecutar) {
   const modal = document.getElementById("modalConfirmarCambioCentro");
   const modalTexto = document.getElementById("modalConfirmarTexto");
   const nombreCentroActual = certificadoState.datos_generales?.nombre_centro || locationActual || "Centro Previo";
-  
+
   if (modalTexto) {
     modalTexto.innerHTML = `
       La ficha actual contiene datos cargados de <strong>${htmlEscapeAttr(nombreCentroActual)}</strong> (<em>${htmlEscapeAttr(locationActual)}</em> con ${certificadoState.motes?.length || 0} equipos y ${certificadoState.ubicaciones?.length || 0} ubicaciones).
@@ -2672,7 +2666,7 @@ async function procesarAutofill() {
         }
         poblarFormularioDesdeState();
         mostrarToast("Documento autorellenado y complementado con éxito.", "success");
-        
+
         // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
         activarSeccionTab("generales");
         document.querySelectorAll(".tab-btn").forEach(t => {
@@ -2751,7 +2745,7 @@ async function realizarLlamadaSSHAutofill(limpiarPrevios = false) {
       }
       poblarFormularioDesdeState();
       mostrarToast("Auto-rellenado por SSH/Telnet completado con éxito.", "success");
-      
+
       // Cambiar automáticamente de pestaña: "Auto-relleno Rápido" -> "1. Datos generales"
       activarSeccionTab("generales");
       document.querySelectorAll(".tab-btn").forEach(t => {
@@ -4000,7 +3994,7 @@ function restaurarVistaActivaPortal() {
     try {
       vista = (localStorage.getItem("active_portal_view") || "").split("?")[0].replace(/\/+$/, "").trim();
       submodulo = (localStorage.getItem("active_portal_submodule") || "").split("?")[0].replace(/\/+$/, "").trim();
-    } catch (e) {}
+    } catch (e) { }
   }
 
   if (vista && document.getElementById(`view-${vista}`)) {
@@ -4035,7 +4029,7 @@ function iniciarPortalUnificado() {
 }
 
 // --- 1. Navegación entre Secciones del Portal ---
-window.navegarSeccionPortal = function(vista, submodulo) {
+window.navegarSeccionPortal = function (vista, submodulo) {
   // Persistir vista activa en localStorage y Hash de la URL para que no vuelva al home tras F5
   try {
     localStorage.setItem("active_portal_view", vista);
@@ -4049,7 +4043,7 @@ window.navegarSeccionPortal = function(vista, submodulo) {
     if (window.location.hash !== `#${hashTarget}`) {
       history.replaceState(null, "", `#${hashTarget}`);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Actualizar estado activo en los botones del sidebar
   document.querySelectorAll(".sidebar-nav .nav-item:not(.external)").forEach(item => {
@@ -4120,7 +4114,7 @@ window.navegarSeccionPortal = function(vista, submodulo) {
   }
 };
 
-window.copiarComandoTexto = function(btn) {
+window.copiarComandoTexto = function (btn) {
   const codeBox = btn.closest('.cmd-box')?.querySelector('code');
   if (!codeBox) return;
   const text = codeBox.textContent.trim();
@@ -4140,14 +4134,14 @@ window.copiarComandoTexto = function(btn) {
   });
 };
 
-window.scrollAComando = function(secId) {
+window.scrollAComando = function (secId) {
   const el = document.getElementById(secId);
   if (el) {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 };
 
-window.filtrarComandos = function(query) {
+window.filtrarComandos = function (query) {
   const q = query.toLowerCase().trim();
   document.querySelectorAll(".cmd-card-item").forEach(card => {
     const text = card.textContent.toLowerCase();
@@ -4311,7 +4305,7 @@ function updatePreviewCorreoLive() {
   const select = document.getElementById('correoPersonalSelect');
   if (!select) return;
   const opt = select.options[select.selectedIndex];
-  
+
   const fechaSab = document.getElementById('correoFechaSabado')?.value;
   const fechaDom = document.getElementById('correoFechaDomingo')?.value;
 
@@ -4599,7 +4593,7 @@ function renderizarTablaDestinatarios() {
   });
 }
 
-window.toggleDestinatarioActivo = async function(id, activo) {
+window.toggleDestinatarioActivo = async function (id, activo) {
   try {
     const res = await fetch("/api/destinatarios", {
       method: "POST",
@@ -4617,7 +4611,7 @@ window.toggleDestinatarioActivo = async function(id, activo) {
   }
 };
 
-window.eliminarDestinatario = async function(id) {
+window.eliminarDestinatario = async function (id) {
   if (!confirm("¿Está seguro de eliminar este destinatario?")) return;
   try {
     const res = await fetch("/api/destinatarios", {
@@ -4755,7 +4749,7 @@ const estadoTickets = {
   pasteListenerAttached: false
 };
 
-window.inicializarModuloTicketsSoporte = async function() {
+window.inicializarModuloTicketsSoporte = async function () {
   await Promise.all([
     cargarCentrosTickets(),
     cargarAsistentesTickets(),
@@ -4816,7 +4810,7 @@ async function cargarZonasTickets() {
       estadoTickets.zonas = data.todas_las_zonas;
       const select = document.getElementById("ticketZonaSelect");
       const modalSelect = document.getElementById("editCentroZonaSelect");
-      
+
       const renderOptions = (sel) => {
         if (!sel) return;
         sel.innerHTML = '<option value="">Seleccione Zona...</option>';
@@ -4827,7 +4821,7 @@ async function cargarZonasTickets() {
           sel.appendChild(opt);
         });
       };
-      
+
       renderOptions(select);
       renderOptions(modalSelect);
     }
@@ -4855,7 +4849,7 @@ function poblarSelectoresEmpresaYCentro() {
   }
 }
 
-window.alCambiarEmpresaTicket = function() {
+window.alCambiarEmpresaTicket = function () {
   const emp = document.getElementById("ticketEmpresaSelect").value;
   const centroSelect = document.getElementById("ticketCentroSelect");
   if (!centroSelect) return;
@@ -4878,7 +4872,7 @@ window.alCambiarEmpresaTicket = function() {
   }
 };
 
-window.alCambiarCentroTicket = function() {
+window.alCambiarCentroTicket = function () {
   const emp = document.getElementById("ticketEmpresaSelect").value;
   const centroNombre = document.getElementById("ticketCentroSelect").value;
   const centroObj = estadoTickets.centros.find(c => c.empresa === emp && c.nombre_centro === centroNombre);
@@ -4896,7 +4890,7 @@ window.alCambiarCentroTicket = function() {
   actualizarPrevisualizacionTicketLive();
 };
 
-window.cambiarTipoTicket = function(tipo) {
+window.cambiarTipoTicket = function (tipo) {
   estadoTickets.tipo = tipo;
 
   // Actualizar botones pills
@@ -4935,7 +4929,7 @@ window.cambiarTipoTicket = function(tipo) {
   actualizarPrevisualizacionTicketLive(true);
 };
 
-window.triggerFileInput = function(inputId) {
+window.triggerFileInput = function (inputId) {
   const elem = document.getElementById(inputId);
   if (elem) elem.click();
 };
@@ -4947,7 +4941,7 @@ window.triggerFileInput = function(inputId) {
 function redimensionarImagenBase64(dataUrl, maxDim = 800, quality = 0.80) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.onload = function() {
+    img.onload = function () {
       let w = img.width, h = img.height;
       if (w > maxDim || h > maxDim) {
         if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
@@ -4960,29 +4954,79 @@ function redimensionarImagenBase64(dataUrl, maxDim = 800, quality = 0.80) {
       ctx.drawImage(img, 0, 0, w, h);
       resolve(canvas.toDataURL("image/jpeg", quality));
     };
-    img.onerror = function() { resolve(dataUrl); };
+    img.onerror = function () { resolve(dataUrl); };
     img.src = dataUrl;
   });
 }
 
-window.alSeleccionarImagenTicket = function(event, key) {
+window.clickDropzoneTicket = function (key, inputId, event) {
+  if (event && event.target.closest(".btn-remove-dz")) return;
+
+  // Si ya estaba seleccionada y vuelve a hacer click, abrir el selector nativo
+  if (estadoTickets.dropzoneSeleccionada === key) {
+    window.triggerFileInput(inputId);
+    return;
+  }
+
+  // Establecer como casilla activa para Ctrl+V
+  estadoTickets.dropzoneSeleccionada = key;
+  actualizarHighlightDropzones();
+};
+
+function actualizarHighlightDropzones() {
+  document.querySelectorAll(".ticket-dropzone").forEach(dz => {
+    const dzId = dz.id.replace("dz-", "").replace(/-/g, "_");
+    if (dzId === estadoTickets.dropzoneSeleccionada) {
+      dz.classList.add("dz-selected");
+    } else {
+      dz.classList.remove("dz-selected");
+    }
+  });
+}
+
+function perteneceAlTipoActual(key, tipo) {
+  if (tipo === "conexion") return key === "conexion_evidencia";
+  if (tipo === "falla_equipo") return ["equipo_defectuoso", "equipo_repuesto", "equipo_grafica"].includes(key);
+  if (tipo === "falla_sensor") return ["sensor_defectuoso", "sensor_repuesto", "sensor_grafica"].includes(key);
+  return false;
+}
+
+function avanzarSiguienteDropzone(currentKey, tipo) {
+  let secuencia = [];
+  if (tipo === "conexion") {
+    secuencia = ["conexion_evidencia"];
+  } else if (tipo === "falla_equipo") {
+    secuencia = ["equipo_defectuoso", "equipo_repuesto", "equipo_grafica"];
+  } else if (tipo === "falla_sensor") {
+    secuencia = ["sensor_defectuoso", "sensor_repuesto", "sensor_grafica"];
+  }
+
+  const nextEmpty = secuencia.find(k => k !== currentKey && !estadoTickets.imagenes[k]);
+  estadoTickets.dropzoneSeleccionada = nextEmpty || "";
+  actualizarHighlightDropzones();
+}
+
+window.alSeleccionarImagenTicket = function (event, key) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     const resized = await redimensionarImagenBase64(e.target.result);
     estadoTickets.imagenes[key] = resized;
     mostrarPreviewDropzone(key, resized);
+    avanzarSiguienteDropzone(key, estadoTickets.tipo);
     actualizarPrevisualizacionTicketLive(true);
   };
   reader.readAsDataURL(file);
 };
 
-window.removerImagenTicket = function(event, key) {
+window.removerImagenTicket = function (event, key) {
   if (event) event.stopPropagation();
   estadoTickets.imagenes[key] = "";
   ocultarPreviewDropzone(key);
+  estadoTickets.dropzoneSeleccionada = key;
+  actualizarHighlightDropzones();
   actualizarPrevisualizacionTicketLive(true);
 };
 
@@ -5011,7 +5055,7 @@ function ocultarPreviewDropzone(key) {
 }
 
 function setupPasteListenersTickets() {
-  document.addEventListener("paste", function(e) {
+  document.addEventListener("paste", function (e) {
     // Solo interceptar si estamos en la vista de tickets
     const viewTickets = document.getElementById("view-tickets-soporte");
     if (!viewTickets || viewTickets.style.display === "none") return;
@@ -5030,7 +5074,7 @@ function setupPasteListenersTickets() {
       if (items[i].type.indexOf("image") !== -1) {
         const blob = items[i].getAsFile();
         const reader = new FileReader();
-        reader.onload = async function(event) {
+        reader.onload = async function (event) {
           const b64 = await redimensionarImagenBase64(event.target.result);
           asignarImagenPegadaSegunTipo(b64);
         };
@@ -5057,6 +5101,7 @@ function setupPasteListenersTickets() {
             const resized = await redimensionarImagenBase64(ev.target.result);
             estadoTickets.imagenes[dzId] = resized;
             mostrarPreviewDropzone(dzId, resized);
+            avanzarSiguienteDropzone(dzId, estadoTickets.tipo);
             actualizarPrevisualizacionTicketLive(true);
           };
           reader.readAsDataURL(file);
@@ -5070,26 +5115,35 @@ function asignarImagenPegadaSegunTipo(b64) {
   const tipo = estadoTickets.tipo;
   let targetKey = "";
 
-  if (tipo === "conexion") {
-    targetKey = "conexion_evidencia";
-  } else if (tipo === "falla_equipo") {
-    if (!estadoTickets.imagenes.equipo_grafica) targetKey = "equipo_grafica";
-    else if (!estadoTickets.imagenes.equipo_defectuoso) targetKey = "equipo_defectuoso";
-    else targetKey = "equipo_repuesto";
-  } else if (tipo === "falla_sensor") {
-    if (!estadoTickets.imagenes.sensor_repuesto) targetKey = "sensor_repuesto";
-    else if (!estadoTickets.imagenes.sensor_defectuoso) targetKey = "sensor_defectuoso";
-    else targetKey = "sensor_grafica";
+  // 1. Si el usuario hizo click en una casilla concreta, pegar en esa:
+  if (estadoTickets.dropzoneSeleccionada && perteneceAlTipoActual(estadoTickets.dropzoneSeleccionada, tipo)) {
+    targetKey = estadoTickets.dropzoneSeleccionada;
+  } else {
+    // 2. Si no hay seleccionada, asignar en orden natural a la primera casilla vacía:
+    if (tipo === "conexion") {
+      targetKey = "conexion_evidencia";
+    } else if (tipo === "falla_equipo") {
+      if (!estadoTickets.imagenes.equipo_defectuoso) targetKey = "equipo_defectuoso";
+      else if (!estadoTickets.imagenes.equipo_repuesto) targetKey = "equipo_repuesto";
+      else if (!estadoTickets.imagenes.equipo_grafica) targetKey = "equipo_grafica";
+      else targetKey = "equipo_defectuoso";
+    } else if (tipo === "falla_sensor") {
+      if (!estadoTickets.imagenes.sensor_defectuoso) targetKey = "sensor_defectuoso";
+      else if (!estadoTickets.imagenes.sensor_repuesto) targetKey = "sensor_repuesto";
+      else if (!estadoTickets.imagenes.sensor_grafica) targetKey = "sensor_grafica";
+      else targetKey = "sensor_defectuoso";
+    }
   }
 
   if (targetKey) {
     estadoTickets.imagenes[targetKey] = b64;
     mostrarPreviewDropzone(targetKey, b64);
+    avanzarSiguienteDropzone(targetKey, tipo);
     actualizarPrevisualizacionTicketLive(true);
   }
 }
 
-window.actualizarPrevisualizacionTicketLive = function(forzar = false) {
+window.actualizarPrevisualizacionTicketLive = function (forzar = false) {
   clearTimeout(estadoTickets.previewTimer);
 
   const delay = forzar ? 0 : 300;
@@ -5139,6 +5193,7 @@ function recolectarDatosTicket() {
     payload.ubicacion = document.getElementById("ticketEquipoUbicacion")?.value || "";
     payload.identificador_repuesto = document.getElementById("ticketEquipoRepuestoId")?.value || "Name A1";
     payload.texto_referencia = document.getElementById("ticketEquipoReferencia")?.value || "";
+    payload.es_corriente = document.getElementById("ticketEquipoEsCorriente")?.checked || false;
   } else if (tipo === "falla_sensor") {
     payload.tipo_sensor = document.getElementById("ticketSensorTipo")?.value || "oxígeno";
     payload.profundidad = document.getElementById("ticketSensorProfundidad")?.value || "10";
@@ -5148,7 +5203,7 @@ function recolectarDatosTicket() {
   return payload;
 }
 
-window.ejecutarEnvioTicket = async function() {
+window.ejecutarEnvioTicket = async function () {
   const btn = document.getElementById("btnEnviarTicket");
   const destTo = document.getElementById("ticketDestinatariosTo")?.value || "";
   const destCc = document.getElementById("ticketDestinatariosCc")?.value || "";
@@ -5202,7 +5257,7 @@ window.ejecutarEnvioTicket = async function() {
   }
 };
 
-window.toggleVistaHistorialTickets = function() {
+window.toggleVistaHistorialTickets = function () {
   const panelPv = document.getElementById("panelVistaPreviaTicket");
   const panelHist = document.getElementById("panelHistorialTickets");
   const btn = document.getElementById("btnToggleHistorialTickets");
@@ -5221,7 +5276,7 @@ window.toggleVistaHistorialTickets = function() {
   }
 };
 
-window.cargarHistorialTickets = async function() {
+window.cargarHistorialTickets = async function () {
   const container = document.getElementById("ticketHistorialListContainer");
   if (!container) return;
 
@@ -5267,7 +5322,7 @@ window.cargarHistorialTickets = async function() {
 };
 
 // Modal Directorio de Centros
-window.abrirModalGestionCentrosTickets = function() {
+window.abrirModalGestionCentrosTickets = function () {
   const modal = document.getElementById("modalGestionCentrosTickets");
   if (modal) {
     modal.style.display = "flex";
@@ -5275,12 +5330,12 @@ window.abrirModalGestionCentrosTickets = function() {
   }
 };
 
-window.cerrarModalGestionCentrosTickets = function() {
+window.cerrarModalGestionCentrosTickets = function () {
   const modal = document.getElementById("modalGestionCentrosTickets");
   if (modal) modal.style.display = "none";
 };
 
-window.cargarTablaCentrosContactos = function() {
+window.cargarTablaCentrosContactos = function () {
   const tbody = document.getElementById("tbodyCentrosContactos");
   if (!tbody) return;
 
@@ -5307,7 +5362,7 @@ window.cargarTablaCentrosContactos = function() {
   tbody.innerHTML = html;
 };
 
-window.limpiarFormCentroContacto = function() {
+window.limpiarFormCentroContacto = function () {
   document.getElementById("editCentroId").value = "";
   document.getElementById("editCentroEmpresa").value = "";
   document.getElementById("editCentroNombre").value = "";
@@ -5318,7 +5373,7 @@ window.limpiarFormCentroContacto = function() {
   document.getElementById("btnGuardarCentroContacto").textContent = "Guardar Centro";
 };
 
-window.editarCentroContacto = function(id) {
+window.editarCentroContacto = function (id) {
   const c = estadoTickets.centros.find(item => item.id === id);
   if (!c) return;
 
@@ -5332,7 +5387,7 @@ window.editarCentroContacto = function(id) {
   document.getElementById("btnGuardarCentroContacto").textContent = "Actualizar Centro";
 };
 
-window.guardarCentroContactoDesdeModal = async function() {
+window.guardarCentroContactoDesdeModal = async function () {
   const cid = document.getElementById("editCentroId").value;
   const empresa = document.getElementById("editCentroEmpresa").value;
   const nombreCentro = document.getElementById("editCentroNombre").value;
@@ -5367,7 +5422,7 @@ window.guardarCentroContactoDesdeModal = async function() {
   }
 };
 
-window.eliminarCentroContacto = async function(id) {
+window.eliminarCentroContacto = async function (id) {
   if (!confirm("¿Está seguro de eliminar este centro del directorio?")) return;
 
   try {

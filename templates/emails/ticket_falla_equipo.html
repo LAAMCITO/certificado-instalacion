@@ -2,14 +2,14 @@
 <html lang="es-cl">
 <head>
     <meta charset="UTF-8">
-    <title>Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ numero_equipo|default:'' }}</title>
+    <title>Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ eq_info }}</title>
 </head>
 <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
     <div style="max-width: 720px; margin: 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
 
         <!-- Header / Asunto visual -->
         <div style="font-size: 18px; font-weight: 700; color: #0f172a; padding-bottom: 12px; border-bottom: 2px solid #f59e0b; margin-bottom: 24px; letter-spacing: -0.2px;">
-            Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ numero_equipo|default:'' }}
+            Ticket - {{ centro_nombre|default:'Centro' }} - Falla de equipo {{ eq_info }}
         </div>
 
         <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
@@ -26,7 +26,7 @@
                 <strong>Equipo:</strong> {{ numero_equipo|default:'10m' }}{% if ubicacion %} - {{ ubicacion }}{% elif numero_jaula %} - Jaula {{ numero_jaula }}{% endif %}
             </p>
             <p style="margin: 0; font-size: 14.5px; color: #0f172a;">
-                <strong>Falla:</strong> {{ texto_referencia|default:'Equipo con corte de datos por posible falla en su funcionamiento.' }}
+                <strong>Falla:</strong> {{ texto_referencia }}
             </p>
         </div>
 
@@ -72,9 +72,19 @@
             Para este propósito se adjunta un manual con las instrucciones correspondientes (<strong>página 2, apartado 2.2: “Mantención correctiva Jennic”</strong>).
         </p>
 
-        <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
-            Si necesita asistencia durante el proceso o una vez realizado el cambio para verificar la señal, no dude en responder este correo o comunicarse al número indicado en la firma.
-        </p>
+        <!-- Recuadro verde para la instrucción de verificación final -->
+        <div style="background-color: #f0fdf4; border: 1px solid #dcfce7; border-left: 4px solid #16a34a; border-radius: 8px; padding: 14px 18px; margin: 18px 0;">
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #15803d;">
+                Una vez realizado el cambio, agradeceremos contactar a Soporte Innovex o responder este correo para que podamos realizar la configuración y verificación remota del equipo.
+            </p>
+        </div>
+
+        {% if es_corriente %}
+        <!-- Nota destacada de compatibilidad para equipo de corriente/turbidez -->
+        <div style="margin: 20px 0 18px 0; font-size: 14.5px; line-height: 1.65; color: #0f172a;">
+            <strong>Si bien el equipo es distinto, la configuración y programación es compatible, por lo que no hay problema en reemplazar un equipo de corriente con uno de oxigeno-salinidad, lo único que se debe de tener en consideración es que el sensor debe de quedar en la entrada que dice "oxigeno".</strong>
+        </div>
+        {% endif %}
 
         <p style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 14px;">
             Desde ya, muchas gracias por su colaboración.

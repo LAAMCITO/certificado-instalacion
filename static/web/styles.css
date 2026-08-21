@@ -1821,6 +1821,22 @@ body.dark-theme .ticket-pill.active {
   background: rgba(2, 132, 199, 0.05);
 }
 
+.ticket-dropzone.dz-selected {
+  border-color: #0284c7 !important;
+  border-style: solid !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+}
+
+.ticket-dropzone .dz-hint {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.85;
+  margin-top: 4px;
+  color: #0284c7;
+  font-weight: 500;
+}
+
 .ticket-dropzone .dz-prompt {
   font-size: 0.8rem;
   color: var(--text-muted);

@@ -1426,10 +1426,11 @@
                   </div>
                   <div class="form-group">
                     <label>Gráfica / Evidencia opcional de Conexión</label>
-                    <div class="ticket-dropzone" id="dz-conexion-evidencia" onclick="triggerFileInput('file-conexion-evidencia')">
+                    <div class="ticket-dropzone" id="dz-conexion-evidencia" tabindex="0" onclick="clickDropzoneTicket('conexion_evidencia', 'file-conexion-evidencia', event)">
                       <input type="file" id="file-conexion-evidencia" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'conexion_evidencia')">
                       <div class="dz-prompt" id="dz-prompt-conexion-evidencia">
-                        <span>📸 Arrastra, selecciona o pega (Ctrl+V) una captura</span>
+                        <span>📸 Captura / Evidencia</span>
+                        <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                       </div>
                       <div class="dz-preview" id="dz-preview-conexion-evidencia" style="display:none;">
                         <img id="img-preview-conexion-evidencia" src="" alt="Previsualización">
@@ -1459,15 +1460,23 @@
 
                   <div class="form-group margin-top">
                     <label for="ticketEquipoReferencia">Texto de Referencia de la Falla</label>
-                    <input type="text" id="ticketEquipoReferencia" placeholder="ej: Equipo 2 sensor 10mts pontón con corte de datos por posible falla en su funcionamiento." oninput="actualizarPrevisualizacionTicketLive()">
+                    <input type="text" id="ticketEquipoReferencia" placeholder="ej: Corte de datos por posible falla en su funcionamiento." oninput="actualizarPrevisualizacionTicketLive()">
+                  </div>
+
+                  <div class="form-group margin-top" style="background: rgba(2, 132, 199, 0.06); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 8px; padding: 10px 14px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #1e293b; margin: 0;">
+                      <input type="checkbox" id="ticketEquipoEsCorriente" onchange="actualizarPrevisualizacionTicketLive()" style="width: 17px; height: 17px; cursor: pointer;">
+                      <span>Equipo es de Corriente / Turbidez (Aviso compatibilidad Oxígeno-Salinidad)</span>
+                    </label>
                   </div>
 
                   <div class="form-group margin-top">
                     <label>Gráfica de Corte de Datos</label>
-                    <div class="ticket-dropzone" id="dz-equipo-grafica" onclick="triggerFileInput('file-equipo-grafica')">
+                    <div class="ticket-dropzone" id="dz-equipo-grafica" tabindex="0" onclick="clickDropzoneTicket('equipo_grafica', 'file-equipo-grafica', event)">
                       <input type="file" id="file-equipo-grafica" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'equipo_grafica')">
                       <div class="dz-prompt" id="dz-prompt-equipo-grafica">
-                        <span>📊 Gráfico de corte de datos (Arrastrar, click o Ctrl+V)</span>
+                        <span>📊 Gráfico de corte de datos</span>
+                        <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                       </div>
                       <div class="dz-preview" id="dz-preview-equipo-grafica" style="display:none;">
                         <img id="img-preview-equipo-grafica" src="" alt="Previsualización">
@@ -1479,10 +1488,11 @@
                   <div class="form-grid margin-top">
                     <div class="form-group">
                       <label>Foto Equipo Defectuoso</label>
-                      <div class="ticket-dropzone" id="dz-equipo-defectuoso" onclick="triggerFileInput('file-equipo-defectuoso')">
+                      <div class="ticket-dropzone" id="dz-equipo-defectuoso" tabindex="0" onclick="clickDropzoneTicket('equipo_defectuoso', 'file-equipo-defectuoso', event)">
                         <input type="file" id="file-equipo-defectuoso" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'equipo_defectuoso')">
                         <div class="dz-prompt" id="dz-prompt-equipo-defectuoso">
                           <span>📷 Foto Defectuoso</span>
+                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                         </div>
                         <div class="dz-preview" id="dz-preview-equipo-defectuoso" style="display:none;">
                           <img id="img-preview-equipo-defectuoso" src="" alt="Previsualización">
@@ -1493,10 +1503,11 @@
 
                     <div class="form-group">
                       <label>Foto Equipo de Repuesto</label>
-                      <div class="ticket-dropzone" id="dz-equipo-repuesto" onclick="triggerFileInput('file-equipo-repuesto')">
+                      <div class="ticket-dropzone" id="dz-equipo-repuesto" tabindex="0" onclick="clickDropzoneTicket('equipo_repuesto', 'file-equipo-repuesto', event)">
                         <input type="file" id="file-equipo-repuesto" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'equipo_repuesto')">
                         <div class="dz-prompt" id="dz-prompt-equipo-repuesto">
                           <span>📦 Foto Repuesto</span>
+                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                         </div>
                         <div class="dz-preview" id="dz-preview-equipo-repuesto" style="display:none;">
                           <img id="img-preview-equipo-repuesto" src="" alt="Previsualización">
@@ -1533,10 +1544,11 @@
                   <div class="form-grid margin-top">
                     <div class="form-group">
                       <label>Foto Sensor Repuesto</label>
-                      <div class="ticket-dropzone" id="dz-sensor-repuesto" onclick="triggerFileInput('file-sensor-repuesto')">
+                      <div class="ticket-dropzone" id="dz-sensor-repuesto" tabindex="0" onclick="clickDropzoneTicket('sensor_repuesto', 'file-sensor-repuesto', event)">
                         <input type="file" id="file-sensor-repuesto" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_repuesto')">
                         <div class="dz-prompt" id="dz-prompt-sensor-repuesto">
                           <span>📦 (Repuesto)</span>
+                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                         </div>
                         <div class="dz-preview" id="dz-preview-sensor-repuesto" style="display:none;">
                           <img id="img-preview-sensor-repuesto" src="" alt="Previsualización">
@@ -1547,10 +1559,11 @@
 
                     <div class="form-group">
                       <label>Foto Sensor a Reemplazar</label>
-                      <div class="ticket-dropzone" id="dz-sensor-defectuoso" onclick="triggerFileInput('file-sensor-defectuoso')">
+                      <div class="ticket-dropzone" id="dz-sensor-defectuoso" tabindex="0" onclick="clickDropzoneTicket('sensor_defectuoso', 'file-sensor-defectuoso', event)">
                         <input type="file" id="file-sensor-defectuoso" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_defectuoso')">
                         <div class="dz-prompt" id="dz-prompt-sensor-defectuoso">
                           <span>📷 (Reemplazar)</span>
+                          <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                         </div>
                         <div class="dz-preview" id="dz-preview-sensor-defectuoso" style="display:none;">
                           <img id="img-preview-sensor-defectuoso" src="" alt="Previsualización">
@@ -1562,10 +1575,11 @@
 
                   <div class="form-group margin-top">
                     <label>Gráfica opcional de mediciones</label>
-                    <div class="ticket-dropzone" id="dz-sensor-grafica" onclick="triggerFileInput('file-sensor-grafica')">
+                    <div class="ticket-dropzone" id="dz-sensor-grafica" tabindex="0" onclick="clickDropzoneTicket('sensor_grafica', 'file-sensor-grafica', event)">
                       <input type="file" id="file-sensor-grafica" accept="image/*" style="display:none;" onchange="alSeleccionarImagenTicket(event, 'sensor_grafica')">
                       <div class="dz-prompt" id="dz-prompt-sensor-grafica">
                         <span>📊 Captura de gráfica (Opcional)</span>
+                        <small class="dz-hint">Click para seleccionar (Ctrl+V) o doble click para buscar archivo</small>
                       </div>
                       <div class="dz-preview" id="dz-preview-sensor-grafica" style="display:none;">
                         <img id="img-preview-sensor-grafica" src="" alt="Previsualización">

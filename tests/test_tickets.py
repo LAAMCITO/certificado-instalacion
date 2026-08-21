@@ -57,11 +57,14 @@ class TicketsTestCase(TestCase):
             "ubicacion": "Pontón",
             "identificador_repuesto": "Name A1",
             "personal_id": self.asistente.id,
+            "es_corriente": True,
         }
         asunto, html = PortalService.generar_html_ticket("falla_equipo", datos)
         self.assertIn("Ticket - Chidhuapi 1 - Falla de equipo 10", asunto)
         self.assertIn("Pontón", html)
         self.assertIn("Importante:", html)
+        self.assertIn("Una vez realizado el cambio, agradeceremos contactar a Soporte Innovex", html)
+        self.assertIn("Si bien el equipo es distinto, la configuración y programación es compatible", html)
         self.assertIn("Mantención correctiva Jennic", html)
 
     def test_generar_html_ticket_falla_sensor(self):
