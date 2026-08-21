@@ -39,7 +39,6 @@ class TestPortalService(TestCase):
     def test_destinatarios_crud(self):
         destinatarios = PortalService.obtener_destinatarios()
         self.assertIsInstance(destinatarios, list)
-        self.assertGreaterEqual(len(destinatarios), 1)
 
         # Crear destinatario
         res_crear = PortalService.crear_destinatario("TEST_EMPRESA", "test@empresa.com")

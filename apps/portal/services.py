@@ -34,22 +34,7 @@ ASISTENTES_DEFAULT = [
 ]
 
 # Destinatarios y empresas acuícolas iniciales
-DESTINATARIOS_DEFAULT = [
-    {"empresa": "CERMAQ", "correo": "soporte.cermaq@innovex.cl", "activo": True},
-    {"empresa": "CERMAQ", "correo": "operaciones.cermaq@cermaq.com", "activo": True},
-    {"empresa": "AQUACHILE", "correo": "soporte.aquachile@innovex.cl", "activo": True},
-    {"empresa": "AQUACHILE", "correo": "monitoreo.centros@aquachile.com", "activo": True},
-    {"empresa": "BLUMAR", "correo": "soporte.blumar@innovex.cl", "activo": True},
-    {"empresa": "AUSTRALIS", "correo": "soporte.australis@innovex.cl", "activo": True},
-    {"empresa": "MULTI-X", "correo": "soporte.multix@innovex.cl", "activo": True},
-    {"empresa": "SALMONES AUSTRAL", "correo": "soporte.salmonesaustral@innovex.cl", "activo": True},
-    {"empresa": "YADRAN", "correo": "soporte.yadran@innovex.cl", "activo": True},
-    {"empresa": "CAMANCHACA", "correo": "soporte.camanchaca@innovex.cl", "activo": True},
-    {"empresa": "MARINE FARM", "correo": "soporte.marinefarm@innovex.cl", "activo": True},
-    {"empresa": "VENTISQUEROS", "correo": "soporte.ventisqueros@innovex.cl", "activo": True},
-    {"empresa": "COOKE AQUACULTURE", "correo": "soporte.cooke@innovex.cl", "activo": True},
-    {"empresa": "INVERMAR", "correo": "soporte.invermar@innovex.cl", "activo": True},
-]
+DESTINATARIOS_DEFAULT = []
 
 
 class CustomEmailMessage(EmailMessage):
@@ -123,12 +108,48 @@ class PortalService:
     # DESTINATARIOS Y EMPRESAS (GESTOR DE CORREOS)
     # -------------------------------------------------------------
     @classmethod
+    def normalizar_nombre_empresa(cls, empresa: str) -> str:
+        if not empresa:
+            return ""
+        emp_clean = empresa.strip()
+        if not emp_clean:
+            return ""
+
+        from apps.core.constants.empresas import EMPRESAS
+        for emp_std in EMPRESAS:
+            if emp_std.lower() == emp_clean.lower():
+                return emp_std
+
+        existentes = Destinatario.objects.filter(empresa__iexact=emp_clean)
+        for ex in existentes:
+            if not ex.empresa.isupper():
+                return ex.empresa
+
+        if emp_clean.isupper():
+            return emp_clean.title()
+
+        return emp_clean
+
+    @classmethod
     def obtener_destinatarios(cls) -> list[dict]:
         try:
             if not Destinatario.objects.exists():
                 for d in DESTINATARIOS_DEFAULT:
-                    Destinatario.objects.create(**d)
-            return [d.to_dict() for d in Destinatario.objects.all().order_by("empresa", "correo")]
+                    d_copy = dict(d)
+                    d_copy["empresa"] = cls.normalizar_nombre_empresa(d_copy["empresa"])
+                    Destinatario.objects.create(**d_copy)
+
+            # Normalizar cualquier registro existente en la BD que haya quedado guardado en ALL-CAPS (e.g. legacy BLUMAR)
+            destinatarios_qs = Destinatario.objects.all().order_by("empresa", "correo")
+            resultado = []
+            for d in destinatarios_qs:
+                norm = cls.normalizar_nombre_empresa(d.empresa)
+                if norm != d.empresa:
+                    d.empresa = norm
+                    d.save()
+                resultado.append(d.to_dict())
+
+            return resultado
         except Exception:
             return [{"id": i+1, **d} for i, d in enumerate(DESTINATARIOS_DEFAULT)]
 
@@ -146,11 +167,7 @@ class PortalService:
     @classmethod
     def crear_destinatario(cls, empresa: str, correo: str) -> dict:
         try:
-            empresa_clean = empresa.strip()
-            existente = Destinatario.objects.filter(empresa__iexact=empresa_clean).first()
-            if existente:
-                empresa_clean = existente.empresa
-
+            empresa_clean = cls.normalizar_nombre_empresa(empresa)
             nuevo = Destinatario.objects.create(
                 empresa=empresa_clean,
                 correo=correo.strip().lower(),
