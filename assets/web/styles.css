@@ -1816,9 +1816,9 @@ body.dark-theme .ticket-pill.active {
   transition: all 0.2s ease;
 }
 
-.ticket-dropzone:hover, .ticket-dropzone.dragover {
+.ticket-dropzone:hover, .ticket-dropzone.dz-hover, .ticket-dropzone.dragover {
   border-color: #0284c7;
-  background: rgba(2, 132, 199, 0.05);
+  background: rgba(2, 132, 199, 0.06);
 }
 
 .ticket-dropzone.dz-selected {

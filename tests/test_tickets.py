@@ -55,7 +55,6 @@ class TicketsTestCase(TestCase):
             "numero_equipo": "10",
             "numero_jaula": "204",
             "ubicacion": "Pontón",
-            "identificador_repuesto": "Name A1",
             "personal_id": self.asistente.id,
             "es_corriente": True,
         }

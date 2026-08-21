@@ -5055,20 +5055,38 @@ function ocultarPreviewDropzone(key) {
 }
 
 function setupPasteListenersTickets() {
+  // Rastrear posición del puntero sobre las casillas de imágenes en tiempo real
+  document.addEventListener("mouseover", function (e) {
+    const dz = e.target && e.target.closest ? e.target.closest(".ticket-dropzone") : null;
+    if (dz) {
+      const key = dz.id.replace("dz-", "").replace(/-/g, "_");
+      estadoTickets.dropzoneHover = key;
+    } else {
+      estadoTickets.dropzoneHover = null;
+    }
+  });
+
   document.addEventListener("paste", function (e) {
     // Solo interceptar si estamos en la vista de tickets
     const viewTickets = document.getElementById("view-tickets-soporte");
     if (!viewTickets || viewTickets.style.display === "none") return;
 
-    // Si el usuario está escribiendo en un input o textarea normal, no bloquear texto
+    // Si el usuario está escribiendo en un input o textarea normal sin imágenes en el portapapeles, no interceptar
     const target = e.target;
-    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA") && target.type !== "file") {
-      // Permitir pegar texto en inputs
-      if (!e.clipboardData.files.length) return;
-    }
-
     const items = e.clipboardData && e.clipboardData.items;
-    if (!items) return;
+    if (!items || !items.length) return;
+
+    const tieneImagen = Array.from(items).some(it => it.type && it.type.includes("image"));
+    if (!tieneImagen) return;
+
+    // 1. Detectar la casilla bajo el puntero del mouse (hover actual o target del evento)
+    const hoverElem = document.querySelector(".ticket-dropzone:hover") || (target && target.closest ? target.closest(".ticket-dropzone") : null);
+    let targetPuntero = "";
+    if (hoverElem) {
+      targetPuntero = hoverElem.id.replace("dz-", "").replace(/-/g, "_");
+    } else if (estadoTickets.dropzoneHover) {
+      targetPuntero = estadoTickets.dropzoneHover;
+    }
 
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf("image") !== -1) {
@@ -5076,7 +5094,7 @@ function setupPasteListenersTickets() {
         const reader = new FileReader();
         reader.onload = async function (event) {
           const b64 = await redimensionarImagenBase64(event.target.result);
-          asignarImagenPegadaSegunTipo(b64);
+          asignarImagenPegadaSegunTipo(b64, targetPuntero);
         };
         reader.readAsDataURL(blob);
         e.preventDefault();
@@ -5101,7 +5119,8 @@ function setupPasteListenersTickets() {
             const resized = await redimensionarImagenBase64(ev.target.result);
             estadoTickets.imagenes[dzId] = resized;
             mostrarPreviewDropzone(dzId, resized);
-            avanzarSiguienteDropzone(dzId, estadoTickets.tipo);
+            estadoTickets.dropzoneSeleccionada = dzId;
+            actualizarHighlightDropzones();
             actualizarPrevisualizacionTicketLive(true);
           };
           reader.readAsDataURL(file);
@@ -5111,15 +5130,20 @@ function setupPasteListenersTickets() {
   });
 }
 
-function asignarImagenPegadaSegunTipo(b64) {
+function asignarImagenPegadaSegunTipo(b64, targetPuntero = "") {
   const tipo = estadoTickets.tipo;
   let targetKey = "";
 
-  // 1. Si el usuario hizo click en una casilla concreta, pegar en esa:
-  if (estadoTickets.dropzoneSeleccionada && perteneceAlTipoActual(estadoTickets.dropzoneSeleccionada, tipo)) {
+  // 1. PRIORIDAD MÁXIMA: Donde esté el puntero del mouse al presionar Ctrl+V
+  if (targetPuntero && perteneceAlTipoActual(targetPuntero, tipo)) {
+    targetKey = targetPuntero;
+  }
+  // 2. Segunda prioridad: Casilla seleccionada por click previo
+  else if (estadoTickets.dropzoneSeleccionada && perteneceAlTipoActual(estadoTickets.dropzoneSeleccionada, tipo)) {
     targetKey = estadoTickets.dropzoneSeleccionada;
-  } else {
-    // 2. Si no hay seleccionada, asignar en orden natural a la primera casilla vacía:
+  }
+  // 3. Tercera prioridad: Primera casilla vacía del formulario
+  else {
     if (tipo === "conexion") {
       targetKey = "conexion_evidencia";
     } else if (tipo === "falla_equipo") {
@@ -5138,7 +5162,8 @@ function asignarImagenPegadaSegunTipo(b64) {
   if (targetKey) {
     estadoTickets.imagenes[targetKey] = b64;
     mostrarPreviewDropzone(targetKey, b64);
-    avanzarSiguienteDropzone(targetKey, tipo);
+    estadoTickets.dropzoneSeleccionada = targetKey;
+    actualizarHighlightDropzones();
     actualizarPrevisualizacionTicketLive(true);
   }
 }
@@ -5191,7 +5216,6 @@ function recolectarDatosTicket() {
   if (tipo === "falla_equipo") {
     payload.numero_equipo = document.getElementById("ticketEquipoNumero")?.value || "";
     payload.ubicacion = document.getElementById("ticketEquipoUbicacion")?.value || "";
-    payload.identificador_repuesto = document.getElementById("ticketEquipoRepuestoId")?.value || "Name A1";
     payload.texto_referencia = document.getElementById("ticketEquipoReferencia")?.value || "";
     payload.es_corriente = document.getElementById("ticketEquipoEsCorriente")?.checked || false;
   } else if (tipo === "falla_sensor") {
@@ -5202,6 +5226,56 @@ function recolectarDatosTicket() {
 
   return payload;
 }
+
+window.generarNuevoTicket = function (limpiarTodo = false) {
+  // 1. Limpiar todas las imágenes cargadas y sus vistas previas
+  Object.keys(estadoTickets.imagenes).forEach(key => {
+    estadoTickets.imagenes[key] = "";
+    ocultarPreviewDropzone(key);
+  });
+
+  // 2. Resetear selección y hover de dropzones
+  estadoTickets.dropzoneSeleccionada = "";
+  estadoTickets.dropzoneHover = null;
+  actualizarHighlightDropzones();
+
+  // 3. Limpiar inputs específicos de fallas
+  const inputEqNum = document.getElementById("ticketEquipoNumero");
+  if (inputEqNum) inputEqNum.value = "";
+
+  const inputEqUbic = document.getElementById("ticketEquipoUbicacion");
+  if (inputEqUbic) inputEqUbic.value = "";
+
+  const inputEqRef = document.getElementById("ticketEquipoReferencia");
+  if (inputEqRef) inputEqRef.value = "";
+
+  const checkEqCorr = document.getElementById("ticketEquipoEsCorriente");
+  if (checkEqCorr) checkEqCorr.checked = false;
+
+  const inputSensProf = document.getElementById("ticketSensorProfundidad");
+  if (inputSensProf) inputSensProf.value = "10";
+
+  const inputSensJaula = document.getElementById("ticketSensorJaula");
+  if (inputSensJaula) inputSensJaula.value = "";
+
+  const inputConexHoras = document.getElementById("ticketConexionHoras");
+  if (inputConexHoras) inputConexHoras.value = "24";
+
+  const inputConexTexto = document.getElementById("ticketConexionTexto");
+  if (inputConexTexto) inputConexTexto.value = "";
+
+  if (limpiarTodo) {
+    const destTo = document.getElementById("ticketDestinatariosTo");
+    if (destTo) destTo.value = "";
+    const destCc = document.getElementById("ticketDestinatariosCc");
+    if (destCc) destCc.value = "";
+    const correoPrueba = document.getElementById("ticketCorreoPrueba");
+    if (correoPrueba) correoPrueba.value = "";
+  }
+
+  // 4. Actualizar la previsualización live en tiempo real
+  actualizarPrevisualizacionTicketLive(true);
+};
 
 window.ejecutarEnvioTicket = async function () {
   const btn = document.getElementById("btnEnviarTicket");
@@ -5241,6 +5315,8 @@ window.ejecutarEnvioTicket = async function () {
     if (data.status === "ok") {
       alert("✅ " + data.mensaje);
       cargarHistorialTickets();
+      // Limpiar datos del ticket para permitir redactar el siguiente inmediatamente manteniendo empresa/centro
+      window.generarNuevoTicket(false);
     } else {
       alert("❌ Error: " + (data.mensaje || "No se pudo enviar el ticket"));
     }

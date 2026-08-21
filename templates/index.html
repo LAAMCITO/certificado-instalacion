@@ -1322,7 +1322,10 @@
                 Emisión de tickets estructurados por conexión, fallas de equipos y sensores abióticos con firma institucional y adjuntos.
               </p>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="generarNuevoTicket(false)" title="Limpia imágenes y detalles para redactar un nuevo ticket" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; border-color: #0284c7; color: #0284c7; font-weight: 600;">
+                <span>✨</span> Nuevo Ticket
+              </button>
               <button class="btn btn-secondary" onclick="abrirModalGestionCentrosTickets()" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 Contactos de Centros
@@ -1451,11 +1454,6 @@
                       <label for="ticketEquipoUbicacion">Ubicación / Jaula</label>
                       <input type="text" id="ticketEquipoUbicacion" placeholder="ej: Pontón, Jaula 204" oninput="actualizarPrevisualizacionTicketLive()">
                     </div>
-                  </div>
-
-                  <div class="form-group margin-top">
-                    <label for="ticketEquipoRepuestoId">Identificador del Repuesto (Pantalla)</label>
-                    <input type="text" id="ticketEquipoRepuestoId" value="Name A1" placeholder="ej: Name A1" oninput="actualizarPrevisualizacionTicketLive()">
                   </div>
 
                   <div class="form-group margin-top">
@@ -1611,10 +1609,13 @@
                   <input type="email" id="ticketCorreoPrueba" placeholder="Ingresa tu correo si deseas recibirlo en modo prueba antes de enviar">
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
-                  <button type="button" class="btn btn-primary" id="btnEnviarTicket" onclick="ejecutarEnvioTicket()" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700;">
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-primary" id="btnEnviarTicket" onclick="ejecutarEnvioTicket()" style="flex: 2; min-width: 180px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     Enviar Ticket de Falla
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="generarNuevoTicket(false)" title="Limpiar imágenes y campos para redactar otro ticket" style="flex: 1; min-width: 130px; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600; border-color: #0284c7; color: #0284c7;">
+                    <span>✨</span> Nuevo
                   </button>
                   <button type="button" class="btn btn-secondary" onclick="actualizarPrevisualizacionTicketLive(true)" title="Refrescar Previsualización">
                     🔄

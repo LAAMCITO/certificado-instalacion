@@ -649,7 +649,6 @@ class PortalService:
             numero_equipo = str(datos.get("numero_equipo", "")).strip()
             ubicacion = str(datos.get("ubicacion", "")).strip()
             numero_jaula = str(datos.get("numero_jaula", "")).strip()
-            identificador_repuesto = datos.get("identificador_repuesto", "Name A1")
 
             partes_equipo = []
             if numero_equipo:
@@ -668,7 +667,6 @@ class PortalService:
                 "numero_jaula": numero_jaula,
                 "ubicacion": ubicacion,
                 "eq_info": eq_info,
-                "identificador_repuesto": identificador_repuesto,
                 "texto_referencia": texto_referencia,
                 "es_corriente": bool(datos.get("es_corriente", False)),
             })
