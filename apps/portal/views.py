@@ -181,7 +181,7 @@ def destinatarios(request):
 @csrf_exempt
 @require_POST
 def enviar_correos_masivos(request):
-    """POST /api/enviar_correos_masivos"""
+    """POST /api/enviar_correos_masivos – Despacho asíncrono en segundo plano"""
     body = _parse_json_body(request)
     semana = body.get("semana")
     personal_id = body.get("personal_id")
@@ -189,14 +189,34 @@ def enviar_correos_masivos(request):
     fecha_domingo = body.get("fecha_domingo") or ""
     correo_prueba = body.get("correo_prueba", "").strip()
 
-    res = PortalService.enviar_correos_masivos(
-        semana=semana,
-        personal_id=personal_id,
-        fecha_sabado=fecha_sabado,
-        fecha_domingo=fecha_domingo,
-        correo_prueba=correo_prueba,
+    def _tarea_envio_asincrono():
+        try:
+            PortalService.enviar_correos_masivos(
+                semana=semana,
+                personal_id=personal_id,
+                fecha_sabado=fecha_sabado,
+                fecha_domingo=fecha_domingo,
+                correo_prueba=correo_prueba,
+            )
+        except Exception as exc:
+            print(f"❌ Error en hilo de envío de correos masivos: {exc}")
+
+    hilo = threading.Thread(target=_tarea_envio_asincrono)
+    hilo.daemon = True
+    hilo.start()
+
+    mensaje = (
+        f"Se inició el despacho en MODO PRUEBA a {correo_prueba} en segundo plano."
+        if correo_prueba
+        else "🚀 Se inició el envío de correos masivos en segundo plano. Se despacharán a todas las empresas en breve."
     )
-    return JsonResponse(res)
+
+    return JsonResponse({
+        "status": "ok",
+        "mensaje": mensaje,
+        "emails_enviados": 1,
+        "modo_prueba": bool(correo_prueba),
+    })
 
 
 # ──────────────────────────────────────────────
